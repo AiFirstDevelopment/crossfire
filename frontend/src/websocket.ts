@@ -13,11 +13,16 @@ export class GameClient {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Determine WebSocket URL based on current location
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = 8787; // Worker port
-      const wsUrl = `${protocol}//${host}:${port}/api/room/join?roomId=${this.roomId}`;
+      // Determine WebSocket URL based on environment
+      let wsUrl: string;
+
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Local development
+        wsUrl = `ws://localhost:8787/api/room/join?roomId=${this.roomId}`;
+      } else {
+        // Production - use deployed worker
+        wsUrl = `wss://crossfire-worker.joelstevick.workers.dev/api/room/join?roomId=${this.roomId}`;
+      }
 
       this.ws = new WebSocket(wsUrl);
 
