@@ -1,0 +1,24 @@
+name = "crossfire-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Development configuration
+[env.dev]
+name = "crossfire-worker-dev"
+
+# Production configuration
+[env.production]
+name = "crossfire-worker"
+routes = [
+  { pattern = "api.crossfire.example.com/*", zone_name = "crossfire.example.com" }
+]
+
+# Uncomment when you add Durable Objects
+# [[durable_objects.bindings]]
+# name = "GAME_ROOM"
+# class_name = "GameRoom"
+# script_name = "crossfire-worker"
+
+# [[migrations]]
+# tag = "v1"
+# new_classes = ["GameRoom"]
