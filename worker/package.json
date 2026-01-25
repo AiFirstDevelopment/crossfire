@@ -14,6 +14,7 @@
     "wrangler": "^3.95.0"
   },
   "dependencies": {
+    "an-array-of-english-words": "^2.0.0",
     "crossword-layout-generator": "^0.1.1"
   }
 }

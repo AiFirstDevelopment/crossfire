@@ -1,6 +1,10 @@
 import './style.css';
 import { GameClient, GameState } from './game';
 import { CrosswordUI } from './crossword-ui';
+import englishWords from 'an-array-of-english-words';
+
+// Create a Set for O(1) word lookup
+const validWords = new Set(englishWords.map(w => w.toUpperCase()));
 
 // Elements
 const screens = {
@@ -52,9 +56,32 @@ function init() {
     }
   });
 
+  // Add blur validation to word inputs
+  wordInputs.forEach(input => {
+    input.addEventListener('blur', () => {
+      validateWordInput(input);
+    });
+    input.addEventListener('input', () => {
+      // Clear invalid state when user starts typing again
+      input.classList.remove('invalid');
+    });
+  });
+
   wordForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const words = Array.from(wordInputs).map(input => input.value.trim().toUpperCase());
+
+    // Validate all words before submission
+    let hasInvalid = false;
+    wordInputs.forEach(input => {
+      if (!validateWordInput(input)) {
+        hasInvalid = true;
+      }
+    });
+
+    if (hasInvalid) {
+      return;
+    }
 
     if (words.some(w => w.length < 3)) {
       showError('Each word must be at least 3 letters');
@@ -243,6 +270,33 @@ function formatTime(ms: number): string {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function validateWordInput(input: HTMLInputElement): boolean {
+  const word = input.value.trim().toUpperCase();
+
+  // Empty is ok (not filled yet)
+  if (!word) {
+    input.classList.remove('invalid');
+    return true;
+  }
+
+  // Check minimum length
+  if (word.length < 3) {
+    input.classList.add('invalid');
+    showError('Word must be at least 3 letters');
+    return false;
+  }
+
+  // Check if valid English word
+  if (!validWords.has(word)) {
+    input.classList.add('invalid');
+    showError(`"${word}" is not a valid English word`);
+    return false;
+  }
+
+  input.classList.remove('invalid');
+  return true;
 }
 
 // Initialize

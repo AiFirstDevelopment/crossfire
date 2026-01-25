@@ -7,6 +7,10 @@ import type {
   HintResponse,
 } from './types';
 import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells } from './crossword';
+import englishWords from 'an-array-of-english-words';
+
+// Create a Set for O(1) word lookup
+const validWords = new Set(englishWords.map(w => w.toUpperCase()));
 
 export interface Env {
   GAME_ROOM: DurableObjectNamespace;
@@ -237,6 +241,11 @@ export class GameRoom {
 
       if (seen.has(normalized)) {
         return `Duplicate word: ${word}`;
+      }
+
+      // Check if word is in the English dictionary
+      if (!validWords.has(normalized)) {
+        return `"${word}" is not a valid English word`;
       }
 
       seen.add(normalized);

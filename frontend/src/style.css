@@ -170,6 +170,15 @@ input[type="text"]:focus {
   letter-spacing: 0.1em;
 }
 
+.word-input.invalid {
+  border-color: #dc2626;
+  background-color: #3a1a1a;
+}
+
+.word-input.invalid:focus {
+  outline-color: #dc2626;
+}
+
 /* Timer */
 .timer {
   font-size: 2em;
