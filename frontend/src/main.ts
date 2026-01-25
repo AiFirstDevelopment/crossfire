@@ -56,39 +56,35 @@ function init() {
     }
   });
 
+  const submitBtn = wordForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+  submitBtn.disabled = true;
+
+  const updateSubmitButton = () => {
+    const allValid = Array.from(wordInputs).every(input => {
+      const word = input.value.trim().toUpperCase();
+      return word.length >= 3 && validWords.has(word);
+    });
+    submitBtn.disabled = !allValid;
+  };
+
   // Add blur validation to word inputs
   wordInputs.forEach(input => {
     input.addEventListener('blur', () => {
       validateWordInput(input);
+      updateSubmitButton();
     });
     input.addEventListener('input', () => {
       // Clear invalid state when user starts typing again
       input.classList.remove('invalid');
+      const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+      if (errorEl) errorEl.textContent = '';
+      updateSubmitButton();
     });
   });
 
   wordForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const words = Array.from(wordInputs).map(input => input.value.trim().toUpperCase());
-
-    // Validate all words before submission
-    let hasInvalid = false;
-    wordInputs.forEach(input => {
-      if (!validateWordInput(input)) {
-        hasInvalid = true;
-      }
-    });
-
-    if (hasInvalid) {
-      return;
-    }
-
-    if (words.some(w => w.length < 3)) {
-      showError('Each word must be at least 3 letters');
-      return;
-    }
-
-    game.submitWords(words);
+    game.submitWords(Array.from(wordInputs).map(input => input.value.trim().toUpperCase()));
     stopTimer();
     submitFormSection.classList.add('hidden');
     submitWaitingSection.classList.remove('hidden');
@@ -129,8 +125,13 @@ function handleStateChange(state: GameState) {
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
-      wordForm.querySelector('button')!.disabled = false;
-      wordInputs.forEach(input => input.value = '');
+      wordForm.querySelector('button')!.disabled = true;
+      wordInputs.forEach(input => {
+        input.value = '';
+        input.classList.remove('invalid');
+        const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+        if (errorEl) errorEl.textContent = '';
+      });
       startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
       break;
 
@@ -274,28 +275,37 @@ function formatTime(ms: number): string {
 
 function validateWordInput(input: HTMLInputElement): boolean {
   const word = input.value.trim().toUpperCase();
+  const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+
+  const setError = (msg: string) => {
+    input.classList.add('invalid');
+    if (errorEl) errorEl.textContent = msg;
+  };
+
+  const clearError = () => {
+    input.classList.remove('invalid');
+    if (errorEl) errorEl.textContent = '';
+  };
 
   // Empty is ok (not filled yet)
   if (!word) {
-    input.classList.remove('invalid');
+    clearError();
     return true;
   }
 
   // Check minimum length
   if (word.length < 3) {
-    input.classList.add('invalid');
-    showError('Word must be at least 3 letters');
+    setError('Too short (min 3 letters)');
     return false;
   }
 
   // Check if valid English word
   if (!validWords.has(word)) {
-    input.classList.add('invalid');
-    showError(`"${word}" is not a valid English word`);
+    setError('Not a valid word');
     return false;
   }
 
-  input.classList.remove('invalid');
+  clearError();
   return true;
 }
 

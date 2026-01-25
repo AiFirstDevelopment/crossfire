@@ -163,6 +163,12 @@ input[type="text"]:focus {
   margin: 1.5rem auto;
 }
 
+.word-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .word-input {
   text-transform: uppercase;
   text-align: center;
@@ -171,12 +177,20 @@ input[type="text"]:focus {
 }
 
 .word-input.invalid {
-  border-color: #dc2626;
-  background-color: #3a1a1a;
+  border-color: #f87171;
+  background-color: #1a1a1a;
+  color: #f87171;
 }
 
 .word-input.invalid:focus {
-  outline-color: #dc2626;
+  outline-color: #f87171;
+}
+
+.word-error {
+  font-size: 0.85em;
+  color: #f87171;
+  font-weight: 500;
+  min-height: 1.2em;
 }
 
 /* Timer */
