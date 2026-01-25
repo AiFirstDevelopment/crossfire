@@ -49,10 +49,6 @@ export class CrosswordUI {
     }
 
     this.container.appendChild(table);
-
-    // Add word list
-    const wordList = this.createWordList();
-    this.container.appendChild(wordList);
   }
 
   private createCell(row: number, col: number, cell: ClientCell | null, wordNumber?: number): HTMLElement {
@@ -174,51 +170,6 @@ export class CrosswordUI {
     if (prevInput) {
       prevInput.focus();
     }
-  }
-
-  private createWordList(): HTMLElement {
-    const { grid } = this.options;
-    const container = document.createElement('div');
-    container.className = 'word-list';
-
-    const acrossWords = grid.words.filter(w => w.direction === 'across');
-    const downWords = grid.words.filter(w => w.direction === 'down');
-
-    if (acrossWords.length > 0) {
-      const acrossSection = document.createElement('div');
-      acrossSection.innerHTML = `<h4>Across</h4>`;
-      const list = document.createElement('ul');
-      for (const word of acrossWords) {
-        const li = document.createElement('li');
-        li.textContent = `${word.index}. (${word.length} letters)`;
-        li.addEventListener('click', () => {
-          const input = this.cellElements.get(`${word.startRow},${word.startCol}`);
-          input?.focus();
-        });
-        list.appendChild(li);
-      }
-      acrossSection.appendChild(list);
-      container.appendChild(acrossSection);
-    }
-
-    if (downWords.length > 0) {
-      const downSection = document.createElement('div');
-      downSection.innerHTML = `<h4>Down</h4>`;
-      const list = document.createElement('ul');
-      for (const word of downWords) {
-        const li = document.createElement('li');
-        li.textContent = `${word.index}. (${word.length} letters)`;
-        li.addEventListener('click', () => {
-          const input = this.cellElements.get(`${word.startRow},${word.startCol}`);
-          input?.focus();
-        });
-        list.appendChild(li);
-      }
-      downSection.appendChild(list);
-      container.appendChild(downSection);
-    }
-
-    return container;
   }
 
   update(filledCells: Record<string, string>, cellCorrectness: Record<string, boolean>) {
