@@ -1,13 +1,15 @@
 import { GameRoom } from './GameRoom';
+import { Matchmaking } from './Matchmaking';
 
-export { GameRoom };
+export { GameRoom, Matchmaking };
 
 export interface Env {
   GAME_ROOM: DurableObjectNamespace;
+  MATCHMAKING: DurableObjectNamespace;
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // CORS headers for local development
@@ -33,6 +35,14 @@ export default {
         }),
         { headers: corsHeaders }
       );
+    }
+
+    // Matchmaking endpoint
+    if (url.pathname === '/api/matchmaking') {
+      // Use a single global matchmaking instance
+      const id = env.MATCHMAKING.idFromName('global');
+      const matchmaking = env.MATCHMAKING.get(id);
+      return matchmaking.fetch(request);
     }
 
     // Create or join a room

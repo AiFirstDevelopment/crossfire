@@ -8,28 +8,72 @@
   </head>
   <body>
     <div id="app">
-      <h1>Crossfire</h1>
+      <header>
+        <h1>Crossfire</h1>
+        <p class="tagline">Two-player word puzzle battle</p>
+      </header>
 
-      <section class="test-section">
-        <h2>API Test</h2>
-        <button id="test-btn">Test API Connection</button>
-        <pre id="api-response"></pre>
+      <!-- Connecting / Matchmaking Screen -->
+      <section id="screen-menu" class="screen">
+        <button id="find-match-btn" class="primary-btn">Find Match</button>
+        <p id="status-text"></p>
+
+        <div class="divider">or</div>
+
+        <div class="manual-join">
+          <input type="text" id="room-id-input" placeholder="Enter Room ID" />
+          <button id="join-room-btn">Join Room</button>
+        </div>
       </section>
 
-      <section class="test-section">
-        <h2>WebSocket Test</h2>
-        <div class="controls">
-          <input type="text" id="room-id" placeholder="Room ID" value="test-room" />
-          <button id="connect-btn">Connect to Room</button>
-          <button id="disconnect-btn" disabled>Disconnect</button>
-        </div>
-        <p id="ws-status">Not connected</p>
-        <div class="message-controls">
-          <input type="text" id="message-input" placeholder="Type a message..." disabled />
-          <button id="send-btn" disabled>Send Message</button>
-        </div>
-        <div id="messages"></div>
+      <!-- Waiting for opponent -->
+      <section id="screen-waiting" class="screen hidden">
+        <div class="spinner"></div>
+        <p>Waiting for opponent...</p>
+        <p id="waiting-info"></p>
       </section>
+
+      <!-- Word Submission Phase -->
+      <section id="screen-submit" class="screen hidden">
+        <h2>Enter Your Words</h2>
+        <p>Your opponent will try to guess these!</p>
+        <div id="timer-submit" class="timer"></div>
+
+        <form id="word-form">
+          <input type="text" class="word-input" placeholder="Word 1" maxlength="12" required />
+          <input type="text" class="word-input" placeholder="Word 2" maxlength="12" required />
+          <input type="text" class="word-input" placeholder="Word 3" maxlength="12" required />
+          <input type="text" class="word-input" placeholder="Word 4" maxlength="12" required />
+          <button type="submit" class="primary-btn">Submit Words</button>
+        </form>
+
+        <p id="submit-status"></p>
+      </section>
+
+      <!-- Solving Phase -->
+      <section id="screen-solve" class="screen hidden">
+        <div class="solve-header">
+          <div class="progress-display">
+            <span>You: <span id="your-progress">0%</span></span>
+            <span>Opponent: <span id="opponent-progress">0%</span></span>
+          </div>
+          <div id="timer-solve" class="timer"></div>
+        </div>
+
+        <div id="crossword-container"></div>
+
+        <p class="hint-info">Right-click a cell for a hint (+15s penalty)</p>
+      </section>
+
+      <!-- Results Screen -->
+      <section id="screen-results" class="screen hidden">
+        <h2 id="result-title"></h2>
+        <div id="result-details"></div>
+        <button id="play-again-btn" class="primary-btn">Play Again</button>
+      </section>
+
+      <!-- Error display -->
+      <div id="error-toast" class="error-toast hidden"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
