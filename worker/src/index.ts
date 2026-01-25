@@ -1,6 +1,9 @@
+import { GameRoom } from './GameRoom';
+
+export { GameRoom };
+
 export interface Env {
-  // Add bindings here, e.g.:
-  // GAME_ROOM: DurableObjectNamespace;
+  GAME_ROOM: DurableObjectNamespace;
 }
 
 export default {
@@ -30,6 +33,28 @@ export default {
         }),
         { headers: corsHeaders }
       );
+    }
+
+    // Create or join a room
+    if (url.pathname === '/api/room/join') {
+      const roomId = url.searchParams.get('roomId') || 'default-room';
+
+      // Get the Durable Object instance for this room
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const room = env.GAME_ROOM.get(id);
+
+      // Forward the request to the Durable Object
+      return room.fetch(request);
+    }
+
+    // Get room info
+    if (url.pathname.startsWith('/api/room/')) {
+      const roomId = url.searchParams.get('roomId') || 'default-room';
+
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const room = env.GAME_ROOM.get(id);
+
+      return room.fetch(request);
     }
 
     // Default 404 response

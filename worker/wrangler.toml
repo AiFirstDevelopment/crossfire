@@ -13,12 +13,11 @@ routes = [
   { pattern = "api.crossfire.example.com/*", zone_name = "crossfire.example.com" }
 ]
 
-# Uncomment when you add Durable Objects
-# [[durable_objects.bindings]]
-# name = "GAME_ROOM"
-# class_name = "GameRoom"
-# script_name = "crossfire-worker"
+# Durable Objects
+[[durable_objects.bindings]]
+name = "GAME_ROOM"
+class_name = "GameRoom"
 
-# [[migrations]]
-# tag = "v1"
-# new_classes = ["GameRoom"]
+[[migrations]]
+tag = "v1"
+new_classes = ["GameRoom"]
