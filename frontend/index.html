@@ -35,19 +35,24 @@
 
       <!-- Word Submission Phase -->
       <section id="screen-submit" class="screen hidden">
-        <h2>Enter Your Words</h2>
-        <p>Your opponent will try to guess these!</p>
-        <div id="timer-submit" class="timer"></div>
+        <div id="submit-form-section">
+          <h2>Enter Your Words</h2>
+          <p>Your opponent will try to guess these!</p>
+          <div id="timer-submit" class="timer"></div>
 
-        <form id="word-form">
-          <input type="text" class="word-input" placeholder="Word 1" maxlength="12" required />
-          <input type="text" class="word-input" placeholder="Word 2" maxlength="12" required />
-          <input type="text" class="word-input" placeholder="Word 3" maxlength="12" required />
-          <input type="text" class="word-input" placeholder="Word 4" maxlength="12" required />
-          <button type="submit" class="primary-btn">Submit Words</button>
-        </form>
+          <form id="word-form">
+            <input type="text" class="word-input" placeholder="Word 1" maxlength="12" required />
+            <input type="text" class="word-input" placeholder="Word 2" maxlength="12" required />
+            <input type="text" class="word-input" placeholder="Word 3" maxlength="12" required />
+            <input type="text" class="word-input" placeholder="Word 4" maxlength="12" required />
+            <button type="submit" class="primary-btn">Submit Words</button>
+          </form>
+        </div>
 
-        <p id="submit-status"></p>
+        <div id="submit-waiting-section" class="hidden">
+          <div class="spinner"></div>
+          <p id="submit-status">Waiting for opponent...</p>
+        </div>
       </section>
 
       <!-- Solving Phase -->

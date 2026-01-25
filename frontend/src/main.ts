@@ -18,8 +18,9 @@ const joinRoomBtn = document.getElementById('join-room-btn') as HTMLButtonElemen
 const waitingInfo = document.getElementById('waiting-info')!;
 const wordForm = document.getElementById('word-form') as HTMLFormElement;
 const wordInputs = document.querySelectorAll('.word-input') as NodeListOf<HTMLInputElement>;
-const submitStatus = document.getElementById('submit-status')!;
 const timerSubmit = document.getElementById('timer-submit')!;
+const submitFormSection = document.getElementById('submit-form-section')!;
+const submitWaitingSection = document.getElementById('submit-waiting-section')!;
 const timerSolve = document.getElementById('timer-solve')!;
 const yourProgress = document.getElementById('your-progress')!;
 const opponentProgressEl = document.getElementById('opponent-progress')!;
@@ -61,8 +62,9 @@ function init() {
     }
 
     game.submitWords(words);
-    submitStatus.textContent = 'Submitted! Waiting for opponent...';
-    wordForm.querySelector('button')!.disabled = true;
+    stopTimer();
+    submitFormSection.classList.add('hidden');
+    submitWaitingSection.classList.remove('hidden');
   });
 
   playAgainBtn.addEventListener('click', () => {
@@ -98,7 +100,8 @@ function handleStateChange(state: GameState) {
 
     case 'submitting':
       showScreen('submit');
-      submitStatus.textContent = '';
+      submitFormSection.classList.remove('hidden');
+      submitWaitingSection.classList.add('hidden');
       wordForm.querySelector('button')!.disabled = false;
       wordInputs.forEach(input => input.value = '');
       startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
