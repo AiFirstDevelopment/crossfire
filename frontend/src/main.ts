@@ -32,6 +32,8 @@ const crosswordContainer = document.getElementById('crossword-container')!;
 const resultTitle = document.getElementById('result-title')!;
 const resultDetails = document.getElementById('result-details')!;
 const playAgainBtn = document.getElementById('play-again-btn') as HTMLButtonElement;
+const leaveRoomBtn = document.getElementById('leave-room-btn') as HTMLButtonElement;
+const rematchStatus = document.getElementById('rematch-status')!;
 const errorToast = document.getElementById('error-toast')!;
 const hintToast = document.getElementById('hint-toast')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
@@ -100,8 +102,13 @@ function init() {
   });
 
   playAgainBtn.addEventListener('click', () => {
-    game.reset();
-    lastSubmittedWords = []; // Clear stored words for new game
+    game.playAgain();
+  });
+
+  leaveRoomBtn.addEventListener('click', () => {
+    game.leaveRoom();
+    lastSubmittedWords = [];
+    crosswordUI = null;
     showScreen('menu');
     findMatchBtn.disabled = false;
     statusText.textContent = '';
@@ -192,6 +199,7 @@ function handleStateChange(state: GameState) {
       showScreen('results');
       stopTimer();
       showResults(state);
+      updateRematchStatus(state);
       crosswordUI = null;
       break;
   }
@@ -302,6 +310,30 @@ function showResults(state: GameState) {
   }
 
   resultDetails.innerHTML = details;
+}
+
+function updateRematchStatus(state: GameState) {
+  if (state.waitingForRematch) {
+    if (state.opponentWantsRematch) {
+      // Both want rematch - game should restart automatically
+      rematchStatus.textContent = 'Starting new game...';
+      rematchStatus.classList.remove('hidden');
+      rematchStatus.classList.add('waiting');
+    } else {
+      rematchStatus.textContent = 'Waiting for opponent...';
+      rematchStatus.classList.remove('hidden');
+      rematchStatus.classList.add('waiting');
+    }
+    playAgainBtn.disabled = true;
+  } else if (state.opponentWantsRematch) {
+    rematchStatus.textContent = 'Opponent wants to play again!';
+    rematchStatus.classList.remove('hidden', 'waiting');
+    playAgainBtn.disabled = false;
+  } else {
+    rematchStatus.classList.add('hidden');
+    rematchStatus.classList.remove('waiting');
+    playAgainBtn.disabled = false;
+  }
 }
 
 function formatWinReason(reason: string): string {

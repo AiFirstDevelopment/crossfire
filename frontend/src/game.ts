@@ -15,6 +15,8 @@ export interface GameState {
   phaseStartedAt: number;
   result: GameResult | null;
   error: string | null;
+  opponentWantsRematch: boolean;
+  waitingForRematch: boolean;
 }
 
 type StateChangeHandler = (state: GameState) => void;
@@ -52,6 +54,8 @@ export class GameClient {
       phaseStartedAt: Date.now(),
       result: null,
       error: null,
+      opponentWantsRematch: false,
+      waitingForRematch: false,
     };
   }
 
@@ -237,6 +241,28 @@ export class GameClient {
         this.updateState({
           phase: 'finished',
           result: message.result,
+          opponentWantsRematch: false,
+          waitingForRematch: false,
+        });
+        break;
+
+      case 'opponent-wants-rematch':
+        this.updateState({ opponentWantsRematch: true });
+        break;
+
+      case 'rematch-starting':
+        // Reset for new game but keep connection info
+        this.updateState({
+          phase: 'submitting',
+          grid: null,
+          filledCells: {},
+          cellCorrectness: {},
+          opponentProgress: 0,
+          phaseStartedAt: Date.now(),
+          result: null,
+          error: null,
+          opponentWantsRematch: false,
+          waitingForRematch: false,
         });
         break;
 
@@ -299,6 +325,18 @@ export class GameClient {
 
   forfeit() {
     this.send({ type: 'forfeit' });
+  }
+
+  playAgain() {
+    this.updateState({ waitingForRematch: true });
+    this.send({ type: 'play-again' });
+  }
+
+  leaveRoom() {
+    this.send({ type: 'leave-room' });
+    this.disconnect();
+    this.state = this.createInitialState();
+    this.stateHandlers.forEach(h => h(this.state));
   }
 
   disconnect() {

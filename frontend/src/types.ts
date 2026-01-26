@@ -65,6 +65,8 @@ export type ServerMessage =
   | { type: 'hint-response'; hint: HintResponse }
   | { type: 'opponent-progress'; completionPercent: number }
   | { type: 'game-over'; result: GameResult }
+  | { type: 'opponent-wants-rematch' }
+  | { type: 'rematch-starting' }
   | { type: 'error'; code: string; message: string };
 
 // Client messages
@@ -74,4 +76,6 @@ export type ClientMessage =
   | { type: 'submit-words'; words: string[] }
   | { type: 'cell-update'; row: number; col: number; letter: string }
   | { type: 'hint-request'; hint: { type: string; wordIndex?: number; row?: number; col?: number } }
-  | { type: 'forfeit' };
+  | { type: 'forfeit' }
+  | { type: 'play-again' }
+  | { type: 'leave-room' };

@@ -160,6 +160,12 @@ export class GameRoom {
       case 'forfeit':
         this.handleForfeit(player);
         break;
+      case 'play-again':
+        this.handlePlayAgain(player);
+        break;
+      case 'leave-room':
+        this.handleLeaveRoom(player);
+        break;
     }
   }
 
@@ -450,6 +456,50 @@ export class GameRoom {
     if (opponentId) {
       this.endGame(opponentId, 'opponent-left');
     }
+  }
+
+  private handlePlayAgain(player: ConnectedPlayer) {
+    if (this.gameState.phase !== 'finished') {
+      this.sendTo(player.websocket, { type: 'error', code: 'INVALID_PHASE', message: 'Game not finished' });
+      return;
+    }
+
+    // Initialize rematch requests set if needed
+    if (!this.gameState.rematchRequests) {
+      this.gameState.rematchRequests = new Set();
+    }
+
+    // Add this player's request
+    this.gameState.rematchRequests.add(player.id);
+
+    // Notify opponent that this player wants to play again
+    this.broadcast({ type: 'opponent-wants-rematch' }, player.websocket);
+
+    // Check if both players want to play again
+    const playerIds = Object.keys(this.gameState.players);
+    const allWantRematch = playerIds.every(id => this.gameState.rematchRequests?.has(id));
+
+    if (allWantRematch && playerIds.length === 2) {
+      this.startRematch();
+    }
+  }
+
+  private handleLeaveRoom(player: ConnectedPlayer) {
+    // Close the connection - handlePlayerDisconnect will be called
+    player.websocket.close(1000, 'Player left');
+  }
+
+  private startRematch() {
+    // Reset game state but keep players
+    const players = this.gameState.players;
+    this.gameState = this.createInitialGameState();
+    this.gameState.players = players;
+
+    // Notify all players
+    this.broadcast({ type: 'rematch-starting' });
+
+    // Start the submission phase
+    this.startSubmissionPhase();
   }
 
   private checkForWinner() {

@@ -422,6 +422,36 @@ input[type="text"]:focus {
   margin: 0.5rem 0;
 }
 
+.results-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.secondary-btn {
+  background-color: transparent;
+  border: 2px solid #646cff;
+  color: #646cff;
+  padding: 1em 2em;
+  font-size: 1.2em;
+}
+
+.secondary-btn:hover {
+  background-color: rgba(100, 108, 255, 0.1);
+  border-color: #535bf2;
+}
+
+.rematch-status {
+  color: #888;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.rematch-status.waiting {
+  color: #ffa500;
+}
+
 /* Error Toast */
 .error-toast {
   position: fixed;
@@ -471,6 +501,15 @@ input[type="text"]:focus {
 .light-mode .primary-btn {
   background-color: #646cff;
   color: white;
+}
+
+.light-mode .secondary-btn {
+  border-color: #646cff;
+  color: #646cff;
+}
+
+.light-mode .secondary-btn:hover {
+  background-color: rgba(100, 108, 255, 0.1);
 }
 
 .light-mode input[type="text"] {

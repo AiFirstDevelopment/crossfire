@@ -76,6 +76,7 @@ export interface GameState {
   phaseStartedAt: number;
   winnerId?: string;
   winReason?: 'completed' | 'timeout' | 'opponent-left' | 'tie';
+  rematchRequests?: Set<string>; // playerIds who want to play again
 }
 
 // Hint types
@@ -103,7 +104,9 @@ export type ClientMessage =
   | { type: 'submit-words'; words: string[] }
   | { type: 'cell-update'; row: number; col: number; letter: string }
   | { type: 'hint-request'; hint: HintRequest }
-  | { type: 'forfeit' };
+  | { type: 'forfeit' }
+  | { type: 'play-again' }
+  | { type: 'leave-room' };
 
 // Server -> Client messages
 export type ServerMessage =
@@ -118,6 +121,8 @@ export type ServerMessage =
   | { type: 'hint-response'; hint: HintResponse }
   | { type: 'opponent-progress'; completionPercent: number }
   | { type: 'game-over'; result: GameResult }
+  | { type: 'opponent-wants-rematch' }
+  | { type: 'rematch-starting' }
   | { type: 'error'; code: string; message: string };
 
 export interface GameResult {
