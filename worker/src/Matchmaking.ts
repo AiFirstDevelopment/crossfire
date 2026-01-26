@@ -13,21 +13,62 @@ interface QueuedPlayer {
 }
 
 export class Matchmaking {
+  private state: DurableObjectState;
   private queue: Map<WebSocket, QueuedPlayer>;
+  private connectedSockets: Set<WebSocket>;
   private playerCounter: number;
+  private activeGames: number;
 
-  constructor(_state: DurableObjectState, _env: Env) {
+  constructor(state: DurableObjectState, _env: Env) {
+    this.state = state;
     this.queue = new Map();
+    this.connectedSockets = new Set();
     this.playerCounter = 0;
+    this.activeGames = 0;
+
+    // Load persisted active games count
+    this.state.blockConcurrencyWhile(async () => {
+      const stored = await this.state.storage.get<number>('activeGames');
+      if (stored !== undefined) {
+        this.activeGames = stored;
+      }
+    });
   }
 
   async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
     if (request.headers.get('Upgrade') === 'websocket') {
       return this.handleWebSocket(request);
     }
 
+    // Handle game-started notification from GameRoom (for rematches)
+    if (url.pathname === '/game-started' && request.method === 'POST') {
+      this.activeGames++;
+      await this.state.storage.put('activeGames', this.activeGames);
+      this.broadcastStats();
+      return new Response(JSON.stringify({ activeGames: this.activeGames }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle game-ended notification from GameRoom
+    if (url.pathname === '/game-ended' && request.method === 'POST') {
+      this.activeGames = Math.max(0, this.activeGames - 1);
+      await this.state.storage.put('activeGames', this.activeGames);
+      this.broadcastStats();
+      return new Response(JSON.stringify({ activeGames: this.activeGames }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Return current stats
     return new Response(
-      JSON.stringify({ queueSize: this.queue.size }),
+      JSON.stringify({
+        queueSize: this.queue.size,
+        onlineCount: this.connectedSockets.size,
+        activeGames: this.activeGames,
+      }),
       { headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -42,11 +83,17 @@ export class Matchmaking {
     this.playerCounter++;
     const playerName = `Player ${this.playerCounter}`;
 
-    // Send welcome
+    // Track this connection
+    this.connectedSockets.add(server);
+
+    // Send welcome with current stats
     this.sendTo(server, {
       type: 'welcome',
       playerId,
       playerName,
+      queueSize: this.queue.size,
+      onlineCount: this.connectedSockets.size,
+      activeGames: this.activeGames,
     });
 
     // Handle messages
@@ -62,6 +109,9 @@ export class Matchmaking {
     // Handle disconnect
     server.addEventListener('close', () => {
       this.queue.delete(server);
+      this.connectedSockets.delete(server);
+      // Always broadcast since online count changes
+      this.broadcastStats();
     });
 
     return new Response(null, { status: 101, webSocket: client });
@@ -99,12 +149,16 @@ export class Matchmaking {
       position: this.queue.size,
     });
 
+    // Broadcast updated queue size to all connected players
+    this.broadcastStats();
+
     // Try to match players
     this.tryMatch();
   }
 
   private handleLeaveQueue(ws: WebSocket) {
     this.queue.delete(ws);
+    this.broadcastStats();
   }
 
   private tryMatch() {
@@ -119,8 +173,15 @@ export class Matchmaking {
     this.queue.delete(ws1);
     this.queue.delete(ws2);
 
+    // Broadcast updated queue size
+    this.broadcastStats();
+
     // Create a new room ID
     const roomId = `game-${crypto.randomUUID()}`;
+
+    // Track active game
+    this.activeGames++;
+    this.state.storage.put('activeGames', this.activeGames);
 
     // Notify both players
     this.sendTo(ws1, {
@@ -144,6 +205,22 @@ export class Matchmaking {
         // Ignore close errors
       }
     }, 100);
+  }
+
+  private broadcastStats() {
+    const message = JSON.stringify({
+      type: 'stats-update',
+      queueSize: this.queue.size,
+      onlineCount: this.connectedSockets.size,
+      activeGames: this.activeGames,
+    });
+    for (const ws of this.connectedSockets) {
+      try {
+        ws.send(message);
+      } catch (error) {
+        // Connection may be closed
+      }
+    }
   }
 
   private sendTo(ws: WebSocket, message: MatchmakingServerMessage) {

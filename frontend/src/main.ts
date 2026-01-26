@@ -17,6 +17,7 @@ const screens = {
 
 const findMatchBtn = document.getElementById('find-match-btn') as HTMLButtonElement;
 const statusText = document.getElementById('status-text')!;
+const activeGamesEl = document.getElementById('active-games')!;
 const roomIdInput = document.getElementById('room-id-input') as HTMLInputElement;
 const joinRoomBtn = document.getElementById('join-room-btn') as HTMLButtonElement;
 const waitingInfo = document.getElementById('waiting-info')!;
@@ -119,6 +120,9 @@ function init() {
 }
 
 function handleStateChange(state: GameState) {
+  // Always update active games display
+  updateActiveGames(state.activeGames);
+
   // Update error display
   if (state.error) {
     showError(state.error);
@@ -127,7 +131,8 @@ function handleStateChange(state: GameState) {
   // Update screens based on phase
   switch (state.phase) {
     case 'connecting':
-      statusText.textContent = 'Connecting...';
+      // Only show "Connecting..." if user has initiated a connection
+      // (status text will be set when they click Find Match)
       break;
 
     case 'matchmaking':
@@ -208,6 +213,11 @@ function handleStateChange(state: GameState) {
 function showScreen(name: keyof typeof screens) {
   Object.values(screens).forEach(s => s.classList.add('hidden'));
   screens[name].classList.remove('hidden');
+}
+
+function updateActiveGames(count: number) {
+  const plural = count === 1 ? 'game' : 'games';
+  activeGamesEl.textContent = `${count} ${plural} in progress`;
 }
 
 function showError(message: string) {

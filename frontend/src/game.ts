@@ -17,6 +17,7 @@ export interface GameState {
   error: string | null;
   opponentWantsRematch: boolean;
   waitingForRematch: boolean;
+  activeGames: number;
 }
 
 type StateChangeHandler = (state: GameState) => void;
@@ -24,6 +25,7 @@ type HintUsedHandler = (penaltyMs: number) => void;
 
 export class GameClient {
   private ws: WebSocket | null = null;
+  private statsWs: WebSocket | null = null; // Separate connection for stats
   private state: GameState;
   private stateHandlers: Set<StateChangeHandler> = new Set();
   private hintHandler: HintUsedHandler | null = null;
@@ -32,6 +34,30 @@ export class GameClient {
   constructor() {
     this.isProduction = window.location.hostname !== 'localhost';
     this.state = this.createInitialState();
+    this.connectToStats();
+  }
+
+  // Connect to matchmaking just for stats updates
+  private connectToStats() {
+    const url = this.getWsUrl('/api/matchmaking');
+    this.statsWs = new WebSocket(url);
+
+    this.statsWs.onmessage = (event) => {
+      const message = JSON.parse(event.data) as ServerMessage;
+      if (message.type === 'welcome' || message.type === 'stats-update') {
+        const activeGames = 'activeGames' in message ? message.activeGames : 0;
+        this.updateState({ activeGames: activeGames ?? 0 });
+      }
+    };
+
+    this.statsWs.onclose = () => {
+      // Reconnect after a delay
+      setTimeout(() => this.connectToStats(), 5000);
+    };
+
+    this.statsWs.onerror = () => {
+      // Will trigger onclose
+    };
   }
 
   onHintUsed(handler: HintUsedHandler) {
@@ -56,6 +82,7 @@ export class GameClient {
       error: null,
       opponentWantsRematch: false,
       waitingForRematch: false,
+      activeGames: 0,
     };
   }
 
@@ -116,11 +143,16 @@ export class GameClient {
         this.updateState({
           playerId: message.playerId,
           playerName: message.playerName,
+          activeGames: message.activeGames ?? 0,
         });
         break;
 
       case 'queue-joined':
         this.updateState({ phase: 'matchmaking' });
+        break;
+
+      case 'stats-update':
+        this.updateState({ activeGames: message.activeGames });
         break;
 
       case 'match-found':

@@ -140,8 +140,9 @@ export type MatchmakingClientMessage =
   | { type: 'leave-queue' };
 
 export type MatchmakingServerMessage =
-  | { type: 'welcome'; playerId: string; playerName: string }
+  | { type: 'welcome'; playerId: string; playerName: string; queueSize: number; onlineCount: number; activeGames: number }
   | { type: 'queue-joined'; position: number }
+  | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number }
   | { type: 'match-found'; roomId: string; opponent: { id: string; name: string } }
   | { type: 'error'; code: string; message: string };
 

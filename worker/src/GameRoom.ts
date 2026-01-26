@@ -23,11 +23,14 @@ interface ConnectedPlayer extends Player {
 
 export class GameRoom {
   private state: DurableObjectState;
+  private env: Env;
   private players: Map<WebSocket, ConnectedPlayer>;
   private gameState: GameState;
+  private gameEndedNotified: boolean = false;
 
-  constructor(state: DurableObjectState, _env: Env) {
+  constructor(state: DurableObjectState, env: Env) {
     this.state = state;
+    this.env = env;
     this.players = new Map();
     this.gameState = this.createInitialGameState();
   }
@@ -494,6 +497,10 @@ export class GameRoom {
     const players = this.gameState.players;
     this.gameState = this.createInitialGameState();
     this.gameState.players = players;
+    this.gameEndedNotified = false;
+
+    // Notify matchmaking of new game
+    this.notifyGameStarted();
 
     // Notify all players
     this.broadcast({ type: 'rematch-starting' });
@@ -572,6 +579,32 @@ export class GameRoom {
       };
 
       this.sendTo(player.websocket, { type: 'game-over', result });
+    }
+
+    // Notify Matchmaking that game ended (only once per game)
+    if (!this.gameEndedNotified) {
+      this.gameEndedNotified = true;
+      this.notifyGameEnded();
+    }
+  }
+
+  private async notifyGameEnded() {
+    try {
+      const id = this.env.MATCHMAKING.idFromName('global');
+      const matchmaking = this.env.MATCHMAKING.get(id);
+      await matchmaking.fetch(new Request('https://matchmaking/game-ended', { method: 'POST' }));
+    } catch (error) {
+      console.error('Failed to notify matchmaking of game end:', error);
+    }
+  }
+
+  private async notifyGameStarted() {
+    try {
+      const id = this.env.MATCHMAKING.idFromName('global');
+      const matchmaking = this.env.MATCHMAKING.get(id);
+      await matchmaking.fetch(new Request('https://matchmaking/game-started', { method: 'POST' }));
+    } catch (error) {
+      console.error('Failed to notify matchmaking of game start:', error);
     }
   }
 
