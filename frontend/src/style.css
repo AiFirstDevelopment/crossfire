@@ -243,8 +243,8 @@ input[type="text"]:focus {
 
 .crossword-cell-wrapper {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   background: #1a1a1a;
 }
 
@@ -267,12 +267,16 @@ input[type="text"]:focus {
   border: none;
   background: transparent;
   color: white;
-  font-size: 1.4em;
+  font-size: 20px;
   font-weight: bold;
   text-align: center;
   text-transform: uppercase;
   padding: 0;
   caret-color: #646cff;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  line-height: 44px;
 }
 
 .crossword-cell:focus {
@@ -433,12 +437,13 @@ input[type="text"]:focus {
   }
 
   .crossword-cell-wrapper {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
   }
 
   .crossword-cell {
-    font-size: 1.1em;
+    font-size: 16px;
+    line-height: 36px;
   }
 
   .cell-number {

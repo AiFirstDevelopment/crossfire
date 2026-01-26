@@ -37,6 +37,7 @@ const errorToast = document.getElementById('error-toast')!;
 let game: GameClient;
 let crosswordUI: CrosswordUI | null = null;
 let timerInterval: number | null = null;
+let lastSubmittedWords: string[] = []; // Store words for resubmit scenarios
 
 function init() {
   game = new GameClient();
@@ -84,7 +85,9 @@ function init() {
 
   wordForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    game.submitWords(Array.from(wordInputs).map(input => input.value.trim().toUpperCase()));
+    // Store words in case we need to restore them after validation error
+    lastSubmittedWords = Array.from(wordInputs).map(input => input.value.trim().toUpperCase());
+    game.submitWords(lastSubmittedWords);
     stopTimer();
     submitFormSection.classList.add('hidden');
     submitWaitingSection.classList.remove('hidden');
@@ -92,6 +95,7 @@ function init() {
 
   playAgainBtn.addEventListener('click', () => {
     game.reset();
+    lastSubmittedWords = []; // Clear stored words for new game
     showScreen('menu');
     findMatchBtn.disabled = false;
     statusText.textContent = '';
@@ -125,18 +129,35 @@ function handleStateChange(state: GameState) {
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
-      wordForm.querySelector('button')!.disabled = true;
-      wordInputs.forEach(input => {
-        input.value = '';
-        input.classList.remove('invalid');
-        const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
-        if (errorEl) errorEl.textContent = '';
-      });
+      // Restore words if we have them (resubmit after validation error)
+      if (lastSubmittedWords.length === 4) {
+        wordInputs.forEach((input, i) => {
+          input.value = lastSubmittedWords[i];
+          input.classList.remove('invalid');
+          const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+          if (errorEl) errorEl.textContent = '';
+        });
+        // Re-validate and update button state
+        const allValid = lastSubmittedWords.every(word =>
+          word.length >= 3 && validWords.has(word)
+        );
+        wordForm.querySelector('button')!.disabled = !allValid;
+      } else {
+        // First entry - clear form
+        wordInputs.forEach(input => {
+          input.value = '';
+          input.classList.remove('invalid');
+          const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+          if (errorEl) errorEl.textContent = '';
+        });
+        wordForm.querySelector('button')!.disabled = true;
+      }
       startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
       break;
 
     case 'solving':
       showScreen('solve');
+      lastSubmittedWords = []; // Words accepted, clear stored words
       if (state.grid && !crosswordUI) {
         crosswordUI = new CrosswordUI(crosswordContainer, {
           grid: state.grid,

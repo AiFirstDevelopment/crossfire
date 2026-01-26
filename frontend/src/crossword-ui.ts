@@ -27,8 +27,8 @@ export class CrosswordUI {
     const table = document.createElement('div');
     table.className = 'crossword-grid';
     table.style.display = 'grid';
-    table.style.gridTemplateColumns = `repeat(${grid.width}, 40px)`;
-    table.style.gridTemplateRows = `repeat(${grid.height}, 40px)`;
+    table.style.gridTemplateColumns = `repeat(${grid.width}, 44px)`;
+    table.style.gridTemplateRows = `repeat(${grid.height}, 44px)`;
     table.style.gap = '2px';
 
     // Create word number labels map

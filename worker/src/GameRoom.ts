@@ -193,6 +193,12 @@ export class GameRoom {
     const validationError = this.validateWords(words);
     if (validationError) {
       this.sendTo(player.websocket, { type: 'error', code: 'INVALID_WORDS', message: validationError });
+      // Return player to form to fix the issue
+      this.sendTo(player.websocket, {
+        type: 'game-start',
+        phase: 'submitting',
+        timeoutMs: 120000,
+      });
       return;
     }
 
