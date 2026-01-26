@@ -71,56 +71,82 @@ export class CrosswordUI {
       wrapper.appendChild(numberEl);
     }
 
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.maxLength = 1;
-    input.className = 'crossword-cell';
-    input.value = filledLetter;
-    input.dataset.row = String(row);
-    input.dataset.col = String(col);
+    const cellEl = document.createElement('div');
+    cellEl.className = 'crossword-cell';
+    cellEl.contentEditable = 'true';
+    cellEl.textContent = filledLetter;
+    cellEl.dataset.row = String(row);
+    cellEl.dataset.col = String(col);
+    cellEl.setAttribute('inputmode', 'text');
+    cellEl.setAttribute('autocapitalize', 'characters');
+    cellEl.setAttribute('autocomplete', 'off');
+    cellEl.setAttribute('autocorrect', 'off');
+    cellEl.setAttribute('spellcheck', 'false');
 
     if (isCorrect === true) {
-      input.classList.add('correct');
+      cellEl.classList.add('correct');
     } else if (isCorrect === false) {
-      input.classList.add('incorrect');
+      cellEl.classList.add('incorrect');
     }
 
-    input.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
-      const letter = target.value.toUpperCase();
-      target.value = letter;
+    cellEl.addEventListener('input', () => {
+      // Get the text and keep only the last character typed
+      let text = cellEl.textContent || '';
+      text = text.toUpperCase().replace(/[^A-Z]/g, '');
+      const letter = text.slice(-1);
+      cellEl.textContent = letter;
 
+      // Move cursor to end
       if (letter) {
+        const range = document.createRange();
+        range.selectNodeContents(cellEl);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+
         this.options.onCellChange(row, col, letter);
         this.moveToNextCell(row, col);
       }
     });
 
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !input.value) {
+    cellEl.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Backspace' && !cellEl.textContent) {
+        e.preventDefault();
         this.moveToPrevCell(row, col);
       } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
         this.moveToNextCell(row, col, 'across');
       } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
         this.moveToPrevCell(row, col, 'across');
       } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
         this.moveToNextCell(row, col, 'down');
       } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
         this.moveToPrevCell(row, col, 'down');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
       }
     });
 
-    input.addEventListener('focus', () => {
-      input.select();
+    cellEl.addEventListener('focus', () => {
+      // Select all text on focus
+      const range = document.createRange();
+      range.selectNodeContents(cellEl);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
     });
 
-    input.addEventListener('contextmenu', (e) => {
+    cellEl.addEventListener('contextmenu', (e: MouseEvent) => {
       e.preventDefault();
       this.options.onHintRequest(row, col);
     });
 
-    this.cellElements.set(key, input);
-    wrapper.appendChild(input);
+    this.cellElements.set(key, cellEl as unknown as HTMLInputElement);
+    wrapper.appendChild(cellEl);
     return wrapper;
   }
 
@@ -176,17 +202,17 @@ export class CrosswordUI {
     this.options.filledCells = filledCells;
     this.options.cellCorrectness = cellCorrectness;
 
-    for (const [key, input] of this.cellElements) {
+    for (const [key, cell] of this.cellElements) {
       const letter = filledCells[key] || '';
       const isCorrect = cellCorrectness[key];
 
-      input.value = letter;
-      input.classList.remove('correct', 'incorrect');
+      cell.textContent = letter;
+      cell.classList.remove('correct', 'incorrect');
 
       if (isCorrect === true) {
-        input.classList.add('correct');
+        cell.classList.add('correct');
       } else if (isCorrect === false) {
-        input.classList.add('incorrect');
+        cell.classList.add('incorrect');
       }
     }
   }

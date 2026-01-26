@@ -200,6 +200,7 @@ export class GameClient {
           phaseStartedAt: Date.now(),
           filledCells: {},
           cellCorrectness: {},
+          error: null,
         });
         break;
 
