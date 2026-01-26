@@ -36,6 +36,7 @@ const errorToast = document.getElementById('error-toast')!;
 const hintToast = document.getElementById('hint-toast')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
+const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 
 let game: GameClient;
 let crosswordUI: CrosswordUI | null = null;
@@ -105,6 +106,9 @@ function init() {
     findMatchBtn.disabled = false;
     statusText.textContent = '';
   });
+
+  // Theme toggle
+  themeToggle.addEventListener('click', toggleTheme);
 }
 
 function handleStateChange(state: GameState) {
@@ -353,6 +357,23 @@ function validateWordInput(input: HTMLInputElement): boolean {
   return true;
 }
 
-// Initialize
+// Theme management
+function initTheme() {
+  const savedTheme = localStorage.getItem('crossfire-theme');
+  // Default to dark mode if no preference saved
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('crossfire-theme', isLight ? 'light' : 'dark');
+}
+
+// Initialize theme before app to avoid flash
+initTheme();
+
+// Initialize app
 init();
 console.log('Crossfire initialized');
