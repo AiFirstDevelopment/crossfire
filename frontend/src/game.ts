@@ -247,8 +247,9 @@ export class GameClient {
           [key]: true,
         },
       });
+      // Also send the cell update to server so it tracks progress correctly
+      this.send({ type: 'cell-update', row: hint.row, col: hint.col, letter: hint.letter });
     }
-    // word-length hints are handled by UI directly
   }
 
   private send(message: ClientMessage) {

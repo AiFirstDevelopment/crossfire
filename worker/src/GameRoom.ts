@@ -170,11 +170,11 @@ export class GameRoom {
     this.broadcast({
       type: 'game-start',
       phase: 'submitting',
-      timeoutMs: 60000, // 60 seconds
+      timeoutMs: 120000, // 2 minutes
     });
 
     // Set alarm for timeout
-    this.state.storage.setAlarm(Date.now() + 60000);
+    this.state.storage.setAlarm(Date.now() + 120000);
   }
 
   private handleSubmitWords(player: ConnectedPlayer, words: string[]) {
@@ -267,12 +267,21 @@ export class GameRoom {
       if (!result.success) {
         // Grid generation failed - let player resubmit
         this.gameState.phase = 'submitting';
+        this.gameState.phaseStartedAt = Date.now();
         delete this.gameState.playerWords[playerId];
 
         const player = Array.from(this.players.values()).find(p => p.id === playerId);
         if (player) {
+          // Send error then tell them to resubmit
           this.sendTo(player.websocket, { type: 'error', code: 'GRID_FAILED', message: result.error });
+          this.sendTo(player.websocket, {
+            type: 'game-start',
+            phase: 'submitting',
+            timeoutMs: 120000,
+          });
         }
+        // Reset alarm for new submission period
+        this.state.storage.setAlarm(Date.now() + 120000);
         return;
       }
 
