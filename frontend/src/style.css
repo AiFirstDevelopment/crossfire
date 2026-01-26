@@ -165,9 +165,15 @@ input[type="text"]:focus {
 }
 
 .active-games {
-  margin: 0.5rem 0;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
   color: #4ade80;
   font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  z-index: 100;
 }
 
 /* Player ID Display */
@@ -595,6 +601,12 @@ input[type="text"]:focus {
 
 .light-mode button {
   background-color: #f9f9f9;
+}
+
+.light-mode .active-games {
+  background: rgba(255, 255, 255, 0.9);
+  color: #16a34a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .light-mode .primary-btn {
