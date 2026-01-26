@@ -140,6 +140,39 @@ export class CrosswordUI {
       sel?.addRange(range);
     });
 
+    // Long press for hint (mobile)
+    let longPressTimer: number | null = null;
+
+    const startLongPress = () => {
+      longPressTimer = window.setTimeout(() => {
+        this.options.onHintRequest(row, col);
+      }, 500);
+    };
+
+    const cancelLongPress = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+
+    cellEl.addEventListener('touchstart', () => {
+      startLongPress();
+    }, { passive: true });
+
+    cellEl.addEventListener('touchend', () => {
+      cancelLongPress();
+    });
+
+    cellEl.addEventListener('touchmove', () => {
+      cancelLongPress();
+    });
+
+    cellEl.addEventListener('touchcancel', () => {
+      cancelLongPress();
+    });
+
+    // Right-click for hint (desktop)
     cellEl.addEventListener('contextmenu', (e: MouseEvent) => {
       e.preventDefault();
       this.options.onHintRequest(row, col);

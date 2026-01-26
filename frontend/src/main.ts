@@ -33,16 +33,21 @@ const resultTitle = document.getElementById('result-title')!;
 const resultDetails = document.getElementById('result-details')!;
 const playAgainBtn = document.getElementById('play-again-btn') as HTMLButtonElement;
 const errorToast = document.getElementById('error-toast')!;
+const hintToast = document.getElementById('hint-toast')!;
+const penaltyDisplay = document.getElementById('penalty-display')!;
+const penaltyTime = document.getElementById('penalty-time')!;
 
 let game: GameClient;
 let crosswordUI: CrosswordUI | null = null;
 let timerInterval: number | null = null;
 let lastSubmittedWords: string[] = []; // Store words for resubmit scenarios
+let accumulatedPenalty = 0;
 
 function init() {
   game = new GameClient();
 
   game.onStateChange(handleStateChange);
+  game.onHintUsed(showHintPenalty);
 
   findMatchBtn.addEventListener('click', () => {
     findMatchBtn.disabled = true;
@@ -153,12 +158,18 @@ function handleStateChange(state: GameState) {
         wordForm.querySelector('button')!.disabled = true;
       }
       startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
+      // Focus first input
+      wordInputs[0]?.focus();
       break;
 
     case 'solving':
       showScreen('solve');
       lastSubmittedWords = []; // Words accepted, clear stored words
       if (state.grid && !crosswordUI) {
+        // Reset penalty for new game
+        accumulatedPenalty = 0;
+        penaltyDisplay.classList.add('hidden');
+
         crosswordUI = new CrosswordUI(crosswordContainer, {
           grid: state.grid,
           filledCells: state.filledCells,
@@ -191,6 +202,19 @@ function showError(message: string) {
   errorToast.textContent = message;
   errorToast.classList.remove('hidden');
   setTimeout(() => errorToast.classList.add('hidden'), 5000);
+}
+
+function showHintPenalty(penaltyMs: number) {
+  const seconds = Math.round(penaltyMs / 1000);
+  hintToast.textContent = `+${seconds}s penalty`;
+  hintToast.classList.remove('hidden');
+  setTimeout(() => hintToast.classList.add('hidden'), 1500);
+
+  // Update accumulated penalty display
+  accumulatedPenalty += penaltyMs;
+  const totalSeconds = Math.round(accumulatedPenalty / 1000);
+  penaltyTime.textContent = String(totalSeconds);
+  penaltyDisplay.classList.remove('hidden');
 }
 
 function startTimer(durationMs: number, startedAt: number, element: HTMLElement) {

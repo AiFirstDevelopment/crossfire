@@ -18,16 +18,22 @@ export interface GameState {
 }
 
 type StateChangeHandler = (state: GameState) => void;
+type HintUsedHandler = (penaltyMs: number) => void;
 
 export class GameClient {
   private ws: WebSocket | null = null;
   private state: GameState;
   private stateHandlers: Set<StateChangeHandler> = new Set();
+  private hintHandler: HintUsedHandler | null = null;
   private isProduction: boolean;
 
   constructor() {
     this.isProduction = window.location.hostname !== 'localhost';
     this.state = this.createInitialState();
+  }
+
+  onHintUsed(handler: HintUsedHandler) {
+    this.hintHandler = handler;
   }
 
   private createInitialState(): GameState {
@@ -255,6 +261,11 @@ export class GameClient {
       });
       // Also send the cell update to server so it tracks progress correctly
       this.send({ type: 'cell-update', row: hint.row, col: hint.col, letter: hint.letter });
+
+      // Notify about penalty
+      if (this.hintHandler && hint.timePenaltyMs > 0) {
+        this.hintHandler(hint.timePenaltyMs);
+      }
     }
   }
 

@@ -74,12 +74,15 @@
             <span>You: <span id="your-progress">0%</span></span>
             <span>Opponent: <span id="opponent-progress">0%</span></span>
           </div>
-          <div id="timer-solve" class="timer"></div>
+          <div class="timer-row">
+            <div id="timer-solve" class="timer"></div>
+            <div id="penalty-display" class="penalty-display hidden">+<span id="penalty-time">0</span>s</div>
+          </div>
         </div>
 
         <div id="crossword-container"></div>
 
-        <p class="hint-info">Right-click a cell for a hint (+15s penalty)</p>
+        <p class="hint-info">Hold a cell for a hint (+15s penalty)</p>
       </section>
 
       <!-- Results Screen -->
@@ -91,6 +94,9 @@
 
       <!-- Error display -->
       <div id="error-toast" class="error-toast hidden"></div>
+
+      <!-- Hint penalty notification -->
+      <div id="hint-toast" class="hint-toast hidden">+15s penalty</div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
