@@ -193,13 +193,18 @@ export class GameClient {
         break;
 
       case 'grid-ready':
+        // Pre-fill first letters and mark them correct
+        const firstLetterCorrectness: Record<string, boolean> = {};
+        for (const key of Object.keys(message.firstLetters)) {
+          firstLetterCorrectness[key] = true;
+        }
         this.updateState({
           phase: 'solving',
           grid: message.grid,
           solvingTimeoutMs: message.timeoutMs,
           phaseStartedAt: Date.now(),
-          filledCells: {},
-          cellCorrectness: {},
+          filledCells: message.firstLetters,
+          cellCorrectness: firstLetterCorrectness,
           error: null,
         });
         break;

@@ -166,7 +166,6 @@ function handleStateChange(state: GameState) {
           onCellChange: (row, col, letter) => game.updateCell(row, col, letter),
           onHintRequest: (row, col) => game.requestHint('reveal-letter', { row, col }),
         });
-        crosswordUI.focusFirstCell();
       } else if (crosswordUI) {
         crosswordUI.update(state.filledCells, state.cellCorrectness);
       }

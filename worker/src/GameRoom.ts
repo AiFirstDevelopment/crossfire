@@ -6,7 +6,7 @@ import type {
   GameResult,
   HintResponse,
 } from './types';
-import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells } from './crossword';
+import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells, getFirstLetters } from './crossword';
 import englishWords from 'an-array-of-english-words';
 
 // Create a Set for O(1) word lookup
@@ -170,11 +170,11 @@ export class GameRoom {
     this.broadcast({
       type: 'game-start',
       phase: 'submitting',
-      timeoutMs: 120000, // 2 minutes
+      timeoutMs: 60000, // 2 minutes
     });
 
     // Set alarm for timeout
-    this.state.storage.setAlarm(Date.now() + 120000);
+    this.state.storage.setAlarm(Date.now() + 60000);
   }
 
   private handleSubmitWords(player: ConnectedPlayer, words: string[]) {
@@ -197,7 +197,7 @@ export class GameRoom {
       this.sendTo(player.websocket, {
         type: 'game-start',
         phase: 'submitting',
-        timeoutMs: 120000,
+        timeoutMs: 60000,
       });
       return;
     }
@@ -283,11 +283,11 @@ export class GameRoom {
           this.sendTo(player.websocket, {
             type: 'game-start',
             phase: 'submitting',
-            timeoutMs: 120000,
+            timeoutMs: 60000,
           });
         }
         // Reset alarm for new submission period
-        this.state.storage.setAlarm(Date.now() + 120000);
+        this.state.storage.setAlarm(Date.now() + 60000);
         return;
       }
 
@@ -325,9 +325,19 @@ export class GameRoom {
       const opponentGrid = this.gameState.grids[opponentId];
       const clientGrid = gridToClientGrid(opponentGrid);
 
+      // Get first letters as hints
+      const firstLetters = getFirstLetters(opponentGrid);
+
+      // Pre-fill first letters in player's progress
+      const progress = this.gameState.progress[playerId];
+      for (const [key, letter] of Object.entries(firstLetters)) {
+        progress.filledCells[key] = letter;
+      }
+
       this.sendTo(player.websocket, {
         type: 'grid-ready',
         grid: clientGrid,
+        firstLetters,
         timeoutMs: 300000, // 5 minutes
       });
     }

@@ -260,6 +260,21 @@ export function gridToClientGrid(grid: CrosswordGrid): ClientGrid {
   };
 }
 
+// Get the first letter of each word as pre-filled cells
+export function getFirstLetters(grid: CrosswordGrid): Record<string, string> {
+  const firstLetters: Record<string, string> = {};
+
+  for (const word of grid.words) {
+    const key = `${word.startRow},${word.startCol}`;
+    const cell = grid.cells[word.startRow]?.[word.startCol];
+    if (cell) {
+      firstLetters[key] = cell.letter;
+    }
+  }
+
+  return firstLetters;
+}
+
 // Count total fillable cells in a grid
 export function countTotalCells(grid: CrosswordGrid): number {
   let count = 0;
