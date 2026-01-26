@@ -47,7 +47,7 @@ export default {
 
     // Create or join a room
     if (url.pathname === '/api/room/join') {
-      const roomId = url.searchParams.get('roomId') || 'default-room';
+      const roomId = (url.searchParams.get('roomId') || 'default-room').toLowerCase();
 
       // Get the Durable Object instance for this room
       const id = env.GAME_ROOM.idFromName(roomId);
@@ -59,7 +59,7 @@ export default {
 
     // Get room info
     if (url.pathname.startsWith('/api/room/')) {
-      const roomId = url.searchParams.get('roomId') || 'default-room';
+      const roomId = (url.searchParams.get('roomId') || 'default-room').toLowerCase();
 
       const id = env.GAME_ROOM.idFromName(roomId);
       const room = env.GAME_ROOM.get(id);
