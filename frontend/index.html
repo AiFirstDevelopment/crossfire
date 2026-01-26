@@ -18,6 +18,20 @@
         </div>
         <p class="tagline">Two-player word puzzle battle</p>
         <p id="active-games" class="active-games"></p>
+        <div id="player-id-display" class="player-id-display">
+          <span class="player-id-label">Your ID:</span>
+          <span id="player-id" class="player-id"></span>
+          <button id="change-id-btn" class="change-id-btn" title="Change ID">&#9998;</button>
+        </div>
+        <div id="change-id-form" class="change-id-form hidden">
+          <input type="text" id="new-id-input" placeholder="Enter existing ID" />
+          <button id="save-id-btn" class="small-btn">Use This ID</button>
+          <button id="cancel-id-btn" class="small-btn secondary">Cancel</button>
+        </div>
+        <div id="player-stats" class="player-stats">
+          <span class="level-badge">Level <span id="player-level">1</span></span>
+          <span class="wins-info"><span id="player-wins">0</span> wins • <span id="wins-to-next">1</span> to next level</span>
+        </div>
       </header>
 
       <!-- Connecting / Matchmaking Screen -->

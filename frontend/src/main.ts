@@ -2,6 +2,7 @@ import './style.css';
 import { GameClient, GameState } from './game';
 import { CrosswordUI } from './crossword-ui';
 import englishWords from 'an-array-of-english-words';
+import humanId from 'human-id';
 
 // Create a Set for O(1) word lookup
 const validWords = new Set(englishWords.map(w => w.toUpperCase()));
@@ -40,6 +41,18 @@ const hintToast = document.getElementById('hint-toast')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
+const playerLevelEl = document.getElementById('player-level')!;
+const playerWinsEl = document.getElementById('player-wins')!;
+const winsToNextEl = document.getElementById('wins-to-next')!;
+const playerIdEl = document.getElementById('player-id')!;
+const playerIdDisplay = document.getElementById('player-id-display')!;
+const changeIdBtn = document.getElementById('change-id-btn') as HTMLButtonElement;
+const changeIdForm = document.getElementById('change-id-form')!;
+const newIdInput = document.getElementById('new-id-input') as HTMLInputElement;
+const saveIdBtn = document.getElementById('save-id-btn') as HTMLButtonElement;
+const cancelIdBtn = document.getElementById('cancel-id-btn') as HTMLButtonElement;
+
+let currentPlayerId: string = '';
 
 let game: GameClient;
 let crosswordUI: CrosswordUI | null = null;
@@ -304,6 +317,7 @@ function showResults(state: GameState) {
     resultTitle.textContent = "It's a Tie!";
   } else if (isWinner) {
     resultTitle.textContent = 'You Win!';
+    recordWin();
   } else {
     resultTitle.textContent = 'You Lose';
   }
@@ -399,6 +413,158 @@ function validateWordInput(input: HTMLInputElement): boolean {
   return true;
 }
 
+// Player ID system
+function generatePlayerId(): string {
+  return humanId({ separator: '-', capitalize: false, adjectiveCount: 1 });
+}
+
+function loadPlayerId(): string {
+  const stored = localStorage.getItem('crossfire-player-id');
+  if (stored) {
+    return stored;
+  }
+  const newId = generatePlayerId();
+  localStorage.setItem('crossfire-player-id', newId);
+  // Register the new player in the cloud
+  registerPlayer(newId);
+  return newId;
+}
+
+async function registerPlayer(playerId: string): Promise<void> {
+  try {
+    await fetch(`${getApiUrl()}/api/player/${playerId}/register`, {
+      method: 'POST',
+    });
+  } catch (error) {
+    console.error('Failed to register player:', error);
+  }
+}
+
+function savePlayerId(id: string): void {
+  localStorage.setItem('crossfire-player-id', id);
+  currentPlayerId = id;
+}
+
+function updatePlayerIdDisplay(): void {
+  playerIdEl.textContent = currentPlayerId;
+}
+
+function initPlayerIdUI(): void {
+  changeIdBtn.addEventListener('click', () => {
+    playerIdDisplay.classList.add('hidden');
+    changeIdForm.classList.remove('hidden');
+    newIdInput.value = '';
+    newIdInput.focus();
+  });
+
+  cancelIdBtn.addEventListener('click', () => {
+    changeIdForm.classList.add('hidden');
+    playerIdDisplay.classList.remove('hidden');
+  });
+
+  saveIdBtn.addEventListener('click', async () => {
+    const newId = newIdInput.value.trim().toLowerCase();
+    if (newId) {
+      // Validate that the player ID exists
+      try {
+        const response = await fetch(`${getApiUrl()}/api/player/${newId}/stats`);
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.exists) {
+            showError('Player ID not found. You can only use an existing ID.');
+            return;
+          }
+          savePlayerId(newId);
+          updatePlayerIdDisplay();
+          displayStats(data.wins);
+        } else {
+          showError('Failed to verify player ID');
+          return;
+        }
+      } catch (error) {
+        showError('Failed to verify player ID');
+        return;
+      }
+    }
+    changeIdForm.classList.add('hidden');
+    playerIdDisplay.classList.remove('hidden');
+  });
+
+  newIdInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveIdBtn.click();
+    } else if (e.key === 'Escape') {
+      cancelIdBtn.click();
+    }
+  });
+}
+
+// API helpers
+function getApiUrl(): string {
+  const isProduction = window.location.hostname !== 'localhost';
+  return isProduction
+    ? 'https://crossfire-worker.joelstevick.workers.dev'
+    : 'http://localhost:8787';
+}
+
+// Level system
+// Quadratic progression: level L requires (L-1)² total wins
+// Level 1: 0 wins, Level 2: 1 win, Level 3: 4 wins, Level 4: 9 wins, etc.
+function calculateLevel(wins: number): number {
+  return Math.floor(Math.sqrt(wins)) + 1;
+}
+
+function winsForLevel(level: number): number {
+  return (level - 1) * (level - 1);
+}
+
+function winsToNextLevel(wins: number): number {
+  const currentLevel = calculateLevel(wins);
+  const winsNeededForNext = winsForLevel(currentLevel + 1);
+  return winsNeededForNext - wins;
+}
+
+async function fetchWins(): Promise<number> {
+  try {
+    const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/stats`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.wins || 0;
+    }
+  } catch (error) {
+    console.error('Failed to fetch wins:', error);
+  }
+  return 0;
+}
+
+function displayStats(wins: number): void {
+  const level = calculateLevel(wins);
+  const toNext = winsToNextLevel(wins);
+
+  playerLevelEl.textContent = String(level);
+  playerWinsEl.textContent = String(wins);
+  winsToNextEl.textContent = String(toNext);
+}
+
+async function updatePlayerStats(): Promise<void> {
+  const wins = await fetchWins();
+  displayStats(wins);
+}
+
+async function recordWin(): Promise<void> {
+  try {
+    const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/record-win`, {
+      method: 'POST',
+    });
+    if (response.ok) {
+      const data = await response.json();
+      displayStats(data.wins);
+    }
+  } catch (error) {
+    console.error('Failed to record win:', error);
+  }
+}
+
 // Theme management
 function initTheme() {
   const savedTheme = localStorage.getItem('crossfire-theme');
@@ -415,6 +581,14 @@ function toggleTheme() {
 
 // Initialize theme before app to avoid flash
 initTheme();
+
+// Initialize player ID first (needed for stats)
+currentPlayerId = loadPlayerId();
+updatePlayerIdDisplay();
+initPlayerIdUI();
+
+// Initialize player stats (fetches from cloud)
+updatePlayerStats();
 
 // Initialize app
 init();
