@@ -1,11 +1,13 @@
 import './style.css';
 import { GameClient, GameState } from './game';
 import { CrosswordUI } from './crossword-ui';
+import { BotGame, BotGameState } from './bot';
 import englishWords from 'an-array-of-english-words';
 import humanId from 'human-id';
 
-// Create a Set for O(1) word lookup
+// Create a Set for O(1) word lookup and word list for bot
 const validWords = new Set(englishWords.map(w => w.toUpperCase()));
+const wordList = englishWords;
 
 // Elements
 const screens = {
@@ -55,16 +57,19 @@ const cancelIdBtn = document.getElementById('cancel-id-btn') as HTMLButtonElemen
 let currentPlayerId: string = '';
 
 let game: GameClient;
+let botGame: BotGame | null = null;
 let crosswordUI: CrosswordUI | null = null;
 let timerInterval: number | null = null;
 let lastSubmittedWords: string[] = []; // Store words for resubmit scenarios
 let accumulatedPenalty = 0;
+let isBotMode = false;
 
 function init() {
   game = new GameClient();
 
   game.onStateChange(handleStateChange);
   game.onHintUsed(showHintPenalty);
+  game.onMatchmakingTimeout(startBotGame);
 
   findMatchBtn.addEventListener('click', () => {
     findMatchBtn.disabled = true;
@@ -109,18 +114,37 @@ function init() {
     e.preventDefault();
     // Store words in case we need to restore them after validation error
     lastSubmittedWords = Array.from(wordInputs).map(input => input.value.trim().toUpperCase());
-    game.submitWords(lastSubmittedWords);
+
+    if (isBotMode && botGame) {
+      const success = botGame.submitWords(lastSubmittedWords);
+      if (!success) {
+        showError('Could not create puzzle from these words. Try different words.');
+        return;
+      }
+    } else {
+      game.submitWords(lastSubmittedWords);
+    }
     stopTimer();
     submitFormSection.classList.add('hidden');
     submitWaitingSection.classList.remove('hidden');
   });
 
   playAgainBtn.addEventListener('click', () => {
-    game.playAgain();
+    if (isBotMode && botGame) {
+      botGame.playAgain();
+    } else {
+      game.playAgain();
+    }
   });
 
   leaveRoomBtn.addEventListener('click', () => {
-    game.leaveRoom();
+    if (isBotMode && botGame) {
+      botGame.destroy();
+      botGame = null;
+      isBotMode = false;
+    } else {
+      game.leaveRoom();
+    }
     lastSubmittedWords = [];
     crosswordUI = null;
     showScreen('menu');
@@ -130,6 +154,122 @@ function init() {
 
   // Theme toggle
   themeToggle.addEventListener('click', toggleTheme);
+}
+
+// Start a bot game when matchmaking times out
+function startBotGame() {
+  // Cancel the real matchmaking
+  game.cancelMatchmaking();
+
+  // Create bot game
+  isBotMode = true;
+  botGame = new BotGame(validWords, wordList);
+  botGame.onStateChange(handleBotStateChange);
+  botGame.onHintUsed(showHintPenalty);
+
+  // Show submission screen immediately
+  statusText.textContent = `Playing against ${botGame.getBotName()}`;
+}
+
+function handleBotStateChange(state: BotGameState) {
+  switch (state.phase) {
+    case 'submitting':
+      showScreen('submit');
+      submitFormSection.classList.remove('hidden');
+      submitWaitingSection.classList.add('hidden');
+      // Clear form for new game
+      if (lastSubmittedWords.length === 0) {
+        wordInputs.forEach(input => {
+          input.value = '';
+          input.classList.remove('invalid');
+          const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+          if (errorEl) errorEl.textContent = '';
+        });
+        wordForm.querySelector('button')!.disabled = true;
+      }
+      startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
+      wordInputs[0]?.focus();
+      break;
+
+    case 'solving':
+      showScreen('solve');
+      lastSubmittedWords = [];
+      if (state.playerGrid && !crosswordUI) {
+        accumulatedPenalty = 0;
+        penaltyDisplay.classList.add('hidden');
+
+        crosswordUI = new CrosswordUI(crosswordContainer, {
+          grid: state.playerGrid,
+          filledCells: state.playerFilledCells,
+          cellCorrectness: state.playerCellCorrectness,
+          onCellChange: (row, col, letter) => botGame?.updateCell(row, col, letter),
+          onHintRequest: (row, col) => botGame?.requestHint(row, col),
+        });
+      } else if (crosswordUI) {
+        crosswordUI.update(state.playerFilledCells, state.playerCellCorrectness);
+      }
+      updateBotProgress(state);
+      startTimer(state.solvingTimeoutMs, state.phaseStartedAt, timerSolve);
+      break;
+
+    case 'finished':
+      showScreen('results');
+      stopTimer();
+      showBotResults(state);
+      // Hide rematch status for bot games (bot always accepts rematch)
+      rematchStatus.classList.add('hidden');
+      playAgainBtn.disabled = false;
+      crosswordUI = null;
+      break;
+  }
+}
+
+function updateBotProgress(state: BotGameState) {
+  const grid = state.playerGrid;
+  if (!grid) return;
+
+  let totalCells = 0;
+  let correctCells = 0;
+
+  for (let row = 0; row < grid.height; row++) {
+    for (let col = 0; col < grid.width; col++) {
+      if (grid.cells[row][col]) {
+        totalCells++;
+        const key = `${row},${col}`;
+        if (state.playerCellCorrectness[key] === true) {
+          correctCells++;
+        }
+      }
+    }
+  }
+
+  const yourPercent = totalCells > 0 ? Math.round((correctCells / totalCells) * 100) : 0;
+  yourProgress.textContent = `${yourPercent}%`;
+  opponentProgressEl.textContent = `${state.botProgress}%`;
+}
+
+function showBotResults(state: BotGameState) {
+  const result = state.result;
+  if (!result) return;
+
+  const isWinner = result.winnerId === 'player';
+
+  if (isWinner) {
+    resultTitle.textContent = 'You Win!';
+    recordWin();
+  } else {
+    resultTitle.textContent = 'You Lose';
+  }
+
+  let details = `<p><strong>Reason:</strong> ${formatWinReason(result.winReason)}</p>`;
+  details += `<p><strong>Your progress:</strong> ${result.yourProgress}%</p>`;
+  details += `<p><strong>Opponent progress:</strong> ${result.opponentProgress}%</p>`;
+
+  if (result.yourTime > 0) {
+    details += `<p><strong>Your time:</strong> ${formatTime(result.yourTime)}</p>`;
+  }
+
+  resultDetails.innerHTML = details;
 }
 
 function handleStateChange(state: GameState) {

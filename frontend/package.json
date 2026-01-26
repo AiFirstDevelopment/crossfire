@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "an-array-of-english-words": "^2.0.0",
+    "crossword-layout-generator": "^0.1.1",
     "human-id": "^4.1.3"
   }
 }

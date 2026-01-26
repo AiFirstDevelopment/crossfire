@@ -22,6 +22,7 @@ export interface GameState {
 
 type StateChangeHandler = (state: GameState) => void;
 type HintUsedHandler = (penaltyMs: number) => void;
+type MatchmakingTimeoutHandler = () => void;
 
 export class GameClient {
   private ws: WebSocket | null = null;
@@ -29,7 +30,12 @@ export class GameClient {
   private state: GameState;
   private stateHandlers: Set<StateChangeHandler> = new Set();
   private hintHandler: HintUsedHandler | null = null;
+  private matchmakingTimeoutHandler: MatchmakingTimeoutHandler | null = null;
+  private matchmakingTimer: number | null = null;
   private isProduction: boolean;
+
+  // How long to wait before offering bot match (10 seconds)
+  private static readonly MATCHMAKING_TIMEOUT_MS = 10000;
 
   constructor() {
     this.isProduction = window.location.hostname !== 'localhost';
@@ -62,6 +68,34 @@ export class GameClient {
 
   onHintUsed(handler: HintUsedHandler) {
     this.hintHandler = handler;
+  }
+
+  onMatchmakingTimeout(handler: MatchmakingTimeoutHandler) {
+    this.matchmakingTimeoutHandler = handler;
+  }
+
+  private clearMatchmakingTimer() {
+    if (this.matchmakingTimer) {
+      clearTimeout(this.matchmakingTimer);
+      this.matchmakingTimer = null;
+    }
+  }
+
+  private startMatchmakingTimer() {
+    this.clearMatchmakingTimer();
+    this.matchmakingTimer = window.setTimeout(() => {
+      if (this.state.phase === 'matchmaking' && this.matchmakingTimeoutHandler) {
+        this.matchmakingTimeoutHandler();
+      }
+    }, GameClient.MATCHMAKING_TIMEOUT_MS);
+  }
+
+  cancelMatchmaking() {
+    this.clearMatchmakingTimer();
+    this.ws?.close();
+    this.ws = null;
+    this.state = this.createInitialState();
+    this.stateHandlers.forEach(h => h(this.state));
   }
 
   private createInitialState(): GameState {
@@ -118,6 +152,7 @@ export class GameClient {
     this.ws.onopen = () => {
       this.updateState({ phase: 'matchmaking' });
       this.send({ type: 'join-queue' });
+      this.startMatchmakingTimer();
     };
 
     this.ws.onmessage = (event) => {
@@ -130,6 +165,7 @@ export class GameClient {
     };
 
     this.ws.onclose = () => {
+      this.clearMatchmakingTimer();
       // If we got a match, we'll reconnect to game room
       if (this.state.phase === 'matchmaking') {
         this.updateState({ error: 'Disconnected from matchmaking' });
@@ -156,6 +192,7 @@ export class GameClient {
         break;
 
       case 'match-found':
+        this.clearMatchmakingTimer();
         this.updateState({
           roomId: message.roomId,
           opponentName: message.opponent.name,
