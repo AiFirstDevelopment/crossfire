@@ -96,7 +96,15 @@ export default {
       const id = env.PLAYER_STATS.idFromName(playerId);
       const stats = env.PLAYER_STATS.get(id);
       const response = await stats.fetch(new Request('https://stats/register', { method: 'POST' }));
-      const data = await response.json();
+      const data = await response.json() as { exists: boolean; wins: number; created?: boolean };
+
+      // If a new player was created, notify Matchmaking to increment total players count
+      if (data.created) {
+        const matchmakingId = env.MATCHMAKING.idFromName('global');
+        const matchmaking = env.MATCHMAKING.get(matchmakingId);
+        await matchmaking.fetch(new Request('https://matchmaking/player-registered', { method: 'POST' }));
+      }
+
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 

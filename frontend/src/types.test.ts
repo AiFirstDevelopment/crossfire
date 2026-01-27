@@ -286,11 +286,15 @@ describe('Type Definitions', () => {
         onlineCount: 50,
         activeGames: 20,
         totalGamesPlayed: 100,
+        totalPlayers: 500,
       };
 
       expect(msg.type).toBe('stats-update');
-      expect(msg.queueSize).toBe(10);
-      expect(msg.activeGames).toBe(20);
+      if (msg.type === 'stats-update') {
+        expect(msg.queueSize).toBe(10);
+        expect(msg.activeGames).toBe(20);
+        expect(msg.totalPlayers).toBe(500);
+      }
     });
   });
 

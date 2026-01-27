@@ -29,6 +29,7 @@ const findMatchBtn = document.getElementById('find-match-btn') as HTMLButtonElem
 const statusText = document.getElementById('status-text')!;
 const activeGamesEl = document.getElementById('active-games')!;
 const totalGamesEl = document.getElementById('total-games')!;
+const totalPlayersEl = document.getElementById('total-players')!;
 const roomIdInput = document.getElementById('room-id-input') as HTMLInputElement;
 const joinRoomBtn = document.getElementById('join-room-btn') as HTMLButtonElement;
 const waitingInfo = document.getElementById('waiting-info')!;
@@ -337,6 +338,7 @@ function handleStateChange(state: GameState) {
   // Always update stats displays
   updateActiveGames(state.activeGames);
   updateTotalGames(state.totalGamesPlayed);
+  updateTotalPlayers(state.totalPlayers);
 
   // Update error display
   if (state.error) {
@@ -455,6 +457,10 @@ function updateActiveGames(serverCount: number) {
 
 function updateTotalGames(count: number) {
   totalGamesEl.textContent = `${count.toLocaleString()} games played`;
+}
+
+function updateTotalPlayers(count: number) {
+  totalPlayersEl.textContent = `Players: ${count.toLocaleString()}`;
 }
 
 function showError(message: string) {

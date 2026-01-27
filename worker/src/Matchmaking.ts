@@ -19,6 +19,10 @@ export class Matchmaking {
   private playerCounter: number;
   private activeGames: number;
   private totalGamesPlayed: number;
+  private totalPlayers: number;
+
+  // Seed value for historical players before tracking began
+  private static readonly INITIAL_PLAYER_COUNT = 10;
 
   constructor(state: DurableObjectState, _env: Env) {
     this.state = state;
@@ -27,6 +31,7 @@ export class Matchmaking {
     this.playerCounter = 0;
     this.activeGames = 0;
     this.totalGamesPlayed = 0;
+    this.totalPlayers = Matchmaking.INITIAL_PLAYER_COUNT;
 
     // Load persisted counts
     this.state.blockConcurrencyWhile(async () => {
@@ -37,6 +42,10 @@ export class Matchmaking {
       const storedTotal = await this.state.storage.get<number>('totalGamesPlayed');
       if (storedTotal !== undefined) {
         this.totalGamesPlayed = storedTotal;
+      }
+      const storedPlayers = await this.state.storage.get<number>('totalPlayers');
+      if (storedPlayers !== undefined) {
+        this.totalPlayers = storedPlayers;
       }
     });
   }
@@ -80,6 +89,16 @@ export class Matchmaking {
       });
     }
 
+    // Handle new player registered notification
+    if (url.pathname === '/player-registered' && request.method === 'POST') {
+      this.totalPlayers++;
+      await this.state.storage.put('totalPlayers', this.totalPlayers);
+      this.broadcastStats();
+      return new Response(JSON.stringify({ totalPlayers: this.totalPlayers }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Return current stats
     return new Response(
       JSON.stringify({
@@ -87,6 +106,7 @@ export class Matchmaking {
         onlineCount: this.connectedSockets.size,
         activeGames: this.activeGames,
         totalGamesPlayed: this.totalGamesPlayed,
+        totalPlayers: this.totalPlayers,
       }),
       { headers: { 'Content-Type': 'application/json' } }
     );
@@ -124,6 +144,7 @@ export class Matchmaking {
       onlineCount: this.connectedSockets.size,
       activeGames: this.activeGames,
       totalGamesPlayed: this.totalGamesPlayed,
+      totalPlayers: this.totalPlayers,
     });
 
     // Handle messages
@@ -244,6 +265,7 @@ export class Matchmaking {
       onlineCount: this.connectedSockets.size,
       activeGames: this.activeGames,
       totalGamesPlayed: this.totalGamesPlayed,
+      totalPlayers: this.totalPlayers,
     });
     for (const ws of this.connectedSockets) {
       try {
