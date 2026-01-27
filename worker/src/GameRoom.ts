@@ -582,6 +582,19 @@ export class GameRoom {
       const oppTotal = oppGrid ? countTotalCells(oppGrid) : 0;
       const oppCheck = oppGrid ? checkProgress(oppGrid, opponentProgress?.filledCells || {}) : { correct: 0 };
 
+      // Extract solution from the grid the player was solving
+      const solution: Record<string, string> = {};
+      if (opponentGrid) {
+        for (let row = 0; row < opponentGrid.cells.length; row++) {
+          for (let col = 0; col < opponentGrid.cells[row].length; col++) {
+            const cell = opponentGrid.cells[row][col];
+            if (cell) {
+              solution[`${row},${col}`] = cell.letter;
+            }
+          }
+        }
+      }
+
       const result: GameResult = {
         winnerId,
         winReason: reason,
@@ -589,6 +602,7 @@ export class GameRoom {
         opponentTime: oppTime === Infinity ? -1 : oppTime,
         yourProgress: myTotal > 0 ? Math.round((myCheck.correct / myTotal) * 100) : 0,
         opponentProgress: oppTotal > 0 ? Math.round((oppCheck.correct / oppTotal) * 100) : 0,
+        solution,
       };
 
       this.sendTo(player.websocket, { type: 'game-over', result });

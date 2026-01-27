@@ -38,6 +38,7 @@ export interface GameResult {
   opponentTime: number;
   yourProgress: number;
   opponentProgress: number;
+  solution: Record<string, string>; // "row,col" -> correct letter (for showing completed grid)
 }
 
 // Hint types

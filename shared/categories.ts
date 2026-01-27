@@ -322,6 +322,21 @@ const categoryWords: Record<string, string[]> = {
     'comma', 'period', 'colon', 'semicolon', 'apostrophe', 'hyphen', 'dash', 'parenthesis',
   ],
 
+  // Household & everyday items
+  household: [
+    'garbage', 'trash', 'rubbish', 'waste', 'litter', 'junk', 'debris', 'clutter', 'mess',
+    'bag', 'box', 'bin', 'can', 'bucket', 'basket', 'container', 'jar', 'bottle', 'cup',
+    'mug', 'glass', 'plate', 'bowl', 'dish', 'pot', 'pan', 'lid', 'handle', 'spout',
+    'sink', 'faucet', 'tap', 'drain', 'pipe', 'hose', 'valve', 'knob', 'switch', 'lever',
+    'door', 'window', 'wall', 'floor', 'ceiling', 'roof', 'stairs', 'step', 'ramp', 'rail',
+    'fence', 'gate', 'lock', 'key', 'hinge', 'latch', 'bolt', 'screw', 'nail', 'hook',
+    'shelf', 'rack', 'hanger', 'peg', 'clip', 'pin', 'needle', 'thread', 'string', 'rope',
+    'tape', 'glue', 'staple', 'rubber', 'band', 'wire', 'chain', 'link', 'ring', 'loop',
+    'towel', 'cloth', 'rag', 'sponge', 'brush', 'broom', 'mop', 'duster', 'vacuum', 'filter',
+    'soap', 'detergent', 'bleach', 'cleaner', 'polish', 'wax', 'spray', 'foam', 'gel', 'powder',
+    'trash', 'recycle', 'compost', 'disposal', 'landfill', 'dump', 'pile', 'heap', 'stack',
+  ],
+
   // Miscellaneous common words
   action: [
     'dig', 'run', 'walk', 'jump', 'hop', 'skip', 'leap', 'climb', 'crawl', 'swim', 'fly', 'drive',

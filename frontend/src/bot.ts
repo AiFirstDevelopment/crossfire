@@ -692,6 +692,19 @@ export class BotGame {
       botProgress = Math.round((filled / total) * 100);
     }
 
+    // Extract solution from the grid the player was solving
+    const solution: Record<string, string> = {};
+    if (this.state.playerGridFull) {
+      for (let row = 0; row < this.state.playerGridFull.height; row++) {
+        for (let col = 0; col < this.state.playerGridFull.width; col++) {
+          const cell = this.state.playerGridFull.cells[row][col];
+          if (cell) {
+            solution[`${row},${col}`] = cell.letter;
+          }
+        }
+      }
+    }
+
     const result: GameResult = {
       winnerId: winnerId === 'player' ? 'player' : this.state.botId,
       winReason,
@@ -699,6 +712,7 @@ export class BotGame {
       opponentTime: -1, // Bot doesn't track time
       yourProgress: playerProgress,
       opponentProgress: botProgress,
+      solution,
     };
 
     this.updateState({

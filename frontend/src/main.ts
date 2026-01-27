@@ -4,7 +4,7 @@ import { CrosswordUI } from './crossword-ui';
 import { BotGame, BotGameState } from './bot';
 import englishWords from 'an-array-of-english-words';
 import humanId from 'human-id';
-import { getCategorizedWords } from '../../shared/categories';
+import { getCategorizedWords, getWordCategory } from '../../shared/categories';
 
 // Create a Set for O(1) word lookup - only words with categories are valid
 const categorizedWords = getCategorizedWords();
@@ -48,6 +48,8 @@ const leaveRoomBtn = document.getElementById('leave-room-btn') as HTMLButtonElem
 const rematchStatus = document.getElementById('rematch-status')!;
 const errorToast = document.getElementById('error-toast')!;
 const hintToast = document.getElementById('hint-toast')!;
+const solutionContainer = document.getElementById('solution-container')!;
+const solutionGridEl = document.getElementById('solution-grid')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
 const hintsRemainingEl = document.getElementById('hints-remaining')!;
@@ -166,6 +168,7 @@ function init() {
     }
     lastSubmittedWords = [];
     crosswordUI = null;
+    hideSolutionGrid();
     showScreen('menu');
     findMatchBtn.disabled = false;
     statusText.textContent = '';
@@ -284,8 +287,11 @@ function showBotResults(state: BotGameState) {
   if (!result) return;
 
   const isWinner = result.winnerId === 'player';
+  const isTie = result.winReason === 'tie';
 
-  if (isWinner) {
+  if (isTie) {
+    resultTitle.textContent = "It's a Tie!";
+  } else if (isWinner) {
     resultTitle.textContent = 'You Win!';
     recordWin();
   } else {
@@ -301,6 +307,30 @@ function showBotResults(state: BotGameState) {
   }
 
   resultDetails.innerHTML = details;
+
+  // Show solution grid for losers and ties in bot mode
+  if ((!isWinner || isTie) && state.playerGridFull) {
+    // Extract solution from the full grid
+    const solution: Record<string, string> = {};
+    for (let row = 0; row < state.playerGridFull.height; row++) {
+      for (let col = 0; col < state.playerGridFull.width; col++) {
+        const cell = state.playerGridFull.cells[row][col];
+        if (cell) {
+          solution[`${row},${col}`] = cell.letter;
+        }
+      }
+    }
+    // Build words array with categories for clues
+    const words: SolutionWord[] = state.playerGridFull.words.map(w => ({
+      index: w.index,
+      direction: w.direction,
+      category: getWordCategory(w.word) || 'word',
+      length: w.word.length,
+    }));
+    renderSolutionGrid(state.playerGridFull, solution, words);
+  } else {
+    hideSolutionGrid();
+  }
 }
 
 function handleStateChange(state: GameState) {
@@ -572,6 +602,101 @@ function updateProgress(state: GameState) {
   opponentProgressEl.textContent = `${state.opponentProgress}%`;
 }
 
+interface SolutionWord {
+  index: number;
+  direction: 'across' | 'down';
+  category: string;
+  length: number;
+}
+
+function renderSolutionGrid(
+  grid: { width: number; height: number; cells: (unknown | null)[][] },
+  solution: Record<string, string>,
+  words?: SolutionWord[]
+) {
+  solutionGridEl.innerHTML = '';
+
+  // Create layout container like crossword-ui
+  const layout = document.createElement('div');
+  layout.className = 'crossword-layout';
+
+  // Create grid
+  const gridDiv = document.createElement('div');
+  gridDiv.className = 'crossword-grid';
+  gridDiv.style.display = 'grid';
+  gridDiv.style.gridTemplateColumns = `repeat(${grid.width}, 44px)`;
+  gridDiv.style.gridTemplateRows = `repeat(${grid.height}, 44px)`;
+  gridDiv.style.gap = '2px';
+
+  for (let row = 0; row < grid.height; row++) {
+    for (let col = 0; col < grid.width; col++) {
+      const cell = grid.cells[row][col];
+      const wrapper = document.createElement('div');
+      wrapper.className = 'crossword-cell-wrapper';
+
+      if (cell === null) {
+        wrapper.classList.add('black');
+      } else {
+        const cellDiv = document.createElement('div');
+        cellDiv.className = 'crossword-cell';
+        cellDiv.textContent = solution[`${row},${col}`] || '';
+        wrapper.appendChild(cellDiv);
+      }
+
+      gridDiv.appendChild(wrapper);
+    }
+  }
+
+  layout.appendChild(gridDiv);
+
+  // Add clues if provided
+  if (words && words.length > 0) {
+    const cluesContainer = document.createElement('div');
+    cluesContainer.className = 'crossword-clues';
+
+    const acrossWords = words.filter(w => w.direction === 'across').sort((a, b) => a.index - b.index);
+    const downWords = words.filter(w => w.direction === 'down').sort((a, b) => a.index - b.index);
+
+    if (acrossWords.length > 0) {
+      const acrossSection = document.createElement('div');
+      acrossSection.className = 'clue-section';
+      acrossSection.innerHTML = '<h4>Across</h4>';
+      const acrossList = document.createElement('ul');
+      for (const word of acrossWords) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span> <span class="clue-length">(${word.length})</span>`;
+        acrossList.appendChild(li);
+      }
+      acrossSection.appendChild(acrossList);
+      cluesContainer.appendChild(acrossSection);
+    }
+
+    if (downWords.length > 0) {
+      const downSection = document.createElement('div');
+      downSection.className = 'clue-section';
+      downSection.innerHTML = '<h4>Down</h4>';
+      const downList = document.createElement('ul');
+      for (const word of downWords) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span> <span class="clue-length">(${word.length})</span>`;
+        downList.appendChild(li);
+      }
+      downSection.appendChild(downList);
+      cluesContainer.appendChild(downSection);
+    }
+
+    layout.appendChild(cluesContainer);
+  }
+
+  solutionGridEl.appendChild(layout);
+  solutionContainer.classList.remove('hidden');
+}
+
+function hideSolutionGrid() {
+  solutionContainer.classList.add('hidden');
+  solutionGridEl.innerHTML = '';
+}
+
 function showResults(state: GameState) {
   const result = state.result;
   if (!result) return;
@@ -600,6 +725,13 @@ function showResults(state: GameState) {
   }
 
   resultDetails.innerHTML = details;
+
+  // Show solution grid for losers and ties
+  if ((!isWinner || isTie) && state.grid && result.solution) {
+    renderSolutionGrid(state.grid, result.solution, state.grid.words);
+  } else {
+    hideSolutionGrid();
+  }
 }
 
 function updateRematchStatus(state: GameState) {
