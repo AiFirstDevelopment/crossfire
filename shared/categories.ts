@@ -1,7 +1,8 @@
 // Word categories for hint system
 // Words are mapped to simple, recognizable categories
+import { transformCategoryKeys } from "./transform-category-keys"; // adjust path
 
-const categoryWords: Record<string, string[]> = {
+const _categoryWords: Record<string, string[]> = {
   // Nature
   fruit: [
     "apple",
@@ -5399,6 +5400,9 @@ const categoryWords: Record<string, string[]> = {
     "prettier",
   ],
 };
+
+const categoryWords: { [category: string]: string[] } =
+  transformCategoryKeys(_categoryWords);
 // Build reverse lookup map: word -> category
 const wordToCategory: Map<string, string> = new Map();
 
