@@ -53,11 +53,11 @@ export interface HintResponse {
 
 // Server messages
 export type ServerMessage =
-  | { type: 'welcome'; playerId: string; playerName: string; playerCount?: number; queueSize?: number; onlineCount?: number; activeGames?: number }
+  | { type: 'welcome'; playerId: string; playerName: string; playerCount?: number; queueSize?: number; onlineCount?: number; activeGames?: number; totalGamesPlayed?: number }
   | { type: 'player-joined'; playerId: string; playerName: string; playerCount: number }
   | { type: 'player-left'; playerId: string; playerName: string; playerCount: number }
   | { type: 'queue-joined'; position: number }
-  | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number }
+  | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number; totalGamesPlayed: number }
   | { type: 'match-found'; roomId: string; opponent: { id: string; name: string } }
   | { type: 'game-start'; phase: 'submitting'; timeoutMs: number }
   | { type: 'words-accepted'; wordCount: number }

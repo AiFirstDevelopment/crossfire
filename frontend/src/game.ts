@@ -18,6 +18,7 @@ export interface GameState {
   opponentWantsRematch: boolean;
   waitingForRematch: boolean;
   activeGames: number;
+  totalGamesPlayed: number;
 }
 
 type StateChangeHandler = (state: GameState) => void;
@@ -52,7 +53,8 @@ export class GameClient {
       const message = JSON.parse(event.data) as ServerMessage;
       if (message.type === 'welcome' || message.type === 'stats-update') {
         const activeGames = 'activeGames' in message ? message.activeGames : 0;
-        this.updateState({ activeGames: activeGames ?? 0 });
+        const totalGamesPlayed = 'totalGamesPlayed' in message ? message.totalGamesPlayed : 0;
+        this.updateState({ activeGames: activeGames ?? 0, totalGamesPlayed: totalGamesPlayed ?? 0 });
       }
     };
 
@@ -117,6 +119,7 @@ export class GameClient {
       opponentWantsRematch: false,
       waitingForRematch: false,
       activeGames: 0,
+      totalGamesPlayed: 0,
     };
   }
 
@@ -180,6 +183,7 @@ export class GameClient {
           playerId: message.playerId,
           playerName: message.playerName,
           activeGames: message.activeGames ?? 0,
+          totalGamesPlayed: message.totalGamesPlayed ?? 0,
         });
         break;
 
@@ -188,7 +192,7 @@ export class GameClient {
         break;
 
       case 'stats-update':
-        this.updateState({ activeGames: message.activeGames });
+        this.updateState({ activeGames: message.activeGames, totalGamesPlayed: message.totalGamesPlayed });
         break;
 
       case 'match-found':

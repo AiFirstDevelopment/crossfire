@@ -18,6 +18,7 @@ export class Matchmaking {
   private connectedSockets: Set<WebSocket>;
   private playerCounter: number;
   private activeGames: number;
+  private totalGamesPlayed: number;
 
   constructor(state: DurableObjectState, _env: Env) {
     this.state = state;
@@ -25,12 +26,17 @@ export class Matchmaking {
     this.connectedSockets = new Set();
     this.playerCounter = 0;
     this.activeGames = 0;
+    this.totalGamesPlayed = 0;
 
-    // Load persisted active games count
+    // Load persisted counts
     this.state.blockConcurrencyWhile(async () => {
-      const stored = await this.state.storage.get<number>('activeGames');
-      if (stored !== undefined) {
-        this.activeGames = stored;
+      const storedActive = await this.state.storage.get<number>('activeGames');
+      if (storedActive !== undefined) {
+        this.activeGames = storedActive;
+      }
+      const storedTotal = await this.state.storage.get<number>('totalGamesPlayed');
+      if (storedTotal !== undefined) {
+        this.totalGamesPlayed = storedTotal;
       }
     });
   }
@@ -55,9 +61,11 @@ export class Matchmaking {
     // Handle game-ended notification from GameRoom
     if (url.pathname === '/game-ended' && request.method === 'POST') {
       this.activeGames = Math.max(0, this.activeGames - 1);
+      this.totalGamesPlayed++;
       await this.state.storage.put('activeGames', this.activeGames);
+      await this.state.storage.put('totalGamesPlayed', this.totalGamesPlayed);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.activeGames }), {
+      return new Response(JSON.stringify({ activeGames: this.activeGames, totalGamesPlayed: this.totalGamesPlayed }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -68,6 +76,7 @@ export class Matchmaking {
         queueSize: this.queue.size,
         onlineCount: this.connectedSockets.size,
         activeGames: this.activeGames,
+        totalGamesPlayed: this.totalGamesPlayed,
       }),
       { headers: { 'Content-Type': 'application/json' } }
     );
@@ -94,6 +103,7 @@ export class Matchmaking {
       queueSize: this.queue.size,
       onlineCount: this.connectedSockets.size,
       activeGames: this.activeGames,
+      totalGamesPlayed: this.totalGamesPlayed,
     });
 
     // Handle messages
@@ -213,6 +223,7 @@ export class Matchmaking {
       queueSize: this.queue.size,
       onlineCount: this.connectedSockets.size,
       activeGames: this.activeGames,
+      totalGamesPlayed: this.totalGamesPlayed,
     });
     for (const ws of this.connectedSockets) {
       try {

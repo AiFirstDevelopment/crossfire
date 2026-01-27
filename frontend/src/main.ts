@@ -28,6 +28,7 @@ const screens = {
 const findMatchBtn = document.getElementById('find-match-btn') as HTMLButtonElement;
 const statusText = document.getElementById('status-text')!;
 const activeGamesEl = document.getElementById('active-games')!;
+const totalGamesEl = document.getElementById('total-games')!;
 const roomIdInput = document.getElementById('room-id-input') as HTMLInputElement;
 const joinRoomBtn = document.getElementById('join-room-btn') as HTMLButtonElement;
 const waitingInfo = document.getElementById('waiting-info')!;
@@ -300,8 +301,9 @@ function showBotResults(state: BotGameState) {
 }
 
 function handleStateChange(state: GameState) {
-  // Always update active games display
+  // Always update stats displays
   updateActiveGames(state.activeGames);
+  updateTotalGames(state.totalGamesPlayed);
 
   // Update error display
   if (state.error) {
@@ -416,6 +418,12 @@ function updateActiveGames(serverCount: number) {
   const count = botGameActive ? serverCount + 1 : serverCount;
   const plural = count === 1 ? 'game' : 'games';
   activeGamesEl.textContent = `${count} ${plural} in progress`;
+}
+
+function updateTotalGames(count: number) {
+  if (count > 0) {
+    totalGamesEl.textContent = `${count.toLocaleString()} games played`;
+  }
 }
 
 function showError(message: string) {
