@@ -421,9 +421,7 @@ function updateActiveGames(serverCount: number) {
 }
 
 function updateTotalGames(count: number) {
-  if (count > 0) {
-    totalGamesEl.textContent = `${count.toLocaleString()} games played`;
-  }
+  totalGamesEl.textContent = `${count.toLocaleString()} games played`;
 }
 
 function showError(message: string) {
