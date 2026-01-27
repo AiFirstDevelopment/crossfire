@@ -45,6 +45,9 @@ const penaltyTime = document.getElementById('penalty-time')!;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 const opponentNameDisplay = document.getElementById('opponent-name-display')!;
 const opponentLevelEl = document.getElementById('opponent-level')!;
+const submitOpponentName = document.getElementById('submit-opponent-name')!;
+const submitOpponentLevel = document.getElementById('submit-opponent-level')!;
+const submitOpponentInfo = document.getElementById('submit-opponent-info')!;
 const playerLevelEl = document.getElementById('player-level')!;
 const playerWinsEl = document.getElementById('player-wins')!;
 const winsToNextEl = document.getElementById('wins-to-next')!;
@@ -65,6 +68,7 @@ let timerInterval: number | null = null;
 let lastSubmittedWords: string[] = []; // Store words for resubmit scenarios
 let accumulatedPenalty = 0;
 let isBotMode = false;
+let botGameActive = false; // Track if bot game is active for game count
 
 function init() {
   game = new GameClient();
@@ -141,12 +145,12 @@ function init() {
 
   leaveRoomBtn.addEventListener('click', () => {
     if (isBotMode && botGame) {
-      // Decrement active games count when leaving bot game
-      const currentCount = parseInt(activeGamesEl.textContent?.match(/\d+/)?.[0] || '1');
-      updateActiveGames(Math.max(0, currentCount - 1));
       botGame.destroy();
       botGame = null;
       isBotMode = false;
+      botGameActive = false;
+      // Update active games count (removes bot game addition)
+      updateActiveGames(game.getState().activeGames);
     } else {
       game.leaveRoom();
     }
@@ -168,13 +172,13 @@ function startBotGame() {
 
   // Create bot game
   isBotMode = true;
+  botGameActive = true;
   botGame = new BotGame(validWords, wordList);
   botGame.onStateChange(handleBotStateChange);
   botGame.onHintUsed(showHintPenalty);
 
-  // Increment active games count locally (bot game counts as active)
-  const currentCount = parseInt(activeGamesEl.textContent?.match(/\d+/)?.[0] || '0');
-  updateActiveGames(currentCount + 1);
+  // Update active games count (adds 1 for bot game)
+  updateActiveGames(game.getState().activeGames);
 
   // Show submission screen immediately
   statusText.textContent = `Playing against ${botGame.getBotName()}`;
@@ -186,6 +190,10 @@ function handleBotStateChange(state: BotGameState) {
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
+      // Show bot opponent info on submit screen
+      submitOpponentInfo.classList.remove('hidden');
+      submitOpponentName.textContent = state.botName;
+      submitOpponentLevel.textContent = '1';
       // Clear form for new game
       if (lastSubmittedWords.length === 0) {
         wordInputs.forEach(input => {
@@ -315,6 +323,16 @@ function handleStateChange(state: GameState) {
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
+      // Show opponent info on submit screen
+      if (state.opponentName) {
+        submitOpponentInfo.classList.remove('hidden');
+        submitOpponentName.textContent = state.opponentName;
+        fetchOpponentLevel(state.opponentName).then(level => {
+          submitOpponentLevel.textContent = String(level);
+        });
+      } else {
+        submitOpponentInfo.classList.add('hidden');
+      }
       // Restore words if we have them (resubmit after validation error)
       if (lastSubmittedWords.length === 4) {
         wordInputs.forEach((input, i) => {
@@ -386,7 +404,9 @@ function showScreen(name: keyof typeof screens) {
   screens[name].classList.remove('hidden');
 }
 
-function updateActiveGames(count: number) {
+function updateActiveGames(serverCount: number) {
+  // Add 1 to server count if a bot game is active
+  const count = botGameActive ? serverCount + 1 : serverCount;
   const plural = count === 1 ? 'game' : 'games';
   activeGamesEl.textContent = `${count} ${plural} in progress`;
 }
@@ -695,7 +715,7 @@ async function fetchWins(): Promise<number> {
   return 0;
 }
 
-async function fetchOpponentLevel(opponentName: string): Promise<void> {
+async function fetchOpponentLevel(opponentName: string): Promise<number> {
   // The opponent name is used as the player ID (lowercase)
   const opponentId = opponentName.toLowerCase();
   try {
@@ -705,11 +725,14 @@ async function fetchOpponentLevel(opponentName: string): Promise<void> {
       const wins = data.wins || 0;
       const level = calculateLevel(wins);
       opponentLevelEl.textContent = String(level);
+      return level;
     } else {
       opponentLevelEl.textContent = '1';
+      return 1;
     }
   } catch (error) {
     opponentLevelEl.textContent = '1';
+    return 1;
   }
 }
 

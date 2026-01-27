@@ -400,6 +400,11 @@ input[type="text"]:focus {
   font-size: 1.1em;
 }
 
+.submit-opponent-info {
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
 .opponent-level-badge {
   background: rgba(100, 108, 255, 0.2);
   color: #646cff;
