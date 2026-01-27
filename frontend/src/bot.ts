@@ -166,13 +166,13 @@ export class BotGame {
   }
 
   // Player submits their words
-  submitWords(words: string[]): { success: boolean; error?: string } {
+  submitWords(words: string[]): { success: boolean; error?: string; suggestions?: { wordIndex: number; replacements: string[] }[] } {
     if (this.state.phase !== 'submitting') return { success: false, error: 'Not in submission phase' };
 
     // Generate bot's crossword from player's words
     const botGridResult = this.generateGrid(words);
     if (!botGridResult.success) {
-      return { success: false, error: botGridResult.error };
+      return { success: false, error: botGridResult.error, suggestions: botGridResult.suggestions };
     }
 
     // Generate bot's words and create player's crossword
@@ -255,7 +255,7 @@ export class BotGame {
     return shuffled.slice(0, 4).map(w => w.toUpperCase());
   }
 
-  private generateGrid(words: string[]): { success: true; grid: { full: FullGrid; client: ClientGrid } } | { success: false; error: string } {
+  private generateGrid(words: string[]): { success: true; grid: { full: FullGrid; client: ClientGrid } } | { success: false; error: string; suggestions?: { wordIndex: number; replacements: string[] }[] } {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -274,12 +274,13 @@ export class BotGame {
       }
     }
 
-    // Analyze why and provide specific feedback
-    return { success: false, error: this.analyzeWordConnectivity(words) };
+    // Analyze why and provide specific feedback with suggestions
+    const analysis = this.analyzeWordConnectivity(words);
+    return { success: false, error: analysis.message, suggestions: analysis.suggestions };
   }
 
-  // Analyze why words can't form a crossword and give specific feedback
-  private analyzeWordConnectivity(words: string[]): string {
+  // Analyze why words can't form a crossword and give specific feedback with suggestions
+  private analyzeWordConnectivity(words: string[]): { message: string; suggestions: { wordIndex: number; replacements: string[] }[] } {
     const normalized = words.map(w => w.toUpperCase());
 
     // Get letters in a word as a Set
@@ -310,48 +311,71 @@ export class BotGame {
       }
     }
 
+    // Find replacement suggestions for a word index
+    const findReplacements = (wordIndex: number): string[] => {
+      const otherWords = normalized.filter((_, i) => i !== wordIndex);
+      const otherLetters = new Set<string>();
+      otherWords.forEach(w => getLetters(w).forEach(l => otherLetters.add(l)));
+
+      // Find words that share at least 2 letters with the other words
+      const candidates = this.wordList
+        .filter(w => {
+          const upper = w.toUpperCase();
+          if (upper === normalized[wordIndex]) return false;
+          if (normalized.includes(upper)) return false;
+          const letters = getLetters(upper);
+          const shared = [...letters].filter(l => otherLetters.has(l));
+          return shared.length >= 2 && w.length >= 3 && w.length <= 8;
+        })
+        .slice(0, 100); // Limit candidates for performance
+
+      // Shuffle and take top 5
+      return this.rng.shuffle(candidates).slice(0, 5).map(w => w.toUpperCase());
+    };
+
     // Find isolated words (no shared letters with any other word)
-    const isolated = normalized.filter((_, i) => connections[i].length === 0);
+    const isolatedIndices = normalized.map((_, i) => i).filter(i => connections[i].length === 0);
 
-    if (isolated.length > 0) {
-      const isolatedList = isolated.map(w => `"${w}"`).join(' and ');
-      const otherWords = normalized.filter(w => !isolated.includes(w));
+    if (isolatedIndices.length > 0) {
+      const isolatedWords = isolatedIndices.map(i => normalized[i]);
+      const isolatedList = isolatedWords.map(w => `"${w}"`).join(' and ');
 
-      if (otherWords.length > 0) {
-        const otherLetters = new Set<string>();
-        otherWords.forEach(w => getLetters(w).forEach(l => otherLetters.add(l)));
-        const commonLetters = [...otherLetters].slice(0, 5).join(', ');
+      // Generate suggestions for isolated words
+      const suggestions = isolatedIndices.map(idx => ({
+        wordIndex: idx,
+        replacements: findReplacements(idx)
+      }));
 
-        return `${isolatedList} ${isolated.length === 1 ? "doesn't share any letters" : "don't share any letters"} with your other words.\n\nTry words containing: ${commonLetters}`;
+      return {
+        message: `${isolatedList} ${isolatedIndices.length === 1 ? "doesn't share any letters" : "don't share any letters"} with your other words.`,
+        suggestions
+      };
+    }
+
+    // Words share letters but still can't connect - find weakest connections
+    const connectionScores = normalized.map((_, i) => {
+      let score = 0;
+      for (let j = 0; j < normalized.length; j++) {
+        if (i !== j) {
+          const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+          score += (sharedWith[key]?.length || 0);
+        }
       }
+      return { index: i, score };
+    });
 
-      return `Your words don't share enough letters with each other.\n\nTip: Choose words with common letters like E, A, R, S, T, or N.`;
-    }
+    connectionScores.sort((a, b) => a.score - b.score);
+    const weakestIndex = connectionScores[0].index;
 
-    // Words share letters but still can't connect
-    const pairInfo: { pair: string; shared: string[] }[] = [];
-    for (let i = 0; i < normalized.length; i++) {
-      for (let j = i + 1; j < normalized.length; j++) {
-        const key = `${i}-${j}`;
-        const shared = sharedWith[key] || [];
-        pairInfo.push({ pair: `"${normalized[i]}" & "${normalized[j]}"`, shared });
-      }
-    }
+    const suggestions = [{
+      wordIndex: weakestIndex,
+      replacements: findReplacements(weakestIndex)
+    }];
 
-    pairInfo.sort((a, b) => a.shared.length - b.shared.length);
-    const weakestPairs = pairInfo.filter(p => p.shared.length <= 1).slice(0, 2);
-
-    if (weakestPairs.length > 0) {
-      const weakInfo = weakestPairs.map(p =>
-        p.shared.length === 0
-          ? `${p.pair} share no letters`
-          : `${p.pair} only share "${p.shared.join(', ')}"`
-      ).join('\n');
-
-      return `${weakInfo}\n\nTip: Replace one word with something that shares more letters.`;
-    }
-
-    return `Your words share letters, but can't be arranged into a valid crossword.\n\nTip: Try replacing one word with a longer word.`;
+    return {
+      message: `"${normalized[weakestIndex]}" has weak connections with your other words.`,
+      suggestions
+    };
   }
 
   private buildGrids(layout: LayoutOutput, placedWords: LayoutResult[]): { full: FullGrid; client: ClientGrid } {

@@ -131,7 +131,7 @@ function init() {
     if (isBotMode && botGame) {
       const result = botGame.submitWords(lastSubmittedWords);
       if (!result.success) {
-        showError(result.error || 'Could not create puzzle from these words.');
+        showErrorWithSuggestions(result.error || 'Could not create puzzle from these words.', result.suggestions);
         return;
       }
     } else {
@@ -422,6 +422,60 @@ function showError(message: string) {
   errorToast.textContent = message;
   errorToast.classList.remove('hidden');
   setTimeout(() => errorToast.classList.add('hidden'), 5000);
+}
+
+function showErrorWithSuggestions(message: string, suggestions?: { wordIndex: number; replacements: string[] }[]) {
+  errorToast.innerHTML = '';
+
+  // Add message
+  const messageEl = document.createElement('div');
+  messageEl.textContent = message;
+  messageEl.className = 'error-message';
+  errorToast.appendChild(messageEl);
+
+  // Add suggestions if available
+  if (suggestions && suggestions.length > 0) {
+    for (const suggestion of suggestions) {
+      if (suggestion.replacements.length === 0) continue;
+
+      const suggestionDiv = document.createElement('div');
+      suggestionDiv.className = 'error-suggestions';
+
+      const label = document.createElement('span');
+      label.className = 'suggestion-label';
+      label.textContent = `Replace word ${suggestion.wordIndex + 1} with:`;
+      suggestionDiv.appendChild(label);
+
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.className = 'suggestion-buttons';
+
+      for (const word of suggestion.replacements) {
+        const btn = document.createElement('button');
+        btn.className = 'suggestion-btn';
+        btn.textContent = word;
+        btn.onclick = () => {
+          // Replace the word in the input
+          wordInputs[suggestion.wordIndex].value = word;
+          wordInputs[suggestion.wordIndex].classList.remove('invalid');
+          const errorEl = wordInputs[suggestion.wordIndex].parentElement?.querySelector('.word-error') as HTMLElement;
+          if (errorEl) errorEl.textContent = '';
+          // Hide the toast
+          errorToast.classList.add('hidden');
+          // Focus the input
+          wordInputs[suggestion.wordIndex].focus();
+        };
+        buttonsDiv.appendChild(btn);
+      }
+
+      suggestionDiv.appendChild(buttonsDiv);
+      errorToast.appendChild(suggestionDiv);
+    }
+  }
+
+  errorToast.classList.remove('hidden');
+  // Longer timeout when there are suggestions
+  const timeout = suggestions && suggestions.length > 0 ? 15000 : 5000;
+  setTimeout(() => errorToast.classList.add('hidden'), timeout);
 }
 
 function showHintPenalty(penaltyMs: number) {

@@ -643,10 +643,53 @@ input[type="text"]:focus {
   transform: translateX(-50%);
   background: #dc2626;
   color: white;
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 1000;
+  max-width: 90vw;
+  text-align: left;
+}
+
+.error-message {
+  margin-bottom: 0.75rem;
+}
+
+.error-suggestions {
+  margin-top: 0.5rem;
+}
+
+.suggestion-label {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+
+.suggestion-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.suggestion-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.suggestion-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.05);
+}
+
+.suggestion-btn:active {
+  transform: scale(0.98);
 }
 
 /* Hint Penalty Toast */
