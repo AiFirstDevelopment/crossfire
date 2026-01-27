@@ -336,6 +336,7 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  align-items: center;
 }
 
 .word-input {
