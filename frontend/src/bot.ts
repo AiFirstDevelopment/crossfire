@@ -1,7 +1,7 @@
 import humanId from 'human-id';
 import clg from 'crossword-layout-generator';
 import type { ClientGrid, ClientCell, ClientWordPlacement, GameResult } from './types';
-import { getWordCategory } from '../../shared/categories';
+import { getWordCategory, hasCategory } from '../../shared/categories';
 
 interface LayoutInput {
   clue: string;
@@ -215,10 +215,12 @@ export class BotGame {
     // Prefer words with common letters (E, A, R, S, T, N, O, I)
     const commonLetters = new Set(['E', 'A', 'R', 'S', 'T', 'N', 'O', 'I', 'L']);
 
-    // Filter to words 4-8 letters that have at least 2 common letters
+    // Filter to words 4-8 letters that have at least 2 common letters AND have a known category
     const goodWords = this.wordList.filter(w => {
       const upper = w.toUpperCase();
       if (upper.length < 4 || upper.length > 8) return false;
+      // Only pick words that have categories so hints are useful
+      if (!hasCategory(w)) return false;
       const commonCount = [...upper].filter(l => commonLetters.has(l)).length;
       return commonCount >= 2;
     });
@@ -486,9 +488,8 @@ export class BotGame {
     let cellIndex = 0;
     const totalCells = this.countTotalCells(grid);
 
-    // Bot solving loop - random delays between 800ms-2500ms per cell
-    // This makes the bot slower than most humans, giving players a good chance to win
-    const solveNextCell = () => {
+    // Bot solving loop - 3x slower than before with more random progress
+    const solveNextBatch = () => {
       if (this.state.phase !== 'solving' || cellIndex >= shuffledCells.length) {
         if (this.botSolveInterval) {
           clearTimeout(this.botSolveInterval);
@@ -497,12 +498,22 @@ export class BotGame {
         return;
       }
 
-      const { row, col, letter } = shuffledCells[cellIndex];
-      const key = `${row},${col}`;
+      // Random chance to just "think" without making progress (30% chance)
+      if (this.rng.next() < 0.3) {
+        const thinkDelay = this.rng.nextInt(3000, 8000);
+        this.botSolveInterval = window.setTimeout(solveNextBatch, thinkDelay);
+        return;
+      }
 
-      // Bot fills the cell
-      this.state.botFilledCells[key] = letter;
-      cellIndex++;
+      // Fill 1-3 cells at once (weighted toward 1) for less uniform progress
+      const cellsThisBatch = this.rng.next() < 0.6 ? 1 : (this.rng.next() < 0.7 ? 2 : 3);
+
+      for (let i = 0; i < cellsThisBatch && cellIndex < shuffledCells.length; i++) {
+        const { row, col, letter } = shuffledCells[cellIndex];
+        const key = `${row},${col}`;
+        this.state.botFilledCells[key] = letter;
+        cellIndex++;
+      }
 
       // Calculate bot progress
       const filledCount = Object.keys(this.state.botFilledCells).length;
@@ -515,18 +526,18 @@ export class BotGame {
         return;
       }
 
-      // Schedule next cell with random delay
-      // Base delay 800-2500ms, occasionally longer pauses (simulating thinking)
-      let delay = this.rng.nextInt(800, 2500);
-      if (this.rng.next() < 0.1) {
-        delay += this.rng.nextInt(1000, 3000); // Occasional longer pause
+      // Schedule next batch with random delay (3x slower: 2400-7500ms base)
+      let delay = this.rng.nextInt(2400, 7500);
+      // 20% chance of extra long pause (simulating getting stuck)
+      if (this.rng.next() < 0.2) {
+        delay += this.rng.nextInt(4000, 10000);
       }
 
-      this.botSolveInterval = window.setTimeout(solveNextCell, delay);
+      this.botSolveInterval = window.setTimeout(solveNextBatch, delay);
     };
 
-    // Start after initial delay (bot "looking at puzzle")
-    this.botSolveInterval = window.setTimeout(solveNextCell, this.rng.nextInt(2000, 4000));
+    // Start after longer initial delay (bot "studying puzzle")
+    this.botSolveInterval = window.setTimeout(solveNextBatch, this.rng.nextInt(5000, 10000));
   }
 
   private countTotalCells(grid: FullGrid): number {

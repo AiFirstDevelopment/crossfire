@@ -349,6 +349,69 @@ input[type="text"]:focus {
   min-height: 1.2em;
 }
 
+.word-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.word-input-row .word-input {
+  flex-shrink: 0;
+}
+
+.inline-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.inline-suggestions:empty {
+  display: none;
+}
+
+.inline-suggestion-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.inline-suggestion-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: white;
+}
+
+.inline-suggestion-btn:active {
+  transform: scale(0.95);
+}
+
+.suggestion-hint {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+.form-error {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.form-error.hidden {
+  display: none;
+}
+
 /* Timer */
 .timer {
   font-size: 2em;

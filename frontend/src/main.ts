@@ -424,58 +424,62 @@ function showError(message: string) {
   setTimeout(() => errorToast.classList.add('hidden'), 5000);
 }
 
-function showErrorWithSuggestions(message: string, suggestions?: { wordIndex: number; replacements: string[] }[]) {
-  errorToast.innerHTML = '';
+function clearInlineSuggestions(index?: number) {
+  if (index !== undefined) {
+    // Clear only suggestions for a specific word
+    const input = wordInputs[index];
+    const suggestionDiv = input?.parentElement?.querySelector('.inline-suggestions');
+    if (suggestionDiv) suggestionDiv.innerHTML = '';
+  } else {
+    // Clear all suggestions
+    document.querySelectorAll('.inline-suggestions').forEach(el => {
+      el.innerHTML = '';
+    });
+  }
+}
 
-  // Add message
-  const messageEl = document.createElement('div');
-  messageEl.textContent = message;
-  messageEl.className = 'error-message';
-  errorToast.appendChild(messageEl);
+function showErrorWithSuggestions(_message: string, suggestions?: { wordIndex: number; replacements: string[] }[]) {
+  // Clear any existing inline suggestions
+  clearInlineSuggestions();
 
-  // Add suggestions if available
+  // Add inline suggestions next to each relevant word input
   if (suggestions && suggestions.length > 0) {
     for (const suggestion of suggestions) {
       if (suggestion.replacements.length === 0) continue;
 
-      const suggestionDiv = document.createElement('div');
-      suggestionDiv.className = 'error-suggestions';
+      const input = wordInputs[suggestion.wordIndex];
+      if (!input) continue;
 
-      const label = document.createElement('span');
-      label.className = 'suggestion-label';
-      label.textContent = `Replace word ${suggestion.wordIndex + 1} with:`;
-      suggestionDiv.appendChild(label);
+      const suggestionDiv = input.parentElement?.querySelector('.inline-suggestions');
+      if (!suggestionDiv) continue;
 
-      const buttonsDiv = document.createElement('div');
-      buttonsDiv.className = 'suggestion-buttons';
+      // Add hint explaining the issue
+      const hint = document.createElement('span');
+      hint.className = 'suggestion-hint';
+      hint.textContent = 'no shared letters — try these or type your own:';
+      suggestionDiv.appendChild(hint);
 
       for (const word of suggestion.replacements) {
         const btn = document.createElement('button');
-        btn.className = 'suggestion-btn';
+        btn.type = 'button';
+        btn.className = 'inline-suggestion-btn';
         btn.textContent = word;
         btn.onclick = () => {
           // Replace the word in the input
           wordInputs[suggestion.wordIndex].value = word;
           wordInputs[suggestion.wordIndex].classList.remove('invalid');
-          const errorEl = wordInputs[suggestion.wordIndex].parentElement?.querySelector('.word-error') as HTMLElement;
+          const wrapper = input.closest('.word-input-wrapper');
+          const errorEl = wrapper?.querySelector('.word-error') as HTMLElement;
           if (errorEl) errorEl.textContent = '';
-          // Hide the toast
-          errorToast.classList.add('hidden');
+          // Clear only this word's suggestions
+          clearInlineSuggestions(suggestion.wordIndex);
           // Focus the input
           wordInputs[suggestion.wordIndex].focus();
         };
-        buttonsDiv.appendChild(btn);
+        suggestionDiv.appendChild(btn);
       }
-
-      suggestionDiv.appendChild(buttonsDiv);
-      errorToast.appendChild(suggestionDiv);
     }
   }
-
-  errorToast.classList.remove('hidden');
-  // Longer timeout when there are suggestions
-  const timeout = suggestions && suggestions.length > 0 ? 15000 : 5000;
-  setTimeout(() => errorToast.classList.add('hidden'), timeout);
 }
 
 function showHintPenalty(penaltyMs: number) {

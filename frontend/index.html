@@ -67,22 +67,35 @@
 
           <form id="word-form">
             <div class="word-input-wrapper">
-              <input type="text" class="word-input" placeholder="Word 1" maxlength="12" required />
+              <div class="word-input-row">
+                <input type="text" class="word-input" placeholder="Word 1" maxlength="12" required />
+                <div class="inline-suggestions"></div>
+              </div>
               <span class="word-error"></span>
             </div>
             <div class="word-input-wrapper">
-              <input type="text" class="word-input" placeholder="Word 2" maxlength="12" required />
+              <div class="word-input-row">
+                <input type="text" class="word-input" placeholder="Word 2" maxlength="12" required />
+                <div class="inline-suggestions"></div>
+              </div>
               <span class="word-error"></span>
             </div>
             <div class="word-input-wrapper">
-              <input type="text" class="word-input" placeholder="Word 3" maxlength="12" required />
+              <div class="word-input-row">
+                <input type="text" class="word-input" placeholder="Word 3" maxlength="12" required />
+                <div class="inline-suggestions"></div>
+              </div>
               <span class="word-error"></span>
             </div>
             <div class="word-input-wrapper">
-              <input type="text" class="word-input" placeholder="Word 4" maxlength="12" required />
+              <div class="word-input-row">
+                <input type="text" class="word-input" placeholder="Word 4" maxlength="12" required />
+                <div class="inline-suggestions"></div>
+              </div>
               <span class="word-error"></span>
             </div>
             <button type="submit" class="primary-btn">Submit Words</button>
+            <div id="form-error" class="form-error hidden"></div>
           </form>
         </div>
 
