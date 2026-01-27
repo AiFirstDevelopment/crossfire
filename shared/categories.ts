@@ -9,6 +9,13 @@ const categoryWords: Record<string, string[]> = {
     'apricot', 'avocado', 'tomato', 'watermelon', 'cantaloupe', 'honeydew', 'pomegranate',
     'raspberry', 'blueberry', 'strawberry', 'blackberry', 'cranberry', 'grapefruit', 'tangerine',
     'nectarine', 'persimmon', 'dragonfruit', 'passionfruit', 'starfruit', 'lychee', 'raisin',
+
+    // additions
+    'pineapple', 'granny', 'plantain', 'kumquat', 'yuzu', 'pomelo', 'clementine', 'satsuma',
+    'bloodorange', 'mandarin', 'quince', 'jackfruit', 'durian', 'rambutan', 'longan', 'mangosteen',
+    'cherimoya', 'soursop', 'feijoa', 'tamarind', 'currant', 'gooseberry', 'boysenberry',
+    'mulberry', 'elderberry', 'lingonberry', 'cloudberry', 'huckleberry', 'acai', 'breadfruit',
+    'prune',
   ],
   vegetable: [
     'carrot', 'potato', 'onion', 'garlic', 'celery', 'lettuce', 'spinach', 'kale', 'broccoli',
@@ -16,6 +23,14 @@ const categoryWords: Record<string, string[]> = {
     'cucumber', 'pepper', 'eggplant', 'asparagus', 'artichoke', 'cauliflower', 'mushroom',
     'leek', 'shallot', 'parsley', 'basil', 'mint', 'oregano', 'thyme', 'rosemary', 'sage',
     'cilantro', 'dill', 'chive', 'ginger', 'yam', 'pumpkin', 'okra', 'chard', 'arugula',
+
+    // additions
+    'brussels', 'sprouts', 'bokchoy', 'collard', 'endive', 'escarole', 'romaine', 'iceberg',
+    'radicchio', 'watercress', 'cress', 'mustardgreens', 'microgreens', 'fennel', 'parsnip',
+    'rutabaga', 'jicama', 'kohlrabi', 'celeriac', 'daikon', 'scallion', 'greenonion',
+    'sweetpotato', 'chili', 'jalapeno', 'habanero', 'serrano', 'poblano', 'bellpepper',
+    'tomatillo', 'greenbean', 'edamame', 'lentil', 'splitpea', 'chickpea',
+    'broccolini', 'romanesco', 'bambooshoot', 'waterchestnut', 'cassava', 'taro',
   ],
   animal: [
     'dog', 'cat', 'bird', 'fish', 'horse', 'cow', 'pig', 'sheep', 'goat', 'chicken',
@@ -41,6 +56,18 @@ const categoryWords: Record<string, string[]> = {
     'llama', 'alpaca', 'camel', 'donkey', 'mule', 'pony', 'stallion', 'mare', 'foal', 'colt',
     'puppy', 'kitten', 'cub', 'pup', 'calf', 'lamb', 'kid', 'piglet', 'chick', 'duckling',
     'fawn', 'joey', 'tadpole', 'hatchling', 'fledgling',
+
+    // additions
+    'reindeer', 'antelope', 'gazelle', 'ibex', 'warthog', 'boar', 'badger', 'marten', 'weasel',
+    'stoat', 'ermine', 'wolverine', 'lynx', 'bobcat', 'ocelot', 'caracal', 'serval',
+    'capybara', 'tapir', 'manatee', 'dugong', 'narwhal', 'orca', 'beluga', 'porpoise',
+    'lemur', 'macaque', 'gibbon',
+    'gecko', 'iguana', 'chameleon', 'komodo', 'python', 'cobra', 'viper', 'boa',
+    'newt', 'axolotl',
+    'sealion', 'furseal',
+    'albatross', 'kestrel', 'condor', 'ibis', 'kingfisher', 'loon', 'puffin', 'wren',
+    'woodlouse', 'tick', 'mite', 'flea', 'termite', 'cicada',
+    'coral', 'anemone', 'urchin', 'barnacle',
   ],
   plant: [
     'tree', 'flower', 'grass', 'bush', 'shrub', 'vine', 'fern', 'moss', 'algae', 'cactus',
@@ -50,14 +77,31 @@ const categoryWords: Record<string, string[]> = {
     'iris', 'jasmine', 'lavender', 'lilac', 'magnolia', 'peony', 'poppy', 'zinnia', 'clover',
     'dandelion', 'thistle', 'ivy', 'holly', 'mistletoe', 'poinsettia', 'hibiscus', 'gardenia',
     'azalea', 'rhododendron', 'camellia', 'bougainvillea', 'wisteria', 'honeysuckle', 'lotus',
-    'seaweed', 'kelp', 'reed', 'cattail', 'lily', 'seed', 'root', 'stem', 'leaf', 'branch',
+    'seaweed', 'kelp', 'reed', 'cattail', 'seed', 'root', 'stem', 'leaf', 'branch',
     'twig', 'bark', 'trunk', 'petal', 'pollen', 'nectar', 'bud', 'bloom', 'blossom', 'sprout',
+
+    // additions
+    'mushroom', 'lichen', 'fungus', 'mycelium',
+    'acorn', 'cone', 'sap', 'resin', 'stamen', 'pistil', 'ovary', 'stigma',
+    'succulent', 'aloe', 'agave', 'yucca',
+    'eucalyptus', 'juniper', 'cypress', 'poplar', 'aspen', 'elm', 'ash', 'sycamore', 'walnut',
+    'chestnut', 'pecan', 'hazel', 'dogwood', 'magnolia',
+    'basil', 'oregano', 'thyme', 'rosemary', 'sage', 'mint', 'cilantro', 'dill', 'parsley',
+    'bamboo', 'briar', 'bramble', 'hedge', 'hedgerow',
   ],
   weather: [
     'rain', 'snow', 'hail', 'sleet', 'fog', 'mist', 'cloud', 'storm', 'thunder', 'lightning',
     'wind', 'breeze', 'gust', 'gale', 'hurricane', 'tornado', 'cyclone', 'typhoon', 'monsoon',
     'drought', 'flood', 'frost', 'ice', 'dew', 'humidity', 'sunshine', 'rainbow', 'blizzard',
     'avalanche', 'tsunami', 'earthquake', 'tremor', 'volcano', 'eruption', 'mudslide',
+
+    // additions
+    'drizzle', 'downpour', 'sprinkle', 'shower', 'squall', 'thunderstorm', 'hailstorm',
+    'heatwave', 'coldfront', 'warmfront', 'front', 'pressure', 'barometer',
+    'smog', 'haze', 'overcast', 'sunny', 'clear', 'partlycloudy',
+    'blackice', 'whiteout', 'windchill',
+    'aftershock', 'landslide', 'rockslide', 'sinkhole',
+    'wildfire', 'smoke', 'ashfall',
   ],
 
   // Body
@@ -70,6 +114,13 @@ const categoryWords: Record<string, string[]> = {
     'ankle', 'foot', 'heel', 'toe', 'sole', 'arch', 'skin', 'hair', 'scalp', 'beard',
     'mustache', 'brain', 'heart', 'lung', 'liver', 'kidney', 'intestine', 'bladder', 'muscle',
     'bone', 'joint', 'tendon', 'ligament', 'cartilage', 'vein', 'artery', 'nerve', 'skull',
+
+    // additions
+    'temple', 'nostril', 'gum', 'palate', 'uvula', 'tonsil', 'larynx', 'trachea', 'esophagus',
+    'shoulderblade', 'collarbone', 'bicep', 'tricep', 'forearm',
+    'womb', 'uterus', 'ovary', 'prostate', 'testicle',
+    'appendix', 'colon', 'rectum', 'pancreas', 'spleen', 'gallbladder',
+    'retina', 'cornea', 'iris', 'optic', 'pupil',
   ],
 
   // Objects
@@ -80,6 +131,13 @@ const categoryWords: Record<string, string[]> = {
     'pitchfork', 'trowel', 'pruner', 'mower', 'trimmer', 'blower', 'chainsaw', 'sander',
     'grinder', 'welder', 'torch', 'soldering', 'multimeter', 'voltmeter', 'caliper',
     'micrometer', 'gauge', 'jack', 'crowbar', 'prybar', 'mallet', 'sledgehammer', 'pickaxe',
+
+    // additions
+    'socket', 'ratchet', 'torquewrench', 'allen', 'hexkey', 'torx', 'bit', 'driverbit',
+    'studfinder', 'wirestripper', 'crimper', 'heatgun', 'gluegun',
+    'visegrip', 'handsaw', 'jigsaw', 'circularsaw', 'tablesaw', 'bandsaw',
+    'tapset', 'dieset', 'fileset', 'sandpaper', 'paintbrush', 'roller', 'puttyknife',
+    'ladder', 'wheelbarrow',
   ],
   vehicle: [
     'car', 'truck', 'van', 'bus', 'taxi', 'limo', 'jeep', 'suv', 'sedan', 'coupe', 'wagon',
@@ -92,6 +150,12 @@ const categoryWords: Record<string, string[]> = {
     'blimp', 'zeppelin', 'balloon', 'rocket', 'spacecraft', 'shuttle', 'satellite', 'boat',
     'ship', 'yacht', 'sailboat', 'canoe', 'kayak', 'raft', 'rowboat', 'motorboat', 'speedboat',
     'ferry', 'cruise', 'tanker', 'freighter', 'cargo', 'submarine', 'hovercraft',
+
+    // additions
+    'atv', 'utv', 'snowmobile', 'jetski', 'seaplane', 'hangglider', 'paraglider',
+    'forklift', 'bulldozer', 'excavator', 'backhoe', 'dumptruck', 'cementmixer',
+    'streetcar', 'lightrail',
+    'spaceship', 'lander', 'capsule',
   ],
   furniture: [
     'chair', 'table', 'desk', 'sofa', 'couch', 'loveseat', 'recliner', 'ottoman', 'bench',
@@ -100,6 +164,11 @@ const categoryWords: Record<string, string[]> = {
     'nightstand', 'headboard', 'footboard', 'frame', 'futon', 'hammock', 'crib', 'cradle',
     'bunk', 'canopy', 'mirror', 'lamp', 'chandelier', 'sconce', 'fixture', 'rug', 'carpet',
     'curtain', 'drape', 'blind', 'shade', 'valance', 'cushion', 'throw', 'tapestry',
+
+    // additions
+    'sideboard', 'buffet', 'console', 'vanity', 'coffee', 'endtable', 'nighttable',
+    'bookshelf', 'coatstand', 'umbrella', 'rack', 'shoe', 'cabinet',
+    'beanbag', 'daybed', 'trundle', 'sectional',
   ],
   clothing: [
     'shirt', 'blouse', 'top', 'tank', 'tee', 'polo', 'sweater', 'cardigan', 'hoodie',
@@ -111,6 +180,13 @@ const categoryWords: Record<string, string[]> = {
     'mittens', 'shoes', 'boots', 'sneakers', 'sandals', 'slippers', 'heels', 'flats',
     'loafers', 'oxfords', 'moccasins', 'flip', 'cleats', 'skates', 'uniform', 'costume',
     'apron', 'overalls', 'jumpsuit', 'romper', 'onesie', 'tunic', 'kimono', 'poncho', 'cape',
+
+    // additions
+    'raincoat', 'parka', 'windbreaker', 'anorak', 'peacoat',
+    'turtleneck', 'buttondown', 'henley', 'camisole', 'bodysuit',
+    'sweatpants', 'joggers', 'cargo', 'chinos', 'slacks',
+    'beltbag', 'purse', 'handbag', 'backpack',
+    'bracelet', 'necklace', 'ring', 'earring', 'watch',
   ],
   food: [
     'bread', 'toast', 'bagel', 'muffin', 'croissant', 'biscuit', 'roll', 'bun', 'loaf',
@@ -126,6 +202,16 @@ const categoryWords: Record<string, string[]> = {
     'roll', 'tempura', 'teriyaki', 'ramen', 'pho', 'dumpling', 'spring', 'wonton', 'tofu',
     'hummus', 'falafel', 'pita', 'flatbread', 'naan', 'tortilla', 'tostada', 'tamale',
     'empanada', 'pierogi', 'gnocchi', 'polenta', 'couscous', 'quinoa', 'lentil', 'chickpea',
+
+    // additions
+    'steak', 'brisket', 'jerky', 'meat', 'chicken', 'turkey', 'duck', 'lamb', 'venison',
+    'salmon', 'shrimp', 'crab', 'lobster', 'clam', 'oyster', 'mussel',
+    'sauce', 'gravy', 'salsa', 'guacamole', 'ketchup', 'mustard', 'mayo', 'aioli',
+    'pickle', 'relish', 'kimchi', 'sauerkraut',
+    'brownrice', 'whiterice', 'barley', 'farro', 'bulgur',
+    'pesto', 'marinara', 'alfredo', 'soy', 'miso', 'broth', 'stock',
+    'cheddar', 'mozzarella', 'parmesan', 'feta', 'goatcheese', 'creamcheese',
+    'applepie', 'cheesecake', 'icecream', 'sorbet',
   ],
   drink: [
     'water', 'juice', 'soda', 'pop', 'cola', 'lemonade', 'tea', 'coffee', 'espresso',
@@ -133,6 +219,11 @@ const categoryWords: Record<string, string[]> = {
     'shake', 'smoothie', 'slush', 'punch', 'cider', 'beer', 'wine', 'champagne', 'vodka',
     'whiskey', 'bourbon', 'scotch', 'rum', 'gin', 'tequila', 'brandy', 'cognac', 'liqueur',
     'cocktail', 'martini', 'margarita', 'daiquiri', 'mojito', 'sangria', 'spritzer',
+
+    // additions
+    'seltzer', 'sparkling', 'club', 'tonic', 'kombucha', 'kefir', 'matcha',
+    'chai', 'herbal', 'decaf', 'coldbrew', 'icedcoffee', 'icedtea',
+    'protein', 'electrolyte', 'broth', 'stock',
   ],
 
   // Materials
@@ -145,6 +236,12 @@ const categoryWords: Record<string, string[]> = {
     'acrylic', 'fiberglass', 'carbon', 'leather', 'suede', 'fur', 'wool', 'cotton', 'silk',
     'linen', 'velvet', 'satin', 'denim', 'canvas', 'burlap', 'felt', 'fleece', 'tweed',
     'cashmere', 'mohair', 'angora', 'paper', 'cardboard', 'foam', 'wax', 'resin', 'epoxy',
+
+    // additions
+    'granite', 'quartz', 'obsidian', 'basalt', 'pumice',
+    'asphalt', 'tar', 'bitumen',
+    'silicone', 'neoprene', 'kevlar', 'graphene',
+    'bamboo', 'rattan', 'cork',
   ],
   color: [
     'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'violet', 'pink', 'brown', 'black',
@@ -153,6 +250,11 @@ const categoryWords: Record<string, string[]> = {
     'amber', 'mustard', 'lemon', 'lime', 'olive', 'teal', 'turquoise', 'aqua', 'cyan', 'navy',
     'indigo', 'lavender', 'lilac', 'magenta', 'fuchsia', 'rose', 'mauve', 'plum', 'eggplant',
     'charcoal', 'slate', 'ash', 'pearl', 'champagne', 'khaki', 'taupe', 'mocha', 'chocolate',
+
+    // additions
+    'chartreuse', 'cerulean', 'cobalt', 'sapphire', 'emerald', 'jade', 'mint', 'seafoam',
+    'periwinkle', 'ultramarine', 'vermilion', 'ochre', 'sepia', 'umber', 'sienna',
+    'pastel', 'neon',
   ],
 
   // Places
@@ -169,6 +271,12 @@ const categoryWords: Record<string, string[]> = {
     'aquarium', 'zoo', 'park', 'garden', 'playground', 'fountain', 'monument', 'memorial',
     'hotel', 'motel', 'inn', 'lodge', 'resort', 'hostel', 'dormitory', 'barracks', 'tent',
     'cabin', 'hut', 'shack', 'shelter', 'bunker', 'vault', 'cellar', 'basement', 'attic',
+
+    // additions
+    'mall', 'supermarket', 'grocery', 'bakery', 'butcher', 'restaurant', 'cafe', 'diner',
+    'bar', 'pub', 'shop', 'store', 'market',
+    'embassy', 'consulate', 'capitol', 'cityhall',
+    'powerplant', 'substation', 'waterplant', 'refinery',
   ],
   room: [
     'kitchen', 'bathroom', 'bedroom', 'living', 'dining', 'den', 'study', 'office', 'nursery',
@@ -176,6 +284,10 @@ const categoryWords: Record<string, string[]> = {
     'vestibule', 'corridor', 'stairway', 'landing', 'balcony', 'patio', 'deck', 'porch',
     'veranda', 'terrace', 'sunroom', 'conservatory', 'attic', 'basement', 'cellar', 'garage',
     'workshop', 'studio', 'gallery', 'theater', 'gym', 'sauna', 'spa', 'pool', 'court',
+
+    // additions
+    'bath', 'shower', 'powder', 'guestroom', 'master', 'suite',
+    'closet', 'walkin', 'utility', 'boiler', 'serverroom',
   ],
   place: [
     'city', 'town', 'village', 'suburb', 'neighborhood', 'district', 'county', 'state',
@@ -187,6 +299,11 @@ const categoryWords: Record<string, string[]> = {
     'thicket', 'clearing', 'glade', 'mountain', 'hill', 'valley', 'canyon', 'gorge', 'ravine',
     'cliff', 'bluff', 'plateau', 'mesa', 'butte', 'ridge', 'peak', 'summit', 'slope',
     'desert', 'dune', 'oasis', 'tundra', 'glacier', 'iceberg', 'cave', 'cavern', 'grotto',
+
+    // additions
+    'reef', 'lagoon', 'strait', 'channel', 'fjord', 'inlet', 'estuary',
+    'volcano', 'crater', 'caldera',
+    'steppe', 'savanna', 'badlands',
   ],
 
   // Activities
@@ -202,6 +319,11 @@ const categoryWords: Record<string, string[]> = {
     'jogging', 'walking', 'hiking', 'climbing', 'bouldering', 'rappelling', 'camping',
     'fishing', 'hunting', 'shooting', 'riding', 'racing', 'cycling', 'biking', 'motocross',
     'skateboarding', 'rollerblading', 'parkour', 'yoga', 'pilates', 'aerobics', 'crossfit',
+
+    // additions
+    'lacrosse', 'rugby', 'cricket', 'handball', 'pickleball', 'tabletennis',
+    'powerlifting', 'weightlifting', 'bodybuilding',
+    'kickboxing', 'muaythai', 'bjj',
   ],
   music: [
     'piano', 'keyboard', 'organ', 'synthesizer', 'guitar', 'bass', 'ukulele', 'banjo',
@@ -214,6 +336,11 @@ const categoryWords: Record<string, string[]> = {
     'song', 'melody', 'harmony', 'rhythm', 'beat', 'tempo', 'chord', 'note', 'scale',
     'key', 'pitch', 'tone', 'octave', 'verse', 'chorus', 'bridge', 'intro', 'outro',
     'solo', 'duet', 'trio', 'quartet', 'ensemble', 'orchestra', 'band', 'choir', 'chorus',
+
+    // additions
+    'metronome', 'tuner', 'amplifier', 'amp', 'speaker', 'mixer', 'mic', 'microphone',
+    'genre', 'jazz', 'blues', 'rock', 'pop', 'classical', 'country', 'hiphop', 'rap', 'edm',
+    'folk', 'metal', 'punk', 'reggae', 'gospel',
   ],
   game: [
     'chess', 'checkers', 'backgammon', 'dominoes', 'mahjong', 'poker', 'blackjack', 'roulette',
@@ -221,6 +348,10 @@ const categoryWords: Record<string, string[]> = {
     'scrabble', 'trivial', 'clue', 'risk', 'catan', 'ticket', 'pandemic', 'codenames',
     'charades', 'pictionary', 'taboo', 'catchphrase', 'bingo', 'lottery', 'slots', 'arcade',
     'pinball', 'pacman', 'tetris', 'mario', 'zelda', 'pokemon', 'minecraft', 'fortnite',
+
+    // additions
+    'sudoku', 'crossword', 'wordle', 'minesweeper', 'chutes', 'ladders', 'sorry', 'trouble',
+    'go', 'othello', 'yahtzee', 'battleship',
   ],
 
   // Concepts
@@ -235,6 +366,10 @@ const categoryWords: Record<string, string[]> = {
     'disgust', 'contempt', 'hatred', 'loathing', 'resentment', 'bitterness', 'frustration',
     'annoyance', 'irritation', 'impatience', 'boredom', 'apathy', 'indifference', 'confusion',
     'surprise', 'shock', 'amazement', 'wonder', 'awe', 'curiosity', 'interest', 'fascination',
+
+    // additions
+    'gratitude', 'relief', 'anticipation', 'homesick', 'lonely', 'compassion', 'empathy',
+    'proud', 'ashamed', 'hopeful', 'hopeless',
   ],
   time: [
     'second', 'minute', 'hour', 'day', 'week', 'month', 'year', 'decade', 'century', 'millennium',
@@ -243,6 +378,10 @@ const categoryWords: Record<string, string[]> = {
     'birthday', 'anniversary', 'spring', 'summer', 'autumn', 'fall', 'winter', 'season',
     'past', 'present', 'future', 'history', 'ancient', 'modern', 'era', 'epoch', 'age',
     'period', 'phase', 'cycle', 'rhythm', 'tempo', 'pace', 'moment', 'instant', 'eternity',
+
+    // additions
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
   ],
   shape: [
     'circle', 'square', 'triangle', 'rectangle', 'oval', 'ellipse', 'diamond', 'rhombus',
@@ -250,6 +389,9 @@ const categoryWords: Record<string, string[]> = {
     'cross', 'arrow', 'spiral', 'helix', 'sphere', 'cube', 'cylinder', 'cone', 'pyramid',
     'prism', 'torus', 'dome', 'arch', 'curve', 'angle', 'line', 'point', 'vertex', 'edge',
     'face', 'surface', 'plane', 'dimension', 'symmetry', 'pattern', 'grid', 'lattice', 'mesh',
+
+    // additions
+    'parallelogram', 'trapezoid', 'kite', 'tetrahedron', 'icosahedron', 'dodecahedron',
   ],
   number: [
     'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
@@ -258,6 +400,10 @@ const categoryWords: Record<string, string[]> = {
     'hundred', 'thousand', 'million', 'billion', 'trillion', 'dozen', 'score', 'pair', 'triple',
     'quadruple', 'quintuple', 'half', 'third', 'quarter', 'fifth', 'sixth', 'seventh', 'eighth',
     'ninth', 'tenth', 'fraction', 'decimal', 'percent', 'ratio', 'proportion', 'average', 'sum',
+
+    // additions
+    'negative', 'positive', 'integer', 'prime', 'even', 'odd', 'multiple', 'factor',
+    'numerator', 'denominator',
   ],
 
   // People & Jobs
@@ -281,6 +427,13 @@ const categoryWords: Record<string, string[]> = {
     'sailor', 'driver', 'chauffeur', 'conductor', 'dispatcher', 'firefighter', 'police', 'detective',
     'officer', 'guard', 'soldier', 'general', 'admiral', 'colonel', 'sergeant', 'private',
     'astronaut', 'diver', 'lifeguard', 'ranger', 'warden', 'inspector', 'investigator', 'agent',
+
+    // additions
+    'cashier', 'cashier', 'barber', 'stylist', 'tailor', 'seamstress', 'optometrist',
+    'radiologist', 'labtech', 'phlebotomist', 'midwife',
+    'electrician', 'hvac', 'roofer', 'painter', 'mason',
+    'translator', 'interpreter', 'editor', 'copywriter', 'blogger',
+    'productmanager', 'projectmanager', 'scrummaster',
   ],
   family: [
     'mother', 'father', 'mom', 'dad', 'parent', 'son', 'daughter', 'child', 'kid', 'baby',
@@ -290,6 +443,10 @@ const categoryWords: Record<string, string[]> = {
     'husband', 'wife', 'spouse', 'partner', 'fiance', 'fiancee', 'boyfriend', 'girlfriend',
     'stepmother', 'stepfather', 'stepson', 'stepdaughter', 'stepbrother', 'stepsister',
     'godmother', 'godfather', 'godson', 'goddaughter', 'ancestor', 'descendant', 'heir',
+
+    // additions
+    'inlaw', 'motherinlaw', 'fatherinlaw', 'sisterinlaw', 'brotherinlaw',
+    'roommate', 'neighbor', 'friend',
   ],
 
   // Technology
@@ -306,6 +463,14 @@ const categoryWords: Record<string, string[]> = {
     'robot', 'drone', 'satellite', 'radar', 'sonar', 'laser', 'led', 'lcd', 'oled', 'plasma',
     'virtual', 'reality', 'augmented', 'artificial', 'intelligence', 'machine', 'learning',
     'algorithm', 'code', 'script', 'function', 'variable', 'loop', 'array', 'object', 'class',
+
+    // additions
+    'terminal', 'command', 'cli', 'shell', 'bash', 'zsh', 'powershell',
+    'github', 'gitlab', 'git', 'commit', 'branch', 'merge', 'pullrequest',
+    'api', 'endpoint', 'request', 'response', 'json', 'yaml', 'xml',
+    'docker', 'container', 'kubernetes', 'pod', 'cluster', 'namespace',
+    'http', 'https', 'tls', 'ssl', 'dns', 'ip', 'tcp', 'udp',
+    'bug', 'issue', 'ticket', 'jira',
   ],
 
   // Reading & Writing
@@ -321,6 +486,10 @@ const categoryWords: Record<string, string[]> = {
     'epilogue', 'index', 'glossary', 'appendix', 'bibliography', 'citation', 'quote', 'excerpt',
     'paragraph', 'sentence', 'word', 'syllable', 'vowel', 'consonant', 'grammar', 'punctuation',
     'comma', 'period', 'colon', 'semicolon', 'apostrophe', 'hyphen', 'dash', 'parenthesis',
+
+    // additions
+    'headline', 'byline', 'footnote', 'endnote', 'outline', 'draft', 'revision', 'edit',
+    'publish', 'author', 'reader',
   ],
 
   // Household & everyday items
@@ -336,6 +505,11 @@ const categoryWords: Record<string, string[]> = {
     'towel', 'cloth', 'rag', 'sponge', 'brush', 'broom', 'mop', 'duster', 'vacuum', 'filter',
     'soap', 'detergent', 'bleach', 'cleaner', 'polish', 'wax', 'spray', 'foam', 'gel', 'powder',
     'trash', 'recycle', 'compost', 'disposal', 'landfill', 'dump', 'pile', 'heap', 'stack',
+
+    // additions
+    'laundry', 'washer', 'dryer', 'dishwasher', 'fridge', 'freezer', 'microwave', 'oven', 'stove',
+    'toaster', 'blender', 'mixer', 'kettle', 'coffeemaker',
+    'batteries', 'flashlight', 'candle', 'matches', 'lighter',
   ],
 
   // Miscellaneous common words
@@ -386,12 +560,19 @@ const categoryWords: Record<string, string[]> = {
     'scroll', 'zoom', 'scan', 'browse', 'surf', 'post', 'share', 'tweet', 'text', 'call',
     'dial', 'ring', 'buzz', 'beep', 'honk', 'knock', 'bang', 'slam', 'thud', 'thump',
     'rattle', 'clatter', 'clang', 'chime', 'ding', 'ping', 'pop', 'crack', 'snap', 'click',
+
+    // additions
+    'approve', 'reject', 'accept', 'decline', 'invite', 'confirm', 'cancel', 'schedule',
+    'upload', 'download', 'install', 'uninstall', 'configure', 'deploy', 'build', 'test',
   ],
   size: [
     'big', 'small', 'large', 'tiny', 'huge', 'giant', 'massive', 'enormous', 'immense', 'vast',
     'miniature', 'microscopic', 'compact', 'petite', 'slim', 'thin', 'thick', 'wide', 'narrow',
     'broad', 'long', 'short', 'tall', 'deep', 'shallow', 'high', 'low', 'heavy', 'light',
     'dense', 'sparse', 'full', 'empty', 'crowded', 'spacious', 'roomy', 'cramped', 'tight',
+
+    // additions
+    'oversized', 'undersized', 'bulky', 'chunky', 'tiny', 'minuscule', 'colossal',
   ],
   quality: [
     'good', 'bad', 'great', 'terrible', 'excellent', 'poor', 'perfect', 'flawed', 'best', 'worst',
@@ -413,6 +594,92 @@ const categoryWords: Record<string, string[]> = {
     'approximate', 'rough', 'detailed', 'specific', 'general', 'broad', 'narrow', 'limited',
     'unlimited', 'infinite', 'finite', 'complete', 'incomplete', 'partial', 'whole', 'entire',
     'total', 'full', 'empty', 'blank', 'filled', 'loaded', 'packed', 'crowded', 'sparse',
+
+    // additions
+    'reliable', 'unreliable', 'efficient', 'inefficient', 'usable', 'broken', 'buggy', 'stable',
+    'unstable', 'secure', 'insecure',
+  ],
+
+  // ===== NEW CATEGORIES =====
+
+  // Direction & location concepts
+  direction: [
+    'north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest',
+    'left', 'right', 'up', 'down', 'above', 'below', 'inside', 'outside', 'near', 'far',
+    'front', 'back', 'behind', 'ahead', 'between', 'around', 'through',
+  ],
+
+  // School / education
+  school: [
+    'class', 'course', 'lesson', 'lecture', 'homework', 'assignment', 'project', 'quiz', 'test',
+    'exam', 'midterm', 'final', 'grade', 'score', 'reportcard', 'semester', 'syllabus',
+    'student', 'teacher', 'principal', 'campus', 'cafeteria', 'gym', 'locker',
+  ],
+
+  // Office / business
+  office: [
+    'meeting', 'agenda', 'minutes', 'deadline', 'milestone', 'deliverable', 'stakeholder',
+    'client', 'customer', 'vendor', 'invoice', 'receipt', 'budget', 'forecast', 'proposal',
+    'contract', 'policy', 'procedure', 'handoff', 'oncall',
+  ],
+
+  // Finance
+  finance: [
+    'cash', 'money', 'coin', 'bill', 'bank', 'account', 'deposit', 'withdrawal', 'transfer',
+    'credit', 'debit', 'loan', 'mortgage', 'interest', 'fee', 'tax', 'refund', 'salary', 'wage',
+    'savings', 'checking', 'investment', 'stock', 'bond', 'portfolio', 'dividend',
+  ],
+
+  // Math (useful for hinting/classification)
+  math: [
+    'addition', 'subtraction', 'multiplication', 'division', 'algebra', 'geometry', 'calculus',
+    'equation', 'inequality', 'function', 'graph', 'slope', 'intercept', 'derivative', 'integral',
+    'matrix', 'vector', 'probability', 'statistics', 'mean', 'median', 'mode', 'variance',
+  ],
+
+  // Science
+  science: [
+    'atom', 'molecule', 'element', 'compound', 'reaction', 'acid', 'base', 'salt',
+    'gravity', 'energy', 'force', 'motion', 'velocity', 'acceleration', 'friction',
+    'cell', 'dna', 'gene', 'protein', 'enzyme', 'bacteria', 'virus', 'fungus',
+    'ecosystem', 'habitat', 'species', 'evolution',
+  ],
+
+  // Space
+  space: [
+    'space', 'planet', 'star', 'sun', 'moon', 'galaxy', 'nebula', 'asteroid', 'comet',
+    'meteor', 'meteorite', 'orbit', 'eclipse', 'telescope', 'astronaut', 'spacesuit',
+    'launch', 'rocket', 'capsule', 'station',
+  ],
+
+  // Kitchen items (more specific than household/food)
+  kitchen: [
+    'spoon', 'fork', 'knife', 'spatula', 'ladle', 'whisk', 'tongs', 'peeler', 'grater',
+    'cuttingboard', 'colander', 'strainer', 'measuringcup', 'measuringspoon',
+    'skillet', 'saucepan', 'stockpot', 'baking', 'sheetpan', 'mold',
+  ],
+
+  // Bathroom items
+  bathroom: [
+    'toilet', 'shower', 'bathtub', 'sink', 'mirror', 'towel', 'washcloth',
+    'toothbrush', 'toothpaste', 'floss', 'mouthwash',
+    'soap', 'shampoo', 'conditioner', 'razor', 'deodorant',
+  ],
+
+  // Transportation infrastructure
+  transport: [
+    'road', 'street', 'highway', 'freeway', 'intersection', 'crosswalk', 'sidewalk',
+    'bridge', 'tunnel', 'rail', 'station', 'platform', 'terminal', 'runway', 'gate',
+    'traffic', 'signal', 'stoplight', 'sign', 'speedlimit',
+  ],
+
+  // Common programming terms (separate from general technology)
+  programming: [
+    'typescript', 'javascript', 'python', 'java', 'csharp', 'go', 'rust',
+    'frontend', 'backend', 'api', 'sdk', 'library', 'framework',
+    'compiler', 'runtime', 'package', 'module', 'dependency',
+    'unit', 'integration', 'e2e', 'mock', 'stub', 'fixture',
+    'bug', 'regression', 'refactor', 'deploy', 'pipeline',
   ],
 };
 
