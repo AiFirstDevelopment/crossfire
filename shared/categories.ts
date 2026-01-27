@@ -309,7 +309,7 @@ const categoryWords: Record<string, string[]> = {
 
   // Miscellaneous common words
   action: [
-    'run', 'walk', 'jump', 'hop', 'skip', 'leap', 'climb', 'crawl', 'swim', 'fly', 'drive',
+    'dig', 'run', 'walk', 'jump', 'hop', 'skip', 'leap', 'climb', 'crawl', 'swim', 'fly', 'drive',
     'ride', 'sail', 'row', 'paddle', 'pedal', 'push', 'pull', 'lift', 'carry', 'drag', 'drop',
     'throw', 'catch', 'kick', 'hit', 'punch', 'slap', 'grab', 'hold', 'release', 'squeeze',
     'twist', 'turn', 'spin', 'roll', 'flip', 'slide', 'glide', 'bounce', 'shake', 'wave',
