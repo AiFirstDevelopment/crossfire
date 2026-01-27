@@ -590,7 +590,7 @@ function validateWordInput(input: HTMLInputElement): boolean {
 
   // Check if valid categorized word (we only allow words with known categories)
   if (!validWords.has(word)) {
-    setError('Try a more common word');
+    setError('Not in puzzle dictionary (try a noun)');
     return false;
   }
 

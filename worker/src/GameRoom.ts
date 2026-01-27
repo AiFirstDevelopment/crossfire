@@ -266,7 +266,7 @@ export class GameRoom {
 
       // Check if word is valid (in dictionary and has a category)
       if (!validWords.has(normalized)) {
-        return `"${word}" is not supported. Try a more common word.`;
+        return `"${word}" is not in the puzzle dictionary. Try a noun.`;
       }
 
       seen.add(normalized);
