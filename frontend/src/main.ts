@@ -295,7 +295,7 @@ function showBotResults(state: BotGameState) {
     resultTitle.textContent = 'You Win!';
     recordWin();
   } else {
-    resultTitle.textContent = 'You Lose';
+    resultTitle.textContent = 'Your opponent Wins!';
   }
 
   let details = `<p><strong>Reason:</strong> ${formatWinReason(result.winReason)}</p>`;
