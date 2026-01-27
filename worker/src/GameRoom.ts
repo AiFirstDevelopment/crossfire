@@ -6,11 +6,17 @@ import type {
   GameResult,
   HintResponse,
 } from './types';
-import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells, getFirstLetters } from './crossword';
+import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells } from './crossword';
 import englishWords from 'an-array-of-english-words';
+import { hasCategory, getCategorizedWords } from './categories';
 
-// Create a Set for O(1) word lookup
-const validWords = new Set(englishWords.map(w => w.toUpperCase()));
+// Create a Set for O(1) word lookup - only words with categories are valid
+const categorizedWords = getCategorizedWords();
+const validWords = new Set(
+  englishWords
+    .map(w => w.toUpperCase())
+    .filter(w => categorizedWords.has(w.toLowerCase()))
+);
 
 export interface Env {
   GAME_ROOM: DurableObjectNamespace;
@@ -258,9 +264,9 @@ export class GameRoom {
         return `Duplicate word: ${word}`;
       }
 
-      // Check if word is in the English dictionary
+      // Check if word is valid (in dictionary and has a category)
       if (!validWords.has(normalized)) {
-        return `"${word}" is not a valid English word`;
+        return `"${word}" is not supported. Try a more common word.`;
       }
 
       seen.add(normalized);
@@ -320,7 +326,7 @@ export class GameRoom {
     this.gameState.phase = 'solving';
     this.gameState.phaseStartedAt = Date.now();
 
-    // Send each player their opponent's grid (letters blanked)
+    // Send each player their opponent's grid (letters blanked, with category hints)
     const playerIds = Object.keys(this.gameState.players);
 
     for (const playerId of playerIds) {
@@ -334,19 +340,10 @@ export class GameRoom {
       const opponentGrid = this.gameState.grids[opponentId];
       const clientGrid = gridToClientGrid(opponentGrid);
 
-      // Get first letters as hints
-      const firstLetters = getFirstLetters(opponentGrid);
-
-      // Pre-fill first letters in player's progress
-      const progress = this.gameState.progress[playerId];
-      for (const [key, letter] of Object.entries(firstLetters)) {
-        progress.filledCells[key] = letter;
-      }
-
+      // No pre-filled cells - player starts with empty grid, only has category hints
       this.sendTo(player.websocket, {
         type: 'grid-ready',
         grid: clientGrid,
-        firstLetters,
         timeoutMs: 300000, // 5 minutes
       });
     }

@@ -24,6 +24,10 @@ export class CrosswordUI {
     this.container.innerHTML = '';
     this.cellElements.clear();
 
+    // Create layout container
+    const layout = document.createElement('div');
+    layout.className = 'crossword-layout';
+
     const table = document.createElement('div');
     table.className = 'crossword-grid';
     table.style.display = 'grid';
@@ -48,7 +52,46 @@ export class CrosswordUI {
       }
     }
 
-    this.container.appendChild(table);
+    layout.appendChild(table);
+
+    // Create clues section with category hints
+    const cluesContainer = document.createElement('div');
+    cluesContainer.className = 'crossword-clues';
+
+    // Sort words by direction then index
+    const acrossWords = grid.words.filter(w => w.direction === 'across').sort((a, b) => a.index - b.index);
+    const downWords = grid.words.filter(w => w.direction === 'down').sort((a, b) => a.index - b.index);
+
+    if (acrossWords.length > 0) {
+      const acrossSection = document.createElement('div');
+      acrossSection.className = 'clue-section';
+      acrossSection.innerHTML = '<h4>Across</h4>';
+      const acrossList = document.createElement('ul');
+      for (const word of acrossWords) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span> <span class="clue-length">(${word.length})</span>`;
+        acrossList.appendChild(li);
+      }
+      acrossSection.appendChild(acrossList);
+      cluesContainer.appendChild(acrossSection);
+    }
+
+    if (downWords.length > 0) {
+      const downSection = document.createElement('div');
+      downSection.className = 'clue-section';
+      downSection.innerHTML = '<h4>Down</h4>';
+      const downList = document.createElement('ul');
+      for (const word of downWords) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span> <span class="clue-length">(${word.length})</span>`;
+        downList.appendChild(li);
+      }
+      downSection.appendChild(downList);
+      cluesContainer.appendChild(downSection);
+    }
+
+    layout.appendChild(cluesContainer);
+    this.container.appendChild(layout);
   }
 
   private createCell(row: number, col: number, cell: ClientCell | null, wordNumber?: number): HTMLElement {

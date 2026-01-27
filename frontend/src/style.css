@@ -491,6 +491,63 @@ input[type="text"]:focus {
   color: #f87171;
 }
 
+/* Crossword Layout with Clues */
+.crossword-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.crossword-clues {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 600px;
+  text-align: left;
+}
+
+.clue-section {
+  min-width: 200px;
+}
+
+.clue-section h4 {
+  margin: 0 0 0.5rem 0;
+  color: #646cff;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.clue-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.clue-section li {
+  padding: 0.25rem 0;
+  font-size: 0.95em;
+}
+
+.clue-number {
+  font-weight: bold;
+  color: #888;
+  min-width: 1.5em;
+  display: inline-block;
+}
+
+.clue-category {
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.clue-length {
+  color: #666;
+  font-size: 0.85em;
+}
+
 /* Word List */
 .word-list {
   display: flex;
@@ -682,6 +739,18 @@ input[type="text"]:focus {
 .light-mode .crossword-cell.incorrect {
   background: #f4d4d4;
   color: #dc2626;
+}
+
+.light-mode .clue-category {
+  color: #213547;
+}
+
+.light-mode .clue-number {
+  color: #666;
+}
+
+.light-mode .clue-length {
+  color: #999;
 }
 
 .light-mode #result-details {

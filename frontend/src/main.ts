@@ -4,10 +4,17 @@ import { CrosswordUI } from './crossword-ui';
 import { BotGame, BotGameState } from './bot';
 import englishWords from 'an-array-of-english-words';
 import humanId from 'human-id';
+import { getCategorizedWords } from '../../shared/categories';
 
-// Create a Set for O(1) word lookup and word list for bot
-const validWords = new Set(englishWords.map(w => w.toUpperCase()));
-const wordList = englishWords;
+// Create a Set for O(1) word lookup - only words with categories are valid
+const categorizedWords = getCategorizedWords();
+const validWords = new Set(
+  englishWords
+    .map(w => w.toUpperCase())
+    .filter(w => categorizedWords.has(w.toLowerCase()))
+);
+// Word list for bot - only categorized words
+const wordList = englishWords.filter(w => categorizedWords.has(w.toLowerCase()));
 
 // Elements
 const screens = {
@@ -581,9 +588,9 @@ function validateWordInput(input: HTMLInputElement): boolean {
     return false;
   }
 
-  // Check if valid English word
+  // Check if valid categorized word (we only allow words with known categories)
   if (!validWords.has(word)) {
-    setError('Not a valid word');
+    setError('Try a more common word');
     return false;
   }
 

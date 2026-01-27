@@ -1,5 +1,6 @@
 import clg from 'crossword-layout-generator';
 import type { CrosswordGrid, GridCell, ClientGrid, ClientCell, ClientWordPlacement, WordPlacement } from './types';
+import { getWordCategory } from './categories';
 
 interface LayoutInput {
   clue: string;
@@ -249,7 +250,8 @@ export function gridToClientGrid(grid: CrosswordGrid): ClientGrid {
     startCol: word.startCol,
     direction: word.direction,
     index: word.index,
-    length: word.word.length
+    length: word.word.length,
+    category: getWordCategory(word.word) || 'unknown'
   }));
 
   return {

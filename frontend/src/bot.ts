@@ -1,6 +1,7 @@
 import humanId from 'human-id';
 import clg from 'crossword-layout-generator';
 import type { ClientGrid, ClientCell, ClientWordPlacement, GameResult } from './types';
+import { getWordCategory } from '../../shared/categories';
 
 interface LayoutInput {
   clue: string;
@@ -53,7 +54,6 @@ export interface BotGameState {
   // Player's grid (bot's words for player to solve)
   playerGrid: ClientGrid | null;
   playerGridFull: FullGrid | null;
-  playerFirstLetters: Record<string, string>;
   playerFilledCells: Record<string, string>;
   playerCellCorrectness: Record<string, boolean>;
   // Bot's grid (player's words for bot to solve)
@@ -124,7 +124,6 @@ export class BotGame {
       playerName: 'You',
       playerGrid: null,
       playerGridFull: null,
-      playerFirstLetters: {},
       playerFilledCells: {},
       playerCellCorrectness: {},
       botGrid: null,
@@ -188,27 +187,19 @@ export class BotGame {
       }
       this.state.playerGridFull = retryResult.full;
       this.state.playerGrid = retryResult.client;
-      this.state.playerFirstLetters = retryResult.firstLetters;
     } else {
       this.state.playerGridFull = playerGridResult.full;
       this.state.playerGrid = playerGridResult.client;
-      this.state.playerFirstLetters = playerGridResult.firstLetters;
     }
 
     this.state.botGrid = botGridResult.full;
 
-    // Pre-fill first letters for player
-    const filledCells = { ...this.state.playerFirstLetters };
-    const cellCorrectness: Record<string, boolean> = {};
-    for (const key of Object.keys(filledCells)) {
-      cellCorrectness[key] = true;
-    }
-
+    // No pre-filled cells - player starts with empty grid, only has category hints
     this.updateState({
       phase: 'solving',
       phaseStartedAt: Date.now(),
-      playerFilledCells: filledCells,
-      playerCellCorrectness: cellCorrectness,
+      playerFilledCells: {},
+      playerCellCorrectness: {},
     });
 
     this.playerStartTime = Date.now();
@@ -264,7 +255,7 @@ export class BotGame {
     return shuffled.slice(0, 4).map(w => w.toUpperCase());
   }
 
-  private generateGrid(words: string[]): { full: FullGrid; client: ClientGrid; firstLetters: Record<string, string> } | null {
+  private generateGrid(words: string[]): { full: FullGrid; client: ClientGrid } | null {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -286,7 +277,7 @@ export class BotGame {
     return null;
   }
 
-  private buildGrids(layout: LayoutOutput, placedWords: LayoutResult[]): { full: FullGrid; client: ClientGrid; firstLetters: Record<string, string> } {
+  private buildGrids(layout: LayoutOutput, placedWords: LayoutResult[]): { full: FullGrid; client: ClientGrid } {
     const cells: (GridCell | null)[][] = [];
     for (let row = 0; row < layout.rows; row++) {
       cells[row] = [];
@@ -338,7 +329,7 @@ export class BotGame {
       words: placements
     };
 
-    // Create client grid (no letters)
+    // Create client grid (no letters, but with category hints)
     const clientCells: (ClientCell | null)[][] = cells.map(row =>
       row.map(cell => {
         if (cell === null) return null;
@@ -354,7 +345,8 @@ export class BotGame {
       startCol: word.startCol,
       direction: word.direction,
       index: word.index,
-      length: word.word.length
+      length: word.word.length,
+      category: getWordCategory(word.word) || 'unknown'
     }));
 
     const clientGrid: ClientGrid = {
@@ -364,17 +356,7 @@ export class BotGame {
       words: clientWords
     };
 
-    // Get first letters
-    const firstLetters: Record<string, string> = {};
-    for (const word of placements) {
-      const key = `${word.startRow},${word.startCol}`;
-      const cell = cells[word.startRow]?.[word.startCol];
-      if (cell) {
-        firstLetters[key] = cell.letter;
-      }
-    }
-
-    return { full: fullGrid, client: clientGrid, firstLetters };
+    return { full: fullGrid, client: clientGrid };
   }
 
   private startBotSolving() {
@@ -382,19 +364,13 @@ export class BotGame {
 
     const grid = this.state.botGrid;
 
-    // Get all cells the bot needs to fill (excluding first letters which are pre-filled)
+    // Get all cells the bot needs to fill
     const cellsToFill: { row: number; col: number; letter: string }[] = [];
-    const firstLetterKeys = new Set<string>();
-
-    for (const word of grid.words) {
-      firstLetterKeys.add(`${word.startRow},${word.startCol}`);
-    }
 
     for (let row = 0; row < grid.height; row++) {
       for (let col = 0; col < grid.width; col++) {
         const cell = grid.cells[row][col];
-        const key = `${row},${col}`;
-        if (cell && !firstLetterKeys.has(key)) {
+        if (cell) {
           cellsToFill.push({ row, col, letter: cell.letter });
         }
       }
@@ -403,16 +379,8 @@ export class BotGame {
     // Shuffle the order bot fills cells
     const shuffledCells = this.rng.shuffle(cellsToFill);
 
-    // Pre-fill first letters for bot
-    const botFilled: Record<string, string> = {};
-    for (const word of grid.words) {
-      const key = `${word.startRow},${word.startCol}`;
-      const cell = grid.cells[word.startRow]?.[word.startCol];
-      if (cell) {
-        botFilled[key] = cell.letter;
-      }
-    }
-    this.state.botFilledCells = botFilled;
+    // Bot starts with empty grid
+    this.state.botFilledCells = {};
 
     let cellIndex = 0;
     const totalCells = this.countTotalCells(grid);
