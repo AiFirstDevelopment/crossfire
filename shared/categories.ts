@@ -4521,7 +4521,6 @@ const categoryWords: Record<string, string[]> = {
     "roof",
     "gutter",
   ],
-  ß,
 };
 // Build reverse lookup map: word -> category
 const wordToCategory: Map<string, string> = new Map();
