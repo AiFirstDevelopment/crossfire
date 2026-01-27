@@ -15,12 +15,12 @@ afterEach(() => {
 });
 
 // Mock WebSocket
-global.WebSocket = vi.fn() as any;
+(globalThis as any).WebSocket = vi.fn() as any;
 
 // Mock localStorage if not available
-if (typeof global.localStorage === 'undefined') {
+if (typeof (globalThis as any).localStorage === 'undefined') {
   const store: Record<string, string> = {};
-  global.localStorage = {
+  (globalThis as any).localStorage = {
     getItem: (key: string) => store[key] || null,
     setItem: (key: string, value: string) => {
       store[key] = value.toString();

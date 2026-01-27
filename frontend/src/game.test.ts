@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameClient } from './game';
-import { createMockGrid } from './test-setup';
+
 
 describe('GameClient', () => {
   let gameClient: GameClient;
@@ -63,7 +63,7 @@ describe('GameClient', () => {
 
       // Trigger another state change by finding a match
       // (This would normally happen through WebSocket, but we can test the unsubscribe)
-      const initialCallCount = handler.mock.calls.length;
+
 
       // If properly unsubscribed, handler should not be called
       // We'll test this indirectly through the getState call

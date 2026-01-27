@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { screen } from '@testing-library/dom';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 
 // Note: These tests focus on DOM queries and screen interactions
 // Full main.ts testing would require significant refactoring to make it more testable

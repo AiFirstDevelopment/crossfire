@@ -211,7 +211,7 @@ describe('BotGame', () => {
       
       if (result.success) {
         const state = botGame.getState();
-        state.playerGrid?.words.forEach((word, idx) => {
+        state.playerGrid?.words.forEach((word) => {
           expect(word.index).toBeGreaterThan(0);
           expect(word.direction).toMatch(/across|down/);
           expect(word.length).toBeGreaterThan(0);

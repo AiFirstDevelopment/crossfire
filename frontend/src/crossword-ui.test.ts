@@ -45,8 +45,8 @@ describe('CrosswordUI - DOM Tests', () => {
 
       const gridDiv = container.querySelector('.crossword-grid');
       expect(gridDiv).toBeTruthy();
-      expect(gridDiv?.style.gridTemplateColumns).toBe(`repeat(${grid.width}, 44px)`);
-      expect(gridDiv?.style.gridTemplateRows).toBe(`repeat(${grid.height}, 44px)`);
+      expect((gridDiv as HTMLElement)?.style.gridTemplateColumns).toBe(`repeat(${grid.width}, 44px)`);
+      expect((gridDiv as HTMLElement)?.style.gridTemplateRows).toBe(`repeat(${grid.height}, 44px)`);
     });
 
     it('should render black cells for null positions', () => {
@@ -455,7 +455,7 @@ describe('CrosswordUI - DOM Tests', () => {
         onHintRequest: vi.fn(),
       });
 
-      const firstRenderChildCount = container.children.length;
+
 
       // Create new UI with same container (should replace content)
       ui = new CrosswordUI(container, {
@@ -489,8 +489,8 @@ describe('CrosswordUI - DOM Tests', () => {
       // Check if cells are created with proper class
       cells.forEach(cell => {
         expect(cell.classList.contains('crossword-cell')).toBe(true);
-        expect(cell.dataset.row).toBeTruthy();
-        expect(cell.dataset.col).toBeTruthy();
+        expect((cell as HTMLElement).dataset.row).toBeTruthy();
+        expect((cell as HTMLElement).dataset.col).toBeTruthy();
       });
     });
 
