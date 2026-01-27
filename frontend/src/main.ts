@@ -50,6 +50,7 @@ const errorToast = document.getElementById('error-toast')!;
 const hintToast = document.getElementById('hint-toast')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
+const hintsRemainingEl = document.getElementById('hints-remaining')!;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 const opponentNameDisplay = document.getElementById('opponent-name-display')!;
 const opponentLevelEl = document.getElementById('opponent-level')!;
@@ -58,6 +59,7 @@ const submitOpponentLevel = document.getElementById('submit-opponent-level')!;
 const submitOpponentInfo = document.getElementById('submit-opponent-info')!;
 const playerLevelEl = document.getElementById('player-level')!;
 const playerWinsEl = document.getElementById('player-wins')!;
+const winsLabelEl = document.getElementById('wins-label')!;
 const winsToNextEl = document.getElementById('wins-to-next')!;
 const playerIdEl = document.getElementById('player-id')!;
 const playerIdDisplay = document.getElementById('player-id-display')!;
@@ -82,7 +84,7 @@ function init() {
   game = new GameClient();
 
   game.onStateChange(handleStateChange);
-  game.onHintUsed(showHintPenalty);
+  game.onHintUsed(showHintUsed);
   game.onMatchmakingTimeout(startBotGame);
 
   findMatchBtn.addEventListener('click', () => {
@@ -118,7 +120,7 @@ function init() {
     input.addEventListener('input', () => {
       // Clear invalid state when user starts typing again
       input.classList.remove('invalid');
-      const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+      const errorEl = input.closest('.word-input-wrapper')?.querySelector('.word-error') as HTMLElement;
       if (errorEl) errorEl.textContent = '';
       updateSubmitButton();
     });
@@ -183,7 +185,7 @@ function startBotGame() {
   botGameActive = true;
   botGame = new BotGame(validWords, wordList);
   botGame.onStateChange(handleBotStateChange);
-  botGame.onHintUsed(showHintPenalty);
+  botGame.onHintUsed(showHintUsed);
 
   // Update active games count (adds 1 for bot game)
   updateActiveGames(game.getState().activeGames);
@@ -207,7 +209,7 @@ function handleBotStateChange(state: BotGameState) {
         wordInputs.forEach(input => {
           input.value = '';
           input.classList.remove('invalid');
-          const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+          const errorEl = input.closest('.word-input-wrapper')?.querySelector('.word-error') as HTMLElement;
           if (errorEl) errorEl.textContent = '';
         });
         wordForm.querySelector('button')!.disabled = true;
@@ -223,7 +225,8 @@ function handleBotStateChange(state: BotGameState) {
       opponentNameDisplay.textContent = state.botName;
       opponentLevelEl.textContent = '1';
       if (state.playerGrid && !crosswordUI) {
-        accumulatedPenalty = 0;
+        // Reset hints display for bot mode
+        hintsRemainingEl.textContent = String(state.maxHints - state.hintsUsed);
         penaltyDisplay.classList.add('hidden');
 
         crosswordUI = new CrosswordUI(crosswordContainer, {
@@ -347,7 +350,7 @@ function handleStateChange(state: GameState) {
         wordInputs.forEach((input, i) => {
           input.value = lastSubmittedWords[i];
           input.classList.remove('invalid');
-          const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+          const errorEl = input.closest('.word-input-wrapper')?.querySelector('.word-error') as HTMLElement;
           if (errorEl) errorEl.textContent = '';
         });
         // Re-validate and update button state
@@ -360,7 +363,7 @@ function handleStateChange(state: GameState) {
         wordInputs.forEach(input => {
           input.value = '';
           input.classList.remove('invalid');
-          const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+          const errorEl = input.closest('.word-input-wrapper')?.querySelector('.word-error') as HTMLElement;
           if (errorEl) errorEl.textContent = '';
         });
         wordForm.querySelector('button')!.disabled = true;
@@ -488,17 +491,31 @@ function showErrorWithSuggestions(_message: string, suggestions?: { wordIndex: n
   }
 }
 
-function showHintPenalty(penaltyMs: number) {
-  const seconds = Math.round(penaltyMs / 1000);
-  hintToast.textContent = `+${seconds}s penalty`;
-  hintToast.classList.remove('hidden');
-  setTimeout(() => hintToast.classList.add('hidden'), 1500);
+function showHintUsed(hintsRemainingOrPenaltyMs: number) {
+  if (isBotMode) {
+    // Bot mode: parameter is hints remaining
+    const remaining = hintsRemainingOrPenaltyMs;
+    hintsRemainingEl.textContent = String(remaining);
+    if (remaining === 0) {
+      hintToast.textContent = 'No hints left';
+    } else {
+      hintToast.textContent = `${remaining} hint${remaining === 1 ? '' : 's'} left`;
+    }
+    hintToast.classList.remove('hidden');
+    setTimeout(() => hintToast.classList.add('hidden'), 1500);
+  } else {
+    // Multiplayer mode: parameter is penalty in ms
+    const seconds = Math.round(hintsRemainingOrPenaltyMs / 1000);
+    hintToast.textContent = `+${seconds}s penalty`;
+    hintToast.classList.remove('hidden');
+    setTimeout(() => hintToast.classList.add('hidden'), 1500);
 
-  // Update accumulated penalty display
-  accumulatedPenalty += penaltyMs;
-  const totalSeconds = Math.round(accumulatedPenalty / 1000);
-  penaltyTime.textContent = String(totalSeconds);
-  penaltyDisplay.classList.remove('hidden');
+    // Update accumulated penalty display
+    accumulatedPenalty += hintsRemainingOrPenaltyMs;
+    const totalSeconds = Math.round(accumulatedPenalty / 1000);
+    penaltyTime.textContent = String(totalSeconds);
+    penaltyDisplay.classList.remove('hidden');
+  }
 }
 
 function startTimer(durationMs: number, startedAt: number, element: HTMLElement) {
@@ -628,7 +645,7 @@ function formatTime(ms: number): string {
 
 function validateWordInput(input: HTMLInputElement): boolean {
   const word = input.value.trim().toUpperCase();
-  const errorEl = input.parentElement?.querySelector('.word-error') as HTMLElement;
+  const errorEl = input.closest('.word-input-wrapper')?.querySelector('.word-error') as HTMLElement;
 
   const setError = (msg: string) => {
     input.classList.add('invalid');
@@ -813,6 +830,7 @@ function displayStats(wins: number): void {
 
   playerLevelEl.textContent = String(level);
   playerWinsEl.textContent = String(wins);
+  winsLabelEl.textContent = wins === 1 ? 'win' : 'wins';
   winsToNextEl.textContent = String(toNext);
 }
 

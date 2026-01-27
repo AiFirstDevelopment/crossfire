@@ -70,6 +70,16 @@ export class Matchmaking {
       });
     }
 
+    // Handle bot game ended notification from frontend (bot games are client-side only)
+    if (url.pathname === '/bot-game-ended' && request.method === 'POST') {
+      this.totalGamesPlayed++;
+      await this.state.storage.put('totalGamesPlayed', this.totalGamesPlayed);
+      this.broadcastStats();
+      return new Response(JSON.stringify({ totalGamesPlayed: this.totalGamesPlayed }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Return current stats
     return new Response(
       JSON.stringify({
@@ -94,6 +104,16 @@ export class Matchmaking {
 
     // Track this connection
     this.connectedSockets.add(server);
+
+    // Always read latest stats from storage to ensure persistence works
+    const storedTotal = await this.state.storage.get<number>('totalGamesPlayed');
+    if (storedTotal !== undefined && storedTotal > this.totalGamesPlayed) {
+      this.totalGamesPlayed = storedTotal;
+    }
+    const storedActive = await this.state.storage.get<number>('activeGames');
+    if (storedActive !== undefined) {
+      this.activeGames = storedActive;
+    }
 
     // Send welcome with current stats
     this.sendTo(server, {

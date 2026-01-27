@@ -340,11 +340,27 @@ export class GameRoom {
       const opponentGrid = this.gameState.grids[opponentId];
       const clientGrid = gridToClientGrid(opponentGrid);
 
-      // No pre-filled cells - player starts with empty grid, only has category hints
+      // Pre-fill first letter and every 4th letter (positions 0, 4, 8, etc.) of each word
+      const preFilledCells: Record<string, string> = {};
+      for (const wordPlacement of opponentGrid.words) {
+        const rowDelta = wordPlacement.direction === 'down' ? 1 : 0;
+        const colDelta = wordPlacement.direction === 'across' ? 1 : 0;
+
+        for (let i = 0; i < wordPlacement.word.length; i++) {
+          if (i % 4 === 0) {
+            const row = wordPlacement.startRow + i * rowDelta;
+            const col = wordPlacement.startCol + i * colDelta;
+            const key = `${row},${col}`;
+            preFilledCells[key] = wordPlacement.word[i];
+          }
+        }
+      }
+
       this.sendTo(player.websocket, {
         type: 'grid-ready',
         grid: clientGrid,
         timeoutMs: 300000, // 5 minutes
+        preFilledCells,
       });
     }
 

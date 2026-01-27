@@ -35,15 +35,15 @@ body {
 }
 
 .total-games {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.total-games:empty {
-  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  z-index: 100;
 }
 
 header {
@@ -108,7 +108,7 @@ h1 {
 }
 
 .tagline {
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
 }
 
@@ -174,7 +174,7 @@ input[type="text"]:focus {
 /* Menu Screen */
 #status-text {
   margin: 1rem 0;
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .active-games {
@@ -200,7 +200,7 @@ input[type="text"]:focus {
 }
 
 .player-id-label {
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .player-id {
@@ -269,7 +269,7 @@ input[type="text"]:focus {
 }
 
 .wins-info {
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 #player-wins {
@@ -635,7 +635,7 @@ input[type="text"]:focus {
 
 .word-list h4 {
   margin: 0 0 0.5rem 0;
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .word-list ul {
@@ -655,7 +655,7 @@ input[type="text"]:focus {
 }
 
 .hint-info {
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9em;
   margin-top: 1rem;
 }
@@ -702,7 +702,7 @@ input[type="text"]:focus {
 }
 
 .rematch-status {
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 1rem;
   font-style: italic;
 }

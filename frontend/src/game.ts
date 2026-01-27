@@ -276,14 +276,18 @@ export class GameClient {
         break;
 
       case 'grid-ready':
-        // No pre-filled cells - player starts with empty grid, only has category hints
+        // Pre-fill first letter and every 4th letter from server
+        const preFilledCorrectness: Record<string, boolean> = {};
+        for (const cellKey of Object.keys(message.preFilledCells)) {
+          preFilledCorrectness[cellKey] = true;
+        }
         this.updateState({
           phase: 'solving',
           grid: message.grid,
           solvingTimeoutMs: message.timeoutMs,
           phaseStartedAt: Date.now(),
-          filledCells: {},
-          cellCorrectness: {},
+          filledCells: message.preFilledCells,
+          cellCorrectness: preFilledCorrectness,
           error: null,
         });
         break;

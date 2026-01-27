@@ -47,6 +47,15 @@ export default {
       return matchmaking.fetch(request);
     }
 
+    // Bot game ended notification (bot games are client-side only)
+    if (url.pathname === '/api/bot-game-ended' && request.method === 'POST') {
+      const id = env.MATCHMAKING.idFromName('global');
+      const matchmaking = env.MATCHMAKING.get(id);
+      const response = await matchmaking.fetch(new Request('https://matchmaking/bot-game-ended', { method: 'POST' }));
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
     // Create or join a room
     if (url.pathname === '/api/room/join') {
       const roomId = (url.searchParams.get('roomId') || 'default-room').toLowerCase();

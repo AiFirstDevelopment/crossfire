@@ -64,12 +64,15 @@ export interface BotGameState {
   phaseStartedAt: number;
   submissionTimeoutMs: number;
   solvingTimeoutMs: number;
+  // Hints
+  hintsUsed: number;
+  maxHints: number;
   // Results
   result: GameResult | null;
 }
 
 type StateChangeHandler = (state: BotGameState) => void;
-type HintUsedHandler = (penaltyMs: number) => void;
+type HintUsedHandler = (hintsRemaining: number) => void;
 
 // Seeded random number generator for deterministic behavior
 class SeededRandom {
@@ -105,7 +108,6 @@ export class BotGame {
   private rng: SeededRandom;
   private wordList: string[];
   private botSolveInterval: number | null = null;
-  private playerPenaltyMs: number = 0;
   private playerStartTime: number = 0;
 
   constructor(_validWords: Set<string>, wordList: string[]) {
@@ -132,6 +134,8 @@ export class BotGame {
       phaseStartedAt: Date.now(),
       submissionTimeoutMs: 60000,
       solvingTimeoutMs: 300000,
+      hintsUsed: 0,
+      maxHints: 4,
       result: null,
     };
   }
@@ -194,12 +198,34 @@ export class BotGame {
 
     this.state.botGrid = botGridResult.grid!.full;
 
-    // No pre-filled cells - player starts with empty grid, only has category hints
+    // Pre-fill first letter and every 4th letter (positions 0, 4, 8, etc.) of each word
+    const preFilled: Record<string, string> = {};
+    const preFilledCorrectness: Record<string, boolean> = {};
+
+    if (this.state.playerGridFull) {
+      for (const wordPlacement of this.state.playerGridFull.words) {
+        const rowDelta = wordPlacement.direction === 'down' ? 1 : 0;
+        const colDelta = wordPlacement.direction === 'across' ? 1 : 0;
+
+        for (let i = 0; i < wordPlacement.word.length; i++) {
+          // Pre-fill positions 0, 4, 8, 12... (first and every 4th letter)
+          if (i % 4 === 0) {
+            const row = wordPlacement.startRow + i * rowDelta;
+            const col = wordPlacement.startCol + i * colDelta;
+            const key = `${row},${col}`;
+            const letter = wordPlacement.word[i];
+            preFilled[key] = letter;
+            preFilledCorrectness[key] = true;
+          }
+        }
+      }
+    }
+
     this.updateState({
       phase: 'solving',
       phaseStartedAt: Date.now(),
-      playerFilledCells: {},
-      playerCellCorrectness: {},
+      playerFilledCells: preFilled,
+      playerCellCorrectness: preFilledCorrectness,
     });
 
     this.playerStartTime = Date.now();
@@ -500,7 +526,7 @@ export class BotGame {
 
       // Random chance to just "think" without making progress (30% chance)
       if (this.rng.next() < 0.3) {
-        const thinkDelay = this.rng.nextInt(3000, 8000);
+        const thinkDelay = this.rng.nextInt(6000, 16000);
         this.botSolveInterval = window.setTimeout(solveNextBatch, thinkDelay);
         return;
       }
@@ -526,18 +552,18 @@ export class BotGame {
         return;
       }
 
-      // Schedule next batch with random delay (3x slower: 2400-7500ms base)
-      let delay = this.rng.nextInt(2400, 7500);
+      // Schedule next batch with random delay (doubled: 4800-15000ms base)
+      let delay = this.rng.nextInt(4800, 15000);
       // 20% chance of extra long pause (simulating getting stuck)
       if (this.rng.next() < 0.2) {
-        delay += this.rng.nextInt(4000, 10000);
+        delay += this.rng.nextInt(8000, 20000);
       }
 
       this.botSolveInterval = window.setTimeout(solveNextBatch, delay);
     };
 
     // Start after longer initial delay (bot "studying puzzle")
-    this.botSolveInterval = window.setTimeout(solveNextBatch, this.rng.nextInt(5000, 10000));
+    this.botSolveInterval = window.setTimeout(solveNextBatch, this.rng.nextInt(10000, 20000));
   }
 
   private countTotalCells(grid: FullGrid): number {
@@ -588,6 +614,9 @@ export class BotGame {
   requestHint(row: number, col: number) {
     if (this.state.phase !== 'solving' || !this.state.playerGridFull) return;
 
+    // Check if hints are available
+    if (this.state.hintsUsed >= this.state.maxHints) return;
+
     const cell = this.state.playerGridFull.cells[row]?.[col];
     if (!cell) return;
 
@@ -596,7 +625,8 @@ export class BotGame {
     // If already correct, no hint needed
     if (this.state.playerCellCorrectness[key] === true) return;
 
-    // Reveal the letter
+    // Reveal the letter and increment hints used
+    const newHintsUsed = this.state.hintsUsed + 1;
     this.updateState({
       playerFilledCells: {
         ...this.state.playerFilledCells,
@@ -606,12 +636,12 @@ export class BotGame {
         ...this.state.playerCellCorrectness,
         [key]: true,
       },
+      hintsUsed: newHintsUsed,
     });
 
-    // Add penalty
-    this.playerPenaltyMs += 15000;
+    // Notify handler of remaining hints
     if (this.hintHandler) {
-      this.hintHandler(15000);
+      this.hintHandler(this.state.maxHints - newHintsUsed);
     }
 
     // Check if player completed
@@ -632,7 +662,16 @@ export class BotGame {
       this.botSolveInterval = null;
     }
 
-    const playerTime = Date.now() - this.playerStartTime + this.playerPenaltyMs;
+    // Notify server that a bot game ended (for total games counter)
+    const isProduction = window.location.hostname !== 'localhost';
+    const apiUrl = isProduction
+      ? 'https://crossfire-worker.joelstevick.workers.dev'
+      : 'http://localhost:8787';
+    fetch(`${apiUrl}/api/bot-game-ended`, { method: 'POST' }).catch(() => {
+      // Ignore errors - this is just for stats
+    });
+
+    const playerTime = Date.now() - this.playerStartTime;
 
     // Calculate progress
     let playerProgress = 0;
@@ -672,7 +711,6 @@ export class BotGame {
   playAgain(): boolean {
     // Reset state for new game
     this.state = this.createInitialState();
-    this.playerPenaltyMs = 0;
     this.playerStartTime = 0;
     this.stateHandlers.forEach(h => h(this.state));
     return true;

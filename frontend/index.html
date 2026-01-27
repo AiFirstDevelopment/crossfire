@@ -31,7 +31,7 @@
         </div>
         <div id="player-stats" class="player-stats">
           <span class="level-badge">Level <span id="player-level">1</span></span>
-          <span class="wins-info"><span id="player-wins">0</span> wins • <span id="wins-to-next">1</span> to next level</span>
+          <span class="wins-info"><span id="player-wins">0</span> <span id="wins-label">wins</span> • <span id="wins-to-next">1</span> to next level</span>
         </div>
       </header>
 
@@ -125,7 +125,7 @@
 
         <div id="crossword-container"></div>
 
-        <p class="hint-info">Hold or right-click a cell for a hint (+15s penalty)</p>
+        <p class="hint-info">Hold or right-click a cell for a hint (<span id="hints-remaining">4</span> hints available)</p>
       </section>
 
       <!-- Results Screen -->
@@ -142,8 +142,8 @@
       <!-- Error display -->
       <div id="error-toast" class="error-toast hidden"></div>
 
-      <!-- Hint penalty notification -->
-      <div id="hint-toast" class="hint-toast hidden">+15s penalty</div>
+      <!-- Hint notification -->
+      <div id="hint-toast" class="hint-toast hidden">3 hints left</div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

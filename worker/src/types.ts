@@ -117,7 +117,7 @@ export type ServerMessage =
   | { type: 'game-start'; phase: 'submitting'; timeoutMs: number }
   | { type: 'words-accepted'; wordCount: number }
   | { type: 'opponent-submitted' }
-  | { type: 'grid-ready'; grid: ClientGrid; timeoutMs: number }
+  | { type: 'grid-ready'; grid: ClientGrid; timeoutMs: number; preFilledCells: Record<string, string> }
   | { type: 'cell-accepted'; row: number; col: number; correct: boolean }
   | { type: 'hint-response'; hint: HintResponse }
   | { type: 'opponent-progress'; completionPercent: number }
