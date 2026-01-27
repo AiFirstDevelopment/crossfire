@@ -129,9 +129,9 @@ function init() {
     lastSubmittedWords = Array.from(wordInputs).map(input => input.value.trim().toUpperCase());
 
     if (isBotMode && botGame) {
-      const success = botGame.submitWords(lastSubmittedWords);
-      if (!success) {
-        showError('Could not create puzzle from these words. Try different words.');
+      const result = botGame.submitWords(lastSubmittedWords);
+      if (!result.success) {
+        showError(result.error || 'Could not create puzzle from these words.');
         return;
       }
     } else {

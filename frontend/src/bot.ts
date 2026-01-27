@@ -166,33 +166,33 @@ export class BotGame {
   }
 
   // Player submits their words
-  submitWords(words: string[]): boolean {
-    if (this.state.phase !== 'submitting') return false;
+  submitWords(words: string[]): { success: boolean; error?: string } {
+    if (this.state.phase !== 'submitting') return { success: false, error: 'Not in submission phase' };
 
     // Generate bot's crossword from player's words
     const botGridResult = this.generateGrid(words);
-    if (!botGridResult) {
-      return false;
+    if (!botGridResult.success) {
+      return { success: false, error: botGridResult.error };
     }
 
     // Generate bot's words and create player's crossword
     const botWords = this.pickBotWords();
     const playerGridResult = this.generateGrid(botWords);
-    if (!playerGridResult) {
+    if (!playerGridResult.success) {
       // Try again with different words
       const retryWords = this.pickBotWords();
       const retryResult = this.generateGrid(retryWords);
-      if (!retryResult) {
-        return false;
+      if (!retryResult.success) {
+        return { success: false, error: 'Bot could not generate a puzzle' };
       }
-      this.state.playerGridFull = retryResult.full;
-      this.state.playerGrid = retryResult.client;
+      this.state.playerGridFull = retryResult.grid!.full;
+      this.state.playerGrid = retryResult.grid!.client;
     } else {
-      this.state.playerGridFull = playerGridResult.full;
-      this.state.playerGrid = playerGridResult.client;
+      this.state.playerGridFull = playerGridResult.grid!.full;
+      this.state.playerGrid = playerGridResult.grid!.client;
     }
 
-    this.state.botGrid = botGridResult.full;
+    this.state.botGrid = botGridResult.grid!.full;
 
     // No pre-filled cells - player starts with empty grid, only has category hints
     this.updateState({
@@ -207,7 +207,7 @@ export class BotGame {
     // Start bot solving in background
     this.startBotSolving();
 
-    return true;
+    return { success: true };
   }
 
   private pickBotWords(): string[] {
@@ -255,7 +255,7 @@ export class BotGame {
     return shuffled.slice(0, 4).map(w => w.toUpperCase());
   }
 
-  private generateGrid(words: string[]): { full: FullGrid; client: ClientGrid } | null {
+  private generateGrid(words: string[]): { success: true; grid: { full: FullGrid; client: ClientGrid } } | { success: false; error: string } {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -270,11 +270,88 @@ export class BotGame {
       const placedWords = layout.result.filter(r => r.orientation !== 'none');
 
       if (placedWords.length === 4) {
-        return this.buildGrids(layout, placedWords);
+        return { success: true, grid: this.buildGrids(layout, placedWords) };
       }
     }
 
-    return null;
+    // Analyze why and provide specific feedback
+    return { success: false, error: this.analyzeWordConnectivity(words) };
+  }
+
+  // Analyze why words can't form a crossword and give specific feedback
+  private analyzeWordConnectivity(words: string[]): string {
+    const normalized = words.map(w => w.toUpperCase());
+
+    // Get letters in a word as a Set
+    const getLetters = (word: string): Set<string> => new Set(word.split(''));
+
+    // Find shared letters between two words
+    const sharedLetters = (word1: string, word2: string): string[] => {
+      const letters1 = getLetters(word1);
+      const letters2 = getLetters(word2);
+      return [...letters1].filter(l => letters2.has(l));
+    };
+
+    // Build connectivity map
+    const connections: Record<number, number[]> = {};
+    const sharedWith: Record<string, string[]> = {};
+
+    for (let i = 0; i < normalized.length; i++) {
+      connections[i] = [];
+      for (let j = 0; j < normalized.length; j++) {
+        if (i !== j) {
+          const shared = sharedLetters(normalized[i], normalized[j]);
+          if (shared.length > 0) {
+            connections[i].push(j);
+            const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+            sharedWith[key] = shared;
+          }
+        }
+      }
+    }
+
+    // Find isolated words (no shared letters with any other word)
+    const isolated = normalized.filter((_, i) => connections[i].length === 0);
+
+    if (isolated.length > 0) {
+      const isolatedList = isolated.map(w => `"${w}"`).join(' and ');
+      const otherWords = normalized.filter(w => !isolated.includes(w));
+
+      if (otherWords.length > 0) {
+        const otherLetters = new Set<string>();
+        otherWords.forEach(w => getLetters(w).forEach(l => otherLetters.add(l)));
+        const commonLetters = [...otherLetters].slice(0, 5).join(', ');
+
+        return `${isolatedList} ${isolated.length === 1 ? "doesn't share any letters" : "don't share any letters"} with your other words.\n\nTry words containing: ${commonLetters}`;
+      }
+
+      return `Your words don't share enough letters with each other.\n\nTip: Choose words with common letters like E, A, R, S, T, or N.`;
+    }
+
+    // Words share letters but still can't connect
+    const pairInfo: { pair: string; shared: string[] }[] = [];
+    for (let i = 0; i < normalized.length; i++) {
+      for (let j = i + 1; j < normalized.length; j++) {
+        const key = `${i}-${j}`;
+        const shared = sharedWith[key] || [];
+        pairInfo.push({ pair: `"${normalized[i]}" & "${normalized[j]}"`, shared });
+      }
+    }
+
+    pairInfo.sort((a, b) => a.shared.length - b.shared.length);
+    const weakestPairs = pairInfo.filter(p => p.shared.length <= 1).slice(0, 2);
+
+    if (weakestPairs.length > 0) {
+      const weakInfo = weakestPairs.map(p =>
+        p.shared.length === 0
+          ? `${p.pair} share no letters`
+          : `${p.pair} only share "${p.shared.join(', ')}"`
+      ).join('\n');
+
+      return `${weakInfo}\n\nTip: Replace one word with something that shares more letters.`;
+    }
+
+    return `Your words share letters, but can't be arranged into a valid crossword.\n\nTip: Try replacing one word with a longer word.`;
   }
 
   private buildGrids(layout: LayoutOutput, placedWords: LayoutResult[]): { full: FullGrid; client: ClientGrid } {
