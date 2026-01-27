@@ -393,6 +393,22 @@ input[type="text"]:focus {
   gap: 1rem;
 }
 
+.opponent-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1em;
+}
+
+.opponent-level-badge {
+  background: rgba(100, 108, 255, 0.2);
+  color: #646cff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+
 .progress-display {
   display: flex;
   gap: 2rem;
@@ -621,6 +637,10 @@ input[type="text"]:focus {
 
 .light-mode .secondary-btn:hover {
   background-color: rgba(100, 108, 255, 0.1);
+}
+
+.light-mode .opponent-level-badge {
+  background: rgba(100, 108, 255, 0.15);
 }
 
 .light-mode input[type="text"] {

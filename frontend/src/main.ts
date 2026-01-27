@@ -43,6 +43,8 @@ const hintToast = document.getElementById('hint-toast')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
+const opponentNameDisplay = document.getElementById('opponent-name-display')!;
+const opponentLevelEl = document.getElementById('opponent-level')!;
 const playerLevelEl = document.getElementById('player-level')!;
 const playerWinsEl = document.getElementById('player-wins')!;
 const winsToNextEl = document.getElementById('wins-to-next')!;
@@ -139,6 +141,9 @@ function init() {
 
   leaveRoomBtn.addEventListener('click', () => {
     if (isBotMode && botGame) {
+      // Decrement active games count when leaving bot game
+      const currentCount = parseInt(activeGamesEl.textContent?.match(/\d+/)?.[0] || '1');
+      updateActiveGames(Math.max(0, currentCount - 1));
       botGame.destroy();
       botGame = null;
       isBotMode = false;
@@ -167,6 +172,10 @@ function startBotGame() {
   botGame.onStateChange(handleBotStateChange);
   botGame.onHintUsed(showHintPenalty);
 
+  // Increment active games count locally (bot game counts as active)
+  const currentCount = parseInt(activeGamesEl.textContent?.match(/\d+/)?.[0] || '0');
+  updateActiveGames(currentCount + 1);
+
   // Show submission screen immediately
   statusText.textContent = `Playing against ${botGame.getBotName()}`;
 }
@@ -194,6 +203,9 @@ function handleBotStateChange(state: BotGameState) {
     case 'solving':
       showScreen('solve');
       lastSubmittedWords = [];
+      // Show bot opponent info (bot level is always 1)
+      opponentNameDisplay.textContent = state.botName;
+      opponentLevelEl.textContent = '1';
       if (state.playerGrid && !crosswordUI) {
         accumulatedPenalty = 0;
         penaltyDisplay.classList.add('hidden');
@@ -334,6 +346,12 @@ function handleStateChange(state: GameState) {
     case 'solving':
       showScreen('solve');
       lastSubmittedWords = []; // Words accepted, clear stored words
+      // Show opponent info
+      if (state.opponentName) {
+        opponentNameDisplay.textContent = state.opponentName;
+        // Fetch opponent's level (use playerId extracted from name or stored)
+        fetchOpponentLevel(state.opponentName);
+      }
       if (state.grid && !crosswordUI) {
         // Reset penalty for new game
         accumulatedPenalty = 0;
@@ -675,6 +693,24 @@ async function fetchWins(): Promise<number> {
     console.error('Failed to fetch wins:', error);
   }
   return 0;
+}
+
+async function fetchOpponentLevel(opponentName: string): Promise<void> {
+  // The opponent name is used as the player ID (lowercase)
+  const opponentId = opponentName.toLowerCase();
+  try {
+    const response = await fetch(`${getApiUrl()}/api/player/${opponentId}/stats`);
+    if (response.ok) {
+      const data = await response.json();
+      const wins = data.wins || 0;
+      const level = calculateLevel(wins);
+      opponentLevelEl.textContent = String(level);
+    } else {
+      opponentLevelEl.textContent = '1';
+    }
+  } catch (error) {
+    opponentLevelEl.textContent = '1';
+  }
 }
 
 function displayStats(wins: number): void {
