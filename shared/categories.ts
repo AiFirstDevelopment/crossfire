@@ -365,6 +365,27 @@ const categoryWords: Record<string, string[]> = {
     'grow', 'shrink', 'expand', 'contract', 'increase', 'decrease', 'add', 'subtract', 'multiply',
     'divide', 'count', 'measure', 'weigh', 'balance', 'compare', 'match', 'sort', 'group',
     'separate', 'join', 'connect', 'attach', 'detach', 'remove', 'install', 'repair', 'fix',
+    // Eating/drinking actions
+    'bite', 'chew', 'swallow', 'sip', 'gulp', 'drink', 'eat', 'lick', 'suck', 'nibble', 'munch',
+    'chomp', 'gnaw', 'devour', 'gobble', 'feast', 'dine', 'snack', 'feed', 'starve', 'digest',
+    // Body actions
+    'breathe', 'inhale', 'exhale', 'cough', 'sneeze', 'yawn', 'hiccup', 'burp', 'sigh', 'gasp',
+    'pant', 'snore', 'sniff', 'blow', 'whistle', 'hum', 'sing', 'shout', 'yell', 'scream',
+    'whisper', 'mumble', 'mutter', 'groan', 'moan', 'laugh', 'giggle', 'chuckle', 'cry', 'weep',
+    'sob', 'smile', 'grin', 'frown', 'wink', 'blink', 'stare', 'glare', 'squint', 'nod', 'shrug',
+    // Hand/touch actions
+    'clap', 'snap', 'tap', 'pat', 'rub', 'scratch', 'pinch', 'poke', 'tickle', 'stroke', 'pet',
+    'hug', 'kiss', 'cuddle', 'caress', 'fondle', 'grip', 'grasp', 'clutch', 'toss', 'fling',
+    // Posture/movement
+    'sit', 'stand', 'kneel', 'crouch', 'squat', 'lie', 'lean', 'slouch', 'duck', 'dodge',
+    'stumble', 'trip', 'slip', 'skid', 'stride', 'march', 'stomp', 'tiptoe', 'sneak', 'creep',
+    'dash', 'sprint', 'jog', 'stroll', 'wander', 'roam', 'pace', 'shuffle', 'limp', 'hobble',
+    // Other common actions
+    'aim', 'shoot', 'fire', 'load', 'unload', 'pack', 'unpack', 'stuff', 'cram', 'jam',
+    'plug', 'unplug', 'charge', 'power', 'boot', 'reboot', 'log', 'click', 'tap', 'swipe',
+    'scroll', 'zoom', 'scan', 'browse', 'surf', 'post', 'share', 'tweet', 'text', 'call',
+    'dial', 'ring', 'buzz', 'beep', 'honk', 'knock', 'bang', 'slam', 'thud', 'thump',
+    'rattle', 'clatter', 'clang', 'chime', 'ding', 'ping', 'pop', 'crack', 'snap', 'click',
   ],
   size: [
     'big', 'small', 'large', 'tiny', 'huge', 'giant', 'massive', 'enormous', 'immense', 'vast',
