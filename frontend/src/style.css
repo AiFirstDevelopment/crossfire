@@ -360,6 +360,8 @@ input[type="text"]:focus {
   color: #f87171;
   font-weight: 500;
   min-height: 1.2em;
+  text-align: center;
+  display: block;
 }
 
 .word-input-row {

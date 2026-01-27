@@ -307,6 +307,21 @@ const categoryWords: Record<string, string[]> = {
     'algorithm', 'code', 'script', 'function', 'variable', 'loop', 'array', 'object', 'class',
   ],
 
+  // Reading & Writing
+  'reading/writing': [
+    'book', 'novel', 'story', 'tale', 'chapter', 'page', 'cover', 'spine', 'bookmark', 'library',
+    'magazine', 'newspaper', 'journal', 'diary', 'notebook', 'notepad', 'paper', 'pen', 'pencil',
+    'marker', 'crayon', 'chalk', 'eraser', 'ruler', 'stapler', 'clip', 'tape', 'glue', 'envelope',
+    'stamp', 'letter', 'postcard', 'memo', 'note', 'list', 'form', 'document', 'file', 'folder',
+    'binder', 'textbook', 'workbook', 'manual', 'guide', 'handbook', 'dictionary', 'encyclopedia',
+    'atlas', 'almanac', 'thesaurus', 'biography', 'memoir', 'essay', 'poem', 'sonnet', 'haiku',
+    'fiction', 'nonfiction', 'fantasy', 'mystery', 'thriller', 'romance', 'horror', 'comedy',
+    'drama', 'tragedy', 'epic', 'saga', 'series', 'trilogy', 'sequel', 'prequel', 'prologue',
+    'epilogue', 'index', 'glossary', 'appendix', 'bibliography', 'citation', 'quote', 'excerpt',
+    'paragraph', 'sentence', 'word', 'syllable', 'vowel', 'consonant', 'grammar', 'punctuation',
+    'comma', 'period', 'colon', 'semicolon', 'apostrophe', 'hyphen', 'dash', 'parenthesis',
+  ],
+
   // Miscellaneous common words
   action: [
     'dig', 'run', 'walk', 'jump', 'hop', 'skip', 'leap', 'climb', 'crawl', 'swim', 'fly', 'drive',
