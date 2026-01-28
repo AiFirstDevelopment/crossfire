@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { PlayerStats } from './PlayerStats';
 import { MockDurableObjectState, createMockEnv } from './test-setup';
 
-describe('PlayerStats - Persistence', () => {
+describe('PlayerStats', () => {
   let playerStats: PlayerStats;
   let mockState: MockDurableObjectState;
 
@@ -11,222 +11,158 @@ describe('PlayerStats - Persistence', () => {
     playerStats = new PlayerStats(mockState, createMockEnv());
   });
 
-  describe('Player Registration', () => {
-    it('should register new player with zero wins', async () => {
-      const data = {
-        wins: 0,
-        createdAt: Date.now(),
-      };
+  describe('GET /stats', () => {
+    it('should return exists: false for unregistered player', async () => {
+      const request = new Request('https://player/stats', { method: 'GET' });
+      const response = await playerStats.fetch(request);
+      const data = await response.json() as { exists: boolean; wins: number };
 
-      await mockState.storage.put('data', data);
-      const stored = await mockState.storage.get<any>('data');
-
-      expect(stored?.wins).toBe(0);
-      expect(stored?.createdAt).toBeTruthy();
+      expect(response.status).toBe(200);
+      expect(data.exists).toBe(false);
+      expect(data.wins).toBe(0);
     });
 
-    it('should reject duplicate registration', async () => {
-      const data1 = { wins: 0, createdAt: Date.now() };
-      await mockState.storage.put('data', data1);
+    it('should return player stats after registration', async () => {
+      // Register first
+      await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
 
-      const existing = await mockState.storage.get<any>('data');
-      expect(existing).toBeTruthy();
-      expect(existing?.wins).toBe(0);
+      // Then get stats
+      const response = await playerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+      const data = await response.json() as { exists: boolean; wins: number };
+
+      expect(data.exists).toBe(true);
+      expect(data.wins).toBe(0);
     });
 
-    it('should preserve player registration on restart', async () => {
-      const data = { wins: 5, createdAt: 1000000 };
-      await mockState.storage.put('data', data);
+    it('should return correct win count after recording wins', async () => {
+      // Register and record 3 wins
+      await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
 
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored).toEqual(data);
+      const response = await playerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+      const data = await response.json() as { exists: boolean; wins: number };
+
+      expect(data.wins).toBe(3);
     });
   });
 
-  describe('Win Tracking', () => {
-    it('should increment win count', async () => {
-      let data = {
-        wins: 0,
-        createdAt: Date.now(),
-      };
-      await mockState.storage.put('data', data);
+  describe('POST /register', () => {
+    it('should register a new player with zero wins', async () => {
+      const response = await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+      const data = await response.json() as { exists: boolean; wins: number; created?: boolean };
 
-      data.wins++;
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.wins).toBe(1);
+      expect(response.status).toBe(200);
+      expect(data.exists).toBe(true);
+      expect(data.wins).toBe(0);
+      expect(data.created).toBe(true);
     });
 
-    it('should track multiple wins', async () => {
-      let data = {
-        wins: 0,
-        createdAt: Date.now(),
-      };
-      await mockState.storage.put('data', data);
+    it('should return existing player data on duplicate registration', async () => {
+      // Register twice
+      await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+      // Record a win
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      // Try to register again
+      const response = await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+      const data = await response.json() as { exists: boolean; wins: number; created?: boolean };
 
-      for (let i = 0; i < 100; i++) {
-        data.wins++;
+      expect(data.exists).toBe(true);
+      expect(data.wins).toBe(1);
+      expect(data.created).toBeUndefined(); // Not created, already existed
+    });
+
+    it('should persist registration data in storage', async () => {
+      await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+
+      // Verify storage was updated
+      const stored = await mockState.storage.get<{ wins: number; createdAt: number }>('data');
+      expect(stored).toBeDefined();
+      expect(stored!.wins).toBe(0);
+      expect(stored!.createdAt).toBeGreaterThan(0);
+    });
+  });
+
+  describe('POST /record-win', () => {
+    it('should increment win count for registered player', async () => {
+      await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+
+      const response = await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      const data = await response.json() as { wins: number };
+
+      expect(response.status).toBe(200);
+      expect(data.wins).toBe(1);
+    });
+
+    it('should create player if recording win for unregistered player', async () => {
+      // Record win without registering first
+      const response = await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      const data = await response.json() as { wins: number };
+
+      expect(data.wins).toBe(1);
+
+      // Verify player now exists with 1 win
+      const statsResponse = await playerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+      const statsData = await statsResponse.json() as { exists: boolean; wins: number };
+      expect(statsData.exists).toBe(true);
+      expect(statsData.wins).toBe(1);
+    });
+
+    it('should track lastWinAt timestamp', async () => {
+      const beforeWin = Date.now();
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      const afterWin = Date.now();
+
+      const stored = await mockState.storage.get<{ wins: number; lastWinAt?: number }>('data');
+      expect(stored!.lastWinAt).toBeDefined();
+      expect(stored!.lastWinAt).toBeGreaterThanOrEqual(beforeWin);
+      expect(stored!.lastWinAt).toBeLessThanOrEqual(afterWin);
+    });
+
+    it('should accumulate multiple wins correctly', async () => {
+      for (let i = 1; i <= 10; i++) {
+        const response = await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+        const data = await response.json() as { wins: number };
+        expect(data.wins).toBe(i);
       }
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.wins).toBe(100);
-    });
-
-    it('should record last win timestamp', async () => {
-      const now = Date.now();
-      const data = {
-        wins: 1,
-        createdAt: now,
-        lastWinAt: now,
-      };
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.lastWinAt).toBe(now);
     });
   });
 
-  describe('Stats Retrieval', () => {
-    it('should return zero wins for non-existent player', async () => {
-      const stored = await mockState.storage.get<any>('data');
-      const wins = stored ? stored.wins : 0;
-
-      expect(wins).toBe(0);
+  describe('Unknown endpoints', () => {
+    it('should return 404 for unknown paths', async () => {
+      const response = await playerStats.fetch(new Request('https://player/unknown', { method: 'GET' }));
+      expect(response.status).toBe(404);
     });
 
-    it('should return accurate win count', async () => {
-      const data = { wins: 42, createdAt: Date.now() };
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.wins).toBe(42);
+    it('should return 404 for wrong HTTP method on /stats', async () => {
+      const response = await playerStats.fetch(new Request('https://player/stats', { method: 'POST' }));
+      expect(response.status).toBe(404);
     });
 
-    it('should include creation timestamp', async () => {
-      const createdAt = Date.now();
-      const data = { wins: 0, createdAt };
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.createdAt).toBe(createdAt);
+    it('should return 404 for wrong HTTP method on /register', async () => {
+      const response = await playerStats.fetch(new Request('https://player/register', { method: 'GET' }));
+      expect(response.status).toBe(404);
     });
   });
 
-  describe('Stats Update', () => {
-    it('should update existing player stats', async () => {
-      let data = { wins: 5, createdAt: Date.now() };
-      await mockState.storage.put('data', data);
+  describe('Data persistence', () => {
+    it('should persist data across multiple fetch calls', async () => {
+      // Register
+      await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+      // Record wins
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+      await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
 
-      data.wins = 10;
-      await mockState.storage.put('data', data);
+      // Create a new PlayerStats instance with same storage (simulating DO restart)
+      const newPlayerStats = new PlayerStats(mockState, createMockEnv());
 
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.wins).toBe(10);
-    });
+      // Stats should still be there
+      const response = await newPlayerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+      const data = await response.json() as { exists: boolean; wins: number };
 
-    it('should maintain immutable fields', async () => {
-      const createdAt = 1000000;
-      const data = { wins: 0, createdAt };
-      await mockState.storage.put('data', data);
-
-      let stored = await mockState.storage.get<any>('data');
-      const originalCreatedAt = stored?.createdAt;
-
-      stored.wins = 5;
-      await mockState.storage.put('data', stored);
-
-      stored = await mockState.storage.get<any>('data');
-      expect(stored?.createdAt).toBe(originalCreatedAt);
-    });
-
-    it('should update last win timestamp separately', async () => {
-      const data = {
-        wins: 0,
-        createdAt: Date.now(),
-      };
-      await mockState.storage.put('data', data);
-
-      const now1 = Date.now();
-      data.wins++;
-      const dataWithWin = { ...data, lastWinAt: now1 };
-      await mockState.storage.put('data', dataWithWin);
-
-      let stored = await mockState.storage.get<any>('data');
-      expect(stored?.lastWinAt).toBe(now1);
-
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      const now2 = Date.now();
-      dataWithWin.wins++;
-      dataWithWin.lastWinAt = now2;
-      await mockState.storage.put('data', dataWithWin);
-
-      stored = await mockState.storage.get<any>('data');
-      expect(stored?.lastWinAt).toBe(now2);
-      expect(stored?.lastWinAt).toBeGreaterThanOrEqual(now1);
-    });
-  });
-
-  describe('Data Consistency', () => {
-    it('should maintain data consistency across multiple operations', async () => {
-      const operations = [];
-
-      // Simulate multiple concurrent updates
-      for (let i = 0; i < 10; i++) {
-        const promise = mockState.storage
-          .put('data', { wins: i, createdAt: Date.now() })
-          .then(() => mockState.storage.get('data'));
-        operations.push(promise);
-      }
-
-      const results = await Promise.all(operations);
-      const finalData = await mockState.storage.get<any>('data');
-
-      expect(finalData).toBeTruthy();
-      expect(typeof finalData?.wins).toBe('number');
-      expect(typeof finalData?.createdAt).toBe('number');
-    });
-
-    it('should not lose data during storage operations', async () => {
-      const originalData = {
-        wins: 50,
-        createdAt: 1000000,
-        lastWinAt: 1000001,
-      };
-
-      await mockState.storage.put('data', originalData);
-
-      const retrieved = await mockState.storage.get<any>('data');
-      expect(retrieved).toEqual(originalData);
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('should handle zero wins', async () => {
-      const data = { wins: 0, createdAt: Date.now() };
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.wins).toBe(0);
-    });
-
-    it('should handle large win counts', async () => {
-      const data = { wins: 999999, createdAt: Date.now() };
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.wins).toBe(999999);
-    });
-
-    it('should handle missing optional fields gracefully', async () => {
-      const data = { wins: 0, createdAt: Date.now() };
-      await mockState.storage.put('data', data);
-
-      const stored = await mockState.storage.get<any>('data');
-      expect(stored?.lastWinAt).toBeUndefined();
-      expect(stored?.wins).toBe(0);
+      expect(data.exists).toBe(true);
+      expect(data.wins).toBe(2);
     });
   });
 });

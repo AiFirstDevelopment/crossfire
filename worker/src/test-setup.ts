@@ -1,5 +1,21 @@
 import { beforeEach, afterEach, vi } from 'vitest';
 
+// Polyfill CloseEvent for Node.js environment
+if (typeof (globalThis as any).CloseEvent === 'undefined') {
+  (globalThis as any).CloseEvent = class CloseEvent extends Event {
+    code: number;
+    reason: string;
+    wasClean: boolean;
+
+    constructor(type: string, init?: { code?: number; reason?: string; wasClean?: boolean }) {
+      super(type);
+      this.code = init?.code ?? 1000;
+      this.reason = init?.reason ?? '';
+      this.wasClean = init?.wasClean ?? true;
+    }
+  };
+}
+
 // Mock Durable Objects Storage
 export class MockStorage implements DurableObjectStorage {
   private data: Map<string, any> = new Map();
@@ -26,6 +42,19 @@ export class MockStorage implements DurableObjectStorage {
 
   async clear(): Promise<void> {
     this.data.clear();
+  }
+
+  // Alarm methods (no-op in tests)
+  setAlarm(_scheduledTime: number | Date): void {
+    // No-op in tests
+  }
+
+  getAlarm(): Promise<number | null> {
+    return Promise.resolve(null);
+  }
+
+  deleteAlarm(): void {
+    // No-op in tests
   }
 }
 
@@ -185,4 +214,23 @@ export class MockWebSocketPair {
 if (typeof globalThis !== 'undefined' && !('WebSocketPair' in globalThis)) {
   (globalThis as any).WebSocketPair = MockWebSocketPair;
 }
+
+// Mock Response to support WebSocket upgrade (status 101)
+// Node.js Response doesn't support status 101, but Cloudflare Workers does
+const OriginalResponse = globalThis.Response;
+
+(globalThis as any).Response = class MockResponse extends OriginalResponse {
+  declare webSocket: WebSocket | null;
+
+  constructor(body?: BodyInit | null, init?: ResponseInit & { webSocket?: any }) {
+    // For status 101 (WebSocket upgrade), use 200 as a workaround since Node.js doesn't support 101
+    const status = init?.status === 101 ? 200 : init?.status;
+    super(body, { ...init, status });
+    if (init?.webSocket) {
+      (this as any).webSocket = init.webSocket;
+    }
+    // Store the original intended status
+    Object.defineProperty(this, '_wsStatus', { value: init?.status });
+  }
+};
 

@@ -1,346 +1,426 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { MockDurableObjectState } from './test-setup';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { GameRoom } from './GameRoom';
+import { Matchmaking } from './Matchmaking';
+import { PlayerStats } from './PlayerStats';
+import { MockDurableObjectState, MockWebSocket, createMockEnv } from './test-setup';
 
-describe('Durable Objects - State Transitions', () => {
-  let mockState: MockDurableObjectState;
+// Helper to connect a player to a Durable Object
+async function connectToWebSocket(durableObject: GameRoom | Matchmaking): Promise<{
+  messages: any[];
+  simulateMessage: (msg: any) => void;
+  close: () => void;
+}> {
+  const messages: any[] = [];
+  const mockServer = new MockWebSocket();
 
-  beforeEach(() => {
-    mockState = new MockDurableObjectState();
+  const originalWebSocketPair = (globalThis as any).WebSocketPair;
+  (globalThis as any).WebSocketPair = function() {
+    return { 0: new MockWebSocket(), 1: mockServer };
+  };
+
+  const originalSend = mockServer.send.bind(mockServer);
+  mockServer.send = (data: string) => {
+    messages.push(JSON.parse(data));
+    originalSend(data);
+  };
+
+  await durableObject.fetch(new Request('https://do/', {
+    headers: { 'Upgrade': 'websocket' },
+  }));
+
+  (globalThis as any).WebSocketPair = originalWebSocketPair;
+
+  return {
+    messages,
+    simulateMessage: (msg: any) => {
+      const handlers = (mockServer as any).eventListeners.get('message');
+      if (handlers) {
+        handlers.forEach((handler: Function) => {
+          handler(new MessageEvent('message', { data: JSON.stringify(msg) }));
+        });
+      }
+    },
+    close: () => {
+      const handlers = (mockServer as any).eventListeners.get('close');
+      if (handlers) {
+        handlers.forEach((handler: Function) => {
+          handler(new CloseEvent('close'));
+        });
+      }
+    },
+  };
+}
+
+describe('Integration: Matchmaking → GameRoom flow', () => {
+  let matchmaking: Matchmaking;
+  let matchmakingState: MockDurableObjectState;
+
+  beforeEach(async () => {
+    matchmakingState = new MockDurableObjectState();
+    matchmaking = new Matchmaking(matchmakingState, createMockEnv());
+    await new Promise(resolve => setTimeout(resolve, 0));
   });
 
-  describe('Phase Transitions', () => {
-    it('should transition from waiting to submitting', async () => {
-      const state = { phase: 'waiting' };
-      await mockState.storage.put('gameState', state);
+  it('should create a room ID when two players are matched', async () => {
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
 
-      let stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.phase).toBe('waiting');
+    player1.simulateMessage({ type: 'join-queue' });
+    player2.simulateMessage({ type: 'join-queue' });
 
-      stored.phase = 'submitting';
-      await mockState.storage.put('gameState', stored);
+    const match1 = player1.messages.find(m => m.type === 'match-found');
+    const match2 = player2.messages.find(m => m.type === 'match-found');
 
-      stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.phase).toBe('submitting');
-    });
-
-    it('should transition from submitting to solving', async () => {
-      let state = { phase: 'submitting' };
-      await mockState.storage.put('gameState', state);
-
-      state.phase = 'solving';
-      await mockState.storage.put('gameState', state);
-
-      const stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.phase).toBe('solving');
-    });
-
-    it('should transition from solving to finished', async () => {
-      let state = { phase: 'solving' };
-      await mockState.storage.put('gameState', state);
-
-      state.phase = 'finished';
-      await mockState.storage.put('gameState', state);
-
-      const stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.phase).toBe('finished');
-    });
-
-    it('should validate phase transitions', async () => {
-      const validPhases = ['waiting', 'submitting', 'solving', 'finished'];
-      const state = { phase: 'waiting' };
-
-      await mockState.storage.put('gameState', state);
-      const stored = await mockState.storage.get<any>('gameState');
-
-      expect(validPhases).toContain(stored?.phase);
-    });
+    expect(match1).toBeDefined();
+    expect(match2).toBeDefined();
+    expect(match1.roomId).toMatch(/^game-/);
+    expect(match1.roomId).toBe(match2.roomId);
   });
 
-  describe('Rematch Flow', () => {
-    it('should transition from finished to waiting for rematch', async () => {
-      let state = { phase: 'finished', rematchRequested: false };
-      await mockState.storage.put('gameState', state);
+  it('should increment active games when match is made', async () => {
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
 
-      const stored1 = await mockState.storage.get<any>('gameState');
-      expect(stored1?.phase).toBe('finished');
+    // Verify initial state
+    let stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    let data = await stats.json() as any;
+    expect(data.activeGames).toBe(0);
 
-      stored1.rematchRequested = true;
-      await mockState.storage.put('gameState', stored1);
+    player1.simulateMessage({ type: 'join-queue' });
+    player2.simulateMessage({ type: 'join-queue' });
 
-      const stored2 = await mockState.storage.get<any>('gameState');
-      expect(stored2?.rematchRequested).toBe(true);
-    });
-
-    it('should handle both players accepting rematch', async () => {
-      const state = {
-        phase: 'finished',
-        player1RematchRequested: false,
-        player2RematchRequested: false,
-      };
-      await mockState.storage.put('gameState', state);
-
-      let stored = await mockState.storage.get<any>('gameState');
-      stored.player1RematchRequested = true;
-      await mockState.storage.put('gameState', stored);
-
-      stored = await mockState.storage.get<any>('gameState');
-      stored.player2RematchRequested = true;
-      await mockState.storage.put('gameState', stored);
-
-      stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.player1RematchRequested).toBe(true);
-      expect(stored?.player2RematchRequested).toBe(true);
-    });
+    // After match, active games should increment
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.activeGames).toBe(1);
   });
 
-  describe('Player Disconnect/Reconnect', () => {
-    it('should track player connectivity', async () => {
-      const players = {
-        'player-1': { connected: true, disconnectTime: null },
-        'player-2': { connected: true, disconnectTime: null },
-      };
-      await mockState.storage.put('players', players);
+  it('should provide opponent info in match-found message', async () => {
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
 
-      let stored = await mockState.storage.get<any>('players');
-      expect(stored['player-1'].connected).toBe(true);
+    const welcome1 = player1.messages.find(m => m.type === 'welcome');
+    const welcome2 = player2.messages.find(m => m.type === 'welcome');
 
-      stored['player-1'].connected = false;
-      stored['player-1'].disconnectTime = Date.now();
-      await mockState.storage.put('players', stored);
+    player1.simulateMessage({ type: 'join-queue' });
+    player2.simulateMessage({ type: 'join-queue' });
 
-      stored = await mockState.storage.get<any>('players');
-      expect(stored['player-1'].connected).toBe(false);
-      expect(stored['player-1'].disconnectTime).toBeTruthy();
-    });
+    const match1 = player1.messages.find(m => m.type === 'match-found');
+    const match2 = player2.messages.find(m => m.type === 'match-found');
 
-    it('should handle reconnection', async () => {
-      const players = {
-        'player-1': { connected: false, disconnectTime: 1000 },
-      };
-      await mockState.storage.put('players', players);
-
-      let stored = await mockState.storage.get<any>('players');
-      stored['player-1'].connected = true;
-      stored['player-1'].disconnectTime = null;
-      await mockState.storage.put('players', stored);
-
-      stored = await mockState.storage.get<any>('players');
-      expect(stored['player-1'].connected).toBe(true);
-      expect(stored['player-1'].disconnectTime).toBeNull();
-    });
+    // Player 1's opponent should be player 2
+    expect(match1.opponent.id).toBe(welcome2.playerId);
+    // Player 2's opponent should be player 1
+    expect(match2.opponent.id).toBe(welcome1.playerId);
   });
 });
 
-describe('Durable Objects - Concurrency', () => {
-  let mockState: MockDurableObjectState;
+describe('Integration: GameRoom game flow', () => {
+  let gameRoom: GameRoom;
+  let gameRoomState: MockDurableObjectState;
+  let mockEnv: any;
 
   beforeEach(() => {
-    mockState = new MockDurableObjectState();
+    gameRoomState = new MockDurableObjectState();
+    mockEnv = createMockEnv();
+    gameRoom = new GameRoom(gameRoomState, mockEnv);
   });
 
-  describe('Concurrent Cell Updates', () => {
-    it('should handle simultaneous cell updates from both players', async () => {
-      const cells = { '0,0': 'A', '0,1': '', '1,0': '' };
-      await mockState.storage.put('cells', cells);
+  it('should complete full game lifecycle: connect → submit → solve', async () => {
+    // 1. Two players connect
+    const player1 = await connectToWebSocket(gameRoom);
+    const player2 = await connectToWebSocket(gameRoom);
 
-      // Simulate concurrent updates
-      const update1 = mockState.storage.get<any>('cells').then(c => {
-        c['0,1'] = 'B';
-        return mockState.storage.put('cells', c);
-      });
+    // Verify both received welcome and game-start
+    expect(player1.messages.find(m => m.type === 'welcome')).toBeDefined();
+    expect(player2.messages.find(m => m.type === 'welcome')).toBeDefined();
+    expect(player1.messages.find(m => m.type === 'game-start')).toBeDefined();
+    expect(player2.messages.find(m => m.type === 'game-start')).toBeDefined();
 
-      const update2 = mockState.storage.get<any>('cells').then(c => {
-        c['1,0'] = 'C';
-        return mockState.storage.put('cells', c);
-      });
+    // Verify phase is submitting
+    let info = await gameRoom.fetch(new Request('https://game/room/info'));
+    let data = await info.json() as any;
+    expect(data.phase).toBe('submitting');
 
-      await Promise.all([update1, update2]);
+    // 2. Both players submit words
+    player1.simulateMessage({ type: 'submit-words', words: ['CAT', 'DOG', 'BIRD', 'FISH'] });
 
-      const final = await mockState.storage.get<any>('cells');
-      // Last update should win (or both should apply)
-      expect(final).toBeTruthy();
-    });
+    // Player 1 should get words-accepted
+    expect(player1.messages.find(m => m.type === 'words-accepted')).toBeDefined();
+    // Player 2 should get opponent-submitted
+    expect(player2.messages.find(m => m.type === 'opponent-submitted')).toBeDefined();
 
-    it('should handle conflicting updates to same cell', async () => {
-      const cells = { '0,0': '' };
-      await mockState.storage.put('cells', cells);
+    player2.simulateMessage({ type: 'submit-words', words: ['LION', 'BEAR', 'WOLF', 'DEER'] });
 
-      let current = await mockState.storage.get<any>('cells');
-      current['0,0'] = 'A';
-      await mockState.storage.put('cells', current);
-
-      current = await mockState.storage.get<any>('cells');
-      current['0,0'] = 'B'; // Overwrite with different value
-      await mockState.storage.put('cells', current);
-
-      const final = await mockState.storage.get<any>('cells');
-      expect(final['0,0']).toBe('B'); // Last write wins
-    });
+    // 3. Game should transition to generating/solving
+    info = await gameRoom.fetch(new Request('https://game/room/info'));
+    data = await info.json() as any;
+    // Could be submitting (if grid failed), generating, or solving
+    expect(['submitting', 'generating', 'solving']).toContain(data.phase);
   });
 
-  describe('Request Ordering', () => {
-    it('should preserve order of sequential operations', async () => {
-      const log: string[] = [];
+  it('should handle reconnection scenario: opponent left during wait', async () => {
+    const player1 = await connectToWebSocket(gameRoom);
 
-      for (let i = 0; i < 5; i++) {
-        const entry = `operation-${i}`;
-        log.push(entry);
-        await mockState.storage.put(`op-${i}`, entry);
-      }
+    // Verify player 1 is waiting
+    let info = await gameRoom.fetch(new Request('https://game/room/info'));
+    let data = await info.json() as any;
+    expect(data.phase).toBe('waiting');
+    expect(data.playerCount).toBe(1);
 
-      for (let i = 0; i < 5; i++) {
-        const stored = await mockState.storage.get<any>(`op-${i}`);
-        expect(stored).toBe(`operation-${i}`);
-      }
-    });
+    // Player 1 disconnects
+    player1.close();
 
-    it('should handle rapid-fire updates correctly', async () => {
-      let state = { counter: 0 };
-      await mockState.storage.put('state', state);
+    info = await gameRoom.fetch(new Request('https://game/room/info'));
+    data = await info.json() as any;
+    expect(data.playerCount).toBe(0);
 
-      for (let i = 0; i < 100; i++) {
-        const current = await mockState.storage.get<any>('state');
-        current.counter++;
-        await mockState.storage.put('state', current);
-      }
-
-      const final = await mockState.storage.get<any>('state');
-      expect(final.counter).toBe(100);
-    });
+    // New player can join
+    const player2 = await connectToWebSocket(gameRoom);
+    expect(player2.messages.find(m => m.type === 'welcome')).toBeDefined();
   });
 });
 
-describe('Durable Objects - Timeout Handling', () => {
-  let mockState: MockDurableObjectState;
+describe('Integration: PlayerStats tracking', () => {
+  let playerStats: PlayerStats;
+  let playerStatsState: MockDurableObjectState;
 
   beforeEach(() => {
-    mockState = new MockDurableObjectState();
+    playerStatsState = new MockDurableObjectState();
+    playerStats = new PlayerStats(playerStatsState, createMockEnv());
   });
 
-  describe('Phase Timeouts', () => {
-    it('should track phase start time', async () => {
-      const now = Date.now();
-      const state = { phase: 'submitting', phaseStartedAt: now };
-      await mockState.storage.put('gameState', state);
+  it('should track player registration and wins correctly', async () => {
+    // 1. Check player doesn't exist
+    let response = await playerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+    let data = await response.json() as any;
+    expect(data.exists).toBe(false);
 
-      const stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.phaseStartedAt).toBe(now);
-    });
+    // 2. Register player
+    response = await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+    data = await response.json() as any;
+    expect(data.created).toBe(true);
+    expect(data.wins).toBe(0);
 
-    it('should calculate time elapsed in phase', async () => {
-      const now = Date.now();
-      const state = { phase: 'submitting', phaseStartedAt: now };
-      await mockState.storage.put('gameState', state);
+    // 3. Record a win (simulating game completion)
+    response = await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+    data = await response.json() as any;
+    expect(data.wins).toBe(1);
 
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      const stored = await mockState.storage.get<any>('gameState');
-      const elapsed = Date.now() - stored?.phaseStartedAt;
-      expect(elapsed).toBeGreaterThanOrEqual(10);
-    });
-
-    it('should detect phase timeout', async () => {
-      const phaseTimeout = 60000;
-      const now = Date.now();
-      const state = { phase: 'submitting', phaseStartedAt: now - phaseTimeout - 1000 };
-      await mockState.storage.put('gameState', state);
-
-      const stored = await mockState.storage.get<any>('gameState');
-      const elapsed = Date.now() - stored?.phaseStartedAt;
-      const timedOut = elapsed > phaseTimeout;
-
-      expect(timedOut).toBe(true);
-    });
-
-    it('should update phase on timeout', async () => {
-      const state = { phase: 'submitting', phaseStartedAt: Date.now() };
-      await mockState.storage.put('gameState', state);
-
-      let stored = await mockState.storage.get<any>('gameState');
-      stored.phase = 'solving';
-      await mockState.storage.put('gameState', stored);
-
-      stored = await mockState.storage.get<any>('gameState');
-      expect(stored.phase).toBe('solving');
-    });
+    // 4. Verify stats reflect the win
+    response = await playerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+    data = await response.json() as any;
+    expect(data.exists).toBe(true);
+    expect(data.wins).toBe(1);
   });
 
-  describe('Room Cleanup', () => {
-    it('should mark room for cleanup after timeout', async () => {
-      const state = { phase: 'finished', markedForCleanup: true };
-      await mockState.storage.put('gameState', state);
+  it('should persist stats across Durable Object restarts', async () => {
+    // Register and record wins
+    await playerStats.fetch(new Request('https://player/register', { method: 'POST' }));
+    await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
+    await playerStats.fetch(new Request('https://player/record-win', { method: 'POST' }));
 
-      const stored = await mockState.storage.get<any>('gameState');
-      expect(stored?.markedForCleanup).toBe(true);
-    });
+    // Simulate DO restart by creating new instance with same storage
+    const newPlayerStats = new PlayerStats(playerStatsState, createMockEnv());
 
-    it('should remove stale room data', async () => {
-      await mockState.storage.put('staleData', 'should be deleted');
-      expect(await mockState.storage.get('staleData')).toBeTruthy();
-
-      await mockState.storage.delete('staleData');
-      expect(await mockState.storage.get('staleData')).toBeUndefined();
-    });
+    // Stats should be preserved
+    const response = await newPlayerStats.fetch(new Request('https://player/stats', { method: 'GET' }));
+    const data = await response.json() as any;
+    expect(data.wins).toBe(2);
   });
 });
 
-describe('Durable Objects - Storage Recovery', () => {
-  let mockState: MockDurableObjectState;
+describe('Integration: Matchmaking stats with game lifecycle', () => {
+  let matchmaking: Matchmaking;
+  let matchmakingState: MockDurableObjectState;
 
-  beforeEach(() => {
-    mockState = new MockDurableObjectState();
+  beforeEach(async () => {
+    matchmakingState = new MockDurableObjectState();
+    matchmaking = new Matchmaking(matchmakingState, createMockEnv());
+    await new Promise(resolve => setTimeout(resolve, 0));
   });
 
-  describe('Restart Recovery', () => {
-    it('should restore game state after restart', async () => {
-      const gameState = {
-        phase: 'solving',
-        player1Progress: 50,
-        player2Progress: 75,
-      };
-      await mockState.storage.put('gameState', gameState);
+  it('should track active games correctly through game lifecycle', async () => {
+    // Initial state
+    let stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    let data = await stats.json() as any;
+    expect(data.activeGames).toBe(0);
+    expect(data.totalGamesPlayed).toBe(0);
 
-      const stored = await mockState.storage.get<any>('gameState');
-      expect(stored).toEqual(gameState);
-    });
+    // Match two players (creates a game)
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
+    player1.simulateMessage({ type: 'join-queue' });
+    player2.simulateMessage({ type: 'join-queue' });
 
-    it('should restore player stats after restart', async () => {
-      const stats = { wins: 10, losses: 5 };
-      await mockState.storage.put('playerStats', stats);
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.activeGames).toBe(1);
 
-      const stored = await mockState.storage.get<any>('playerStats');
-      expect(stored).toEqual(stats);
-    });
+    // Simulate game ending (GameRoom would call this)
+    await matchmaking.fetch(new Request('https://matchmaking/game-ended', { method: 'POST' }));
 
-    it('should restore multiple DO instances independently', async () => {
-      const state1 = new MockDurableObjectState();
-      const state2 = new MockDurableObjectState();
-
-      await state1.storage.put('data', { id: 'room-1' });
-      await state2.storage.put('data', { id: 'room-2' });
-
-      const data1 = await state1.storage.get<any>('data');
-      const data2 = await state2.storage.get<any>('data');
-
-      expect(data1?.id).toBe('room-1');
-      expect(data2?.id).toBe('room-2');
-    });
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.activeGames).toBe(0);
+    expect(data.totalGamesPlayed).toBe(1);
   });
 
-  describe('Data Integrity', () => {
-    it('should not corrupt data across multiple restarts', async () => {
-      const original = { players: { p1: 'Alice', p2: 'Bob' } };
-      await mockState.storage.put('gameState', original);
+  it('should track total games including bot games', async () => {
+    // Play a bot game
+    await matchmaking.fetch(new Request('https://matchmaking/bot-game-ended', { method: 'POST' }));
 
-      let retrieved = await mockState.storage.get<any>('gameState');
-      expect(retrieved).toEqual(original);
+    // Play a multiplayer game
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
+    player1.simulateMessage({ type: 'join-queue' });
+    player2.simulateMessage({ type: 'join-queue' });
+    await matchmaking.fetch(new Request('https://matchmaking/game-ended', { method: 'POST' }));
 
-      // Simulate restart
-      retrieved.players.p1 = 'Alice'; // Same value
-      await mockState.storage.put('gameState', retrieved);
+    const stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    const data = await stats.json() as any;
+    expect(data.totalGamesPlayed).toBe(2); // 1 bot + 1 multiplayer
+  });
 
-      retrieved = await mockState.storage.get<any>('gameState');
-      expect(retrieved).toEqual(original);
-    });
+  it('should broadcast stats to connected clients when games start/end', async () => {
+    // Connect an observer (not in queue)
+    const observer = await connectToWebSocket(matchmaking);
+    observer.messages.length = 0;
+
+    // Trigger a stats change
+    await matchmaking.fetch(new Request('https://matchmaking/game-started', { method: 'POST' }));
+
+    // Observer should receive stats-update
+    const update = observer.messages.find(m => m.type === 'stats-update');
+    expect(update).toBeDefined();
+    expect(update.activeGames).toBe(1);
+  });
+});
+
+describe('Integration: Queue behavior', () => {
+  let matchmaking: Matchmaking;
+  let matchmakingState: MockDurableObjectState;
+
+  beforeEach(async () => {
+    matchmakingState = new MockDurableObjectState();
+    matchmaking = new Matchmaking(matchmakingState, createMockEnv());
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+
+  it('should match players in FIFO order', async () => {
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
+    const player3 = await connectToWebSocket(matchmaking);
+
+    const welcome1 = player1.messages.find(m => m.type === 'welcome');
+    const welcome2 = player2.messages.find(m => m.type === 'welcome');
+
+    // Player 1 and 2 join queue
+    player1.simulateMessage({ type: 'join-queue' });
+    player2.simulateMessage({ type: 'join-queue' });
+
+    // Player 1 and 2 should be matched (not player 3)
+    const match1 = player1.messages.find(m => m.type === 'match-found');
+    const match2 = player2.messages.find(m => m.type === 'match-found');
+
+    expect(match1).toBeDefined();
+    expect(match2).toBeDefined();
+    expect(match1.opponent.id).toBe(welcome2.playerId);
+    expect(match2.opponent.id).toBe(welcome1.playerId);
+
+    // Player 3 should not have been matched
+    const match3 = player3.messages.find(m => m.type === 'match-found');
+    expect(match3).toBeUndefined();
+  });
+
+  it('should handle player leaving queue before match', async () => {
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
+
+    // Player 1 joins then leaves
+    player1.simulateMessage({ type: 'join-queue' });
+    player1.simulateMessage({ type: 'leave-queue' });
+
+    // Player 2 joins
+    player2.simulateMessage({ type: 'join-queue' });
+
+    // No match should occur
+    const match1 = player1.messages.find(m => m.type === 'match-found');
+    const match2 = player2.messages.find(m => m.type === 'match-found');
+    expect(match1).toBeUndefined();
+    expect(match2).toBeUndefined();
+
+    // Queue should have 1 player
+    const stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    const data = await stats.json() as any;
+    expect(data.queueSize).toBe(1);
+  });
+
+  it('should remove disconnected players from queue', async () => {
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
+
+    player1.simulateMessage({ type: 'join-queue' });
+
+    // Verify queue has 1 player
+    let stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    let data = await stats.json() as any;
+    expect(data.queueSize).toBe(1);
+
+    // Player 1 disconnects
+    player1.close();
+
+    // Queue should be empty
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.queueSize).toBe(0);
+
+    // Player 2 joins - should be alone in queue
+    player2.simulateMessage({ type: 'join-queue' });
+
+    const match2 = player2.messages.find(m => m.type === 'match-found');
+    expect(match2).toBeUndefined();
+  });
+});
+
+describe('Integration: Online count tracking', () => {
+  let matchmaking: Matchmaking;
+  let matchmakingState: MockDurableObjectState;
+
+  beforeEach(async () => {
+    matchmakingState = new MockDurableObjectState();
+    matchmaking = new Matchmaking(matchmakingState, createMockEnv());
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+
+  it('should accurately track online users', async () => {
+    // Initial: 0 online
+    let stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    let data = await stats.json() as any;
+    expect(data.onlineCount).toBe(0);
+
+    // Connect 3 players
+    const player1 = await connectToWebSocket(matchmaking);
+    const player2 = await connectToWebSocket(matchmaking);
+    const player3 = await connectToWebSocket(matchmaking);
+
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.onlineCount).toBe(3);
+
+    // Disconnect 1 player
+    player2.close();
+
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.onlineCount).toBe(2);
+
+    // Disconnect remaining
+    player1.close();
+    player3.close();
+
+    stats = await matchmaking.fetch(new Request('https://matchmaking/'));
+    data = await stats.json() as any;
+    expect(data.onlineCount).toBe(0);
   });
 });
