@@ -8,14 +8,14 @@ import type {
 } from './types';
 import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells } from './crossword';
 import englishWords from 'an-array-of-english-words';
-import { hasCategory, getCategorizedWords } from './categories';
+import { hasCategory, getCategorizedWords, stemToken } from './categories';
 
 // Create a Set for O(1) word lookup - only words with categories are valid
 const categorizedWords = getCategorizedWords();
 const validWords = new Set(
   englishWords
     .map(w => w.toUpperCase())
-    .filter(w => categorizedWords.has(w.toLowerCase()))
+    .filter(w => categorizedWords.has(stemToken(w)))
 );
 
 export interface Env {

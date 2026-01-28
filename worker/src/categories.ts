@@ -1,6 +1,21 @@
 // Word categories for hint system
-// Words are mapped to simple, recognizable categories
+// Now uses stemming-based lookup from shared module
 
+import { getHint, isValidWord, stemToken, getCategorizedWords } from "../../shared/get-hint";
+
+// Re-export the new functions
+export { getHint, isValidWord, stemToken, getCategorizedWords };
+
+// Legacy alias for backwards compatibility
+export function getWordCategory(word: string): string | null {
+  return getHint(word);
+}
+
+export function hasCategory(word: string): boolean {
+  return isValidWord(word);
+}
+
+// Keep the original categoryWords for reference, but it's no longer the source of truth
 const categoryWords: Record<string, string[]> = {
   // Nature
   fruit: [
@@ -364,46 +379,6 @@ const categoryWords: Record<string, string[]> = {
   ],
 };
 
-// Build reverse lookup map: word -> category
-const wordToCategory: Map<string, string> = new Map();
-
-for (const [category, words] of Object.entries(categoryWords)) {
-  for (const word of words) {
-    wordToCategory.set(word.toLowerCase(), category);
-  }
-}
-
-/**
- * Get the category for a word
- * @param word The word to categorize
- * @returns The category name, or null if not found
- */
-export function getWordCategory(word: string): string | null {
-  return wordToCategory.get(word.toLowerCase()) || null;
-}
-
-/**
- * Get categories for multiple words
- * @param words Array of words to categorize
- * @returns Array of category names (null for unknown words)
- */
-export function getWordCategories(words: string[]): (string | null)[] {
-  return words.map(word => getWordCategory(word));
-}
-
-/**
- * Check if a word has a known category
- */
-export function hasCategory(word: string): boolean {
-  return wordToCategory.has(word.toLowerCase());
-}
-
-/**
- * Get all categorized words as a Set for efficient lookup
- */
-export function getCategorizedWords(): Set<string> {
-  return new Set(wordToCategory.keys());
-}
-
+// Legacy exports kept for reference - actual functions are imported from shared/get-hint
 export { categoryWords };
 

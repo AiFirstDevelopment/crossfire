@@ -6926,7 +6926,7 @@ for (const [category, words] of Object.entries(categoryWords)) {
 }
 
 /**
- * Get the category for a word
+ * Get the category for a word (legacy - use get-hint.ts for stemming support)
  * @param word The word to categorize
  * @returns The category name, or null if not found
  */
@@ -6944,14 +6944,14 @@ export function getWordCategories(words: string[]): (string | null)[] {
 }
 
 /**
- * Check if a word has a known category
+ * Check if a word has a known category (legacy - use get-hint.ts for stemming support)
  */
 export function hasCategory(word: string): boolean {
   return wordToCategory.has(word.toLowerCase());
 }
 
 /**
- * Get all categorized words as a Set for efficient lookup
+ * Get all categorized words as a Set for efficient lookup (legacy - use get-hint.ts for stemming support)
  */
 export function getCategorizedWords(): Set<string> {
   return new Set(wordToCategory.keys());

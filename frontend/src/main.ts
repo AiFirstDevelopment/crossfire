@@ -4,17 +4,17 @@ import { CrosswordUI } from './crossword-ui';
 import { BotGame, BotGameState } from './bot';
 import englishWords from 'an-array-of-english-words';
 import humanId from 'human-id';
-import { getCategorizedWords, getWordCategory } from '../../shared/categories';
+import { getCategorizedWords, getHint as getWordCategory, stemToken } from '../../shared/get-hint';
 
 // Create a Set for O(1) word lookup - only words with categories are valid
 const categorizedWords = getCategorizedWords();
 const validWords = new Set(
   englishWords
     .map(w => w.toUpperCase())
-    .filter(w => categorizedWords.has(w.toLowerCase()))
+    .filter(w => categorizedWords.has(stemToken(w)))
 );
 // Word list for bot - only categorized words
-const wordList = englishWords.filter(w => categorizedWords.has(w.toLowerCase()));
+const wordList = englishWords.filter(w => categorizedWords.has(stemToken(w)));
 
 // Elements
 const screens = {
