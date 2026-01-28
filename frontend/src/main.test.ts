@@ -37,7 +37,7 @@ describe('Main Application DOM Structure', () => {
         </header>
 
         <section id="screen-menu" class="screen">
-          <button id="find-match-btn" class="primary-btn">Find Match</button>
+          <button id="find-match-btn" class="primary-btn">Play Now</button>
           <p id="status-text"></p>
           <div class="divider">or</div>
           <div class="manual-join">
