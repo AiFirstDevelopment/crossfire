@@ -120,13 +120,20 @@ function init() {
       validateWordInput(input);
       updateSubmitButton();
     });
-    input.addEventListener('input', () => {
+
+    const handleInputChange = () => {
       // Clear invalid state when user starts typing again
       input.classList.remove('invalid');
       const errorEl = input.closest('.word-input-wrapper')?.querySelector('.word-error') as HTMLElement;
       if (errorEl) errorEl.textContent = '';
       updateSubmitButton();
-    });
+    };
+
+    input.addEventListener('input', handleInputChange);
+    // Mobile autocomplete selections may fire 'change' instead of 'input'
+    input.addEventListener('change', handleInputChange);
+    // Handle IME/composition end for mobile keyboards
+    input.addEventListener('compositionend', handleInputChange);
   });
 
   wordForm.addEventListener('submit', (e) => {
