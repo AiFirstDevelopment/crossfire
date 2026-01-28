@@ -1,8 +1,9 @@
 // Word categories for hint system
 // Words are mapped to simple, recognizable categories
-import { transformCategoryKeys } from "./transform-category-keys"; // adjust path
+import { transformCategoryKeys } from "./transform-category-keys"; 
+import {categoryWordStems} from "./terms/normalize-category-words";
 
-const _categoryWords: Record<string, string[]> = {
+export const _categoryWords: Record<string, string[]> = {
   // Nature
   fruit: [
     "apple",
@@ -6957,4 +6958,5 @@ export function getCategorizedWords(): Set<string> {
   return new Set(wordToCategory.keys());
 }
 
+console.log("Stemmed terms", categoryWordStems);
 export { categoryWords };
