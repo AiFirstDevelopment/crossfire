@@ -35,6 +35,7 @@ export class GameClient {
   private matchmakingTimeoutHandler: MatchmakingTimeoutHandler | null = null;
   private matchmakingTimer: number | null = null;
   private isProduction: boolean;
+  private intentionalDisconnect: boolean = false;
 
   // How long to wait before offering bot match (10 seconds)
   private static readonly MATCHMAKING_TIMEOUT_MS = 10000;
@@ -96,6 +97,7 @@ export class GameClient {
 
   cancelMatchmaking() {
     this.clearMatchmakingTimer();
+    this.intentionalDisconnect = true;
     this.ws?.close();
     this.ws = null;
     this.state = this.createInitialState();
@@ -173,9 +175,11 @@ export class GameClient {
     this.ws.onclose = () => {
       this.clearMatchmakingTimer();
       // If we got a match, we'll reconnect to game room
-      if (this.state.phase === 'matchmaking') {
+      // Don't show error if this was an intentional disconnect
+      if (this.state.phase === 'matchmaking' && !this.intentionalDisconnect) {
         this.updateState({ error: 'Disconnected from matchmaking' });
       }
+      this.intentionalDisconnect = false;
     };
   }
 
@@ -237,9 +241,11 @@ export class GameClient {
     };
 
     this.ws.onclose = () => {
-      if (this.state.phase !== 'finished') {
+      // Don't show error if this was an intentional disconnect
+      if (this.state.phase !== 'finished' && !this.intentionalDisconnect) {
         this.updateState({ error: 'Disconnected from game' });
       }
+      this.intentionalDisconnect = false;
     };
   }
 
@@ -411,8 +417,7 @@ export class GameClient {
 
   leaveRoom() {
     this.send({ type: 'leave-room' });
-    // Set phase to 'finished' before disconnect to prevent error message in onclose handler
-    this.state.phase = 'finished';
+    this.intentionalDisconnect = true;
     this.disconnect();
     this.state = this.createInitialState();
     this.stateHandlers.forEach(h => h(this.state));
@@ -424,6 +429,7 @@ export class GameClient {
   }
 
   reset() {
+    this.intentionalDisconnect = true;
     this.disconnect();
     this.state = this.createInitialState();
     this.stateHandlers.forEach(h => h(this.state));
