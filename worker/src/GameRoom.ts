@@ -82,14 +82,19 @@ export class GameRoom {
     const playerId = crypto.randomUUID();
     const playerName = `Player ${this.players.size + 1}`;
 
+    // Debug: log connection attempt
+    console.log(`Connection attempt. Current players: ${this.players.size}, phase: ${this.gameState.phase}`);
+
     // Check if room is full or game already started
     if (this.players.size >= 2) {
+      console.log('Rejecting: room is full');
       this.sendTo(server, { type: 'error', code: 'ROOM_FULL', message: 'Room is full' });
       server.close(1008, 'Room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
 
     if (this.gameState.phase !== 'waiting') {
+      console.log(`Rejecting: game in phase ${this.gameState.phase}`);
       this.sendTo(server, { type: 'error', code: 'GAME_IN_PROGRESS', message: 'Game already in progress' });
       server.close(1008, 'Game in progress');
       return new Response(null, { status: 101, webSocket: client });
@@ -99,6 +104,7 @@ export class GameRoom {
     const player: ConnectedPlayer = { websocket: server, id: playerId, name: playerName };
     this.players.set(server, player);
     this.gameState.players[playerId] = { id: playerId, name: playerName };
+    console.log(`Player joined: ${playerName} (${playerId}). Total players: ${this.players.size}`);
 
     // Send welcome
     this.sendTo(server, {
@@ -187,6 +193,9 @@ export class GameRoom {
   private startSubmissionPhase() {
     this.gameState.phase = 'submitting';
     this.gameState.phaseStartedAt = Date.now();
+
+    // Notify matchmaking that a game started (for active games count)
+    this.notifyGameStarted();
 
     this.broadcast({
       type: 'game-start',
@@ -335,6 +344,10 @@ export class GameRoom {
     // Send each player their opponent's grid (letters blanked, with category hints)
     const playerIds = Object.keys(this.gameState.players);
 
+    // Debug: log what words each player submitted
+    console.log('Starting solving phase. Player words:', JSON.stringify(this.gameState.playerWords));
+    console.log('Player IDs in game:', playerIds);
+
     for (const playerId of playerIds) {
       const player = Array.from(this.players.values()).find(p => p.id === playerId);
       if (!player) continue;
@@ -344,6 +357,10 @@ export class GameRoom {
       if (!opponentId) continue;
 
       const opponentGrid = this.gameState.grids[opponentId];
+
+      // Debug: log which grid is being sent to which player
+      const opponentWords = this.gameState.playerWords[opponentId];
+      console.log(`Player ${player.name} (${playerId}) will solve opponent ${opponentId}'s words:`, opponentWords);
       const clientGrid = gridToClientGrid(opponentGrid);
 
       // Pre-fill first letter and every 4th letter (positions 0, 4, 8, etc.) of each word
@@ -524,13 +541,10 @@ export class GameRoom {
     this.gameState.players = players;
     this.gameEndedNotified = false;
 
-    // Notify matchmaking of new game
-    this.notifyGameStarted();
-
     // Notify all players
     this.broadcast({ type: 'rematch-starting' });
 
-    // Start the submission phase
+    // Start the submission phase (this will notify matchmaking of game start)
     this.startSubmissionPhase();
   }
 
