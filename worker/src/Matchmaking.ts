@@ -115,6 +115,16 @@ export class Matchmaking {
       });
     }
 
+    // Admin endpoint to reset active games counter (for fixing stuck counters)
+    if (url.pathname === '/admin/reset-active-games' && request.method === 'POST') {
+      this.activeGames = 0;
+      await this.state.storage.put('activeGames', this.activeGames);
+      this.broadcastStats();
+      return new Response(JSON.stringify({ activeGames: this.activeGames, message: 'Active games counter reset to 0' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Return current stats
     return new Response(
       JSON.stringify({

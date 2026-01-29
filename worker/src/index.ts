@@ -138,6 +138,15 @@ export default {
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
+    // Admin: Reset active games counter - POST /api/admin/reset-active-games
+    if (url.pathname === '/api/admin/reset-active-games' && request.method === 'POST') {
+      const matchmakingId = env.MATCHMAKING.idFromName('global');
+      const matchmaking = env.MATCHMAKING.get(matchmakingId);
+      const response = await matchmaking.fetch(new Request('https://matchmaking/admin/reset-active-games', { method: 'POST' }));
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
     // Default 404 response
     return new Response(
       JSON.stringify({ error: 'Not Found' }),
