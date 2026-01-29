@@ -11,9 +11,8 @@
     "dev": "npm run dev --workspace=frontend & npm run dev --workspace=worker",
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev:worker": "npm run dev --workspace=worker",
-    "build": "npm run build --workspace=frontend && npm run build --workspace=worker",
+    "build": "npm run build --workspace=frontend",
     "build:frontend": "npm run build --workspace=frontend",
-    "build:worker": "npm run build --workspace=worker",
     "deploy": "npm run deploy --workspace=frontend && npm run deploy --workspace=worker",
     "deploy:frontend": "npm run deploy --workspace=frontend",
     "deploy:worker": "npm run deploy --workspace=worker"
