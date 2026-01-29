@@ -4073,6 +4073,20 @@ export const _categoryWords: Record<string, string[]> = {
     "mmorpg",
   ],
 
+  person: [
+    "man",
+    "woman",
+    "child",
+    "boy",
+    "girl",
+    "adult",
+    "teenager",
+    "elderly",
+    "baby",
+    "infant",
+    "toddler",
+    "adolescent",
+  ],
   // Concepts
   emotion: [
     "happy",
