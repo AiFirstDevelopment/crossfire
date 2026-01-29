@@ -375,6 +375,13 @@ input[type="text"]::placeholder {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
+.room-help {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85em;
+  margin: 0 0 1.25rem;
+  line-height: 1.4;
+}
+
 .manual-join {
   display: flex;
   gap: 0.75rem;
@@ -511,6 +518,10 @@ input[type="text"]::placeholder {
 
 .form-error.hidden {
   display: none;
+}
+
+.leave-room-btn {
+  margin-top: 1.5rem;
 }
 
 /* Timer */
@@ -1024,6 +1035,10 @@ input[type="text"]::placeholder {
 .light-mode .divider::before,
 .light-mode .divider::after {
   background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.15), transparent);
+}
+
+.light-mode .room-help {
+  color: rgba(0, 0, 0, 0.5);
 }
 
 .light-mode .word-input.invalid {

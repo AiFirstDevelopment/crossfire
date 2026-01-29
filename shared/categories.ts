@@ -529,6 +529,7 @@ export const _categoryWords: Record<string, string[]> = {
     "saiga",
     "markhor",
     "okapi",
+    "cattle",
   ],
   ingredient: [
     "cornstarch",
@@ -754,6 +755,7 @@ export const _categoryWords: Record<string, string[]> = {
     "bramble",
     "hedge",
     "hedgerow",
+    "crop",
   ],
   weather: [
     "rain",
@@ -830,10 +832,12 @@ export const _categoryWords: Record<string, string[]> = {
     "wildfire",
     "smoke",
     "ashfall",
+    "air",
   ],
 
   // Body
   "body part": [
+    "body",
     "head",
     "face",
     "eye",
@@ -1367,6 +1371,9 @@ export const _categoryWords: Record<string, string[]> = {
     "duffelcoat",
     "cardiganSweater",
     "rainboots",
+    "button",
+    "collar",
+    "crown",
   ],
   cooking: [
     "blanch",
@@ -1959,6 +1966,7 @@ export const _categoryWords: Record<string, string[]> = {
     "quart",
     "pint",
     "fluidounce",
+    "amount",
   ],
 
   food: [
@@ -2138,8 +2146,12 @@ export const _categoryWords: Record<string, string[]> = {
     "shawarma",
     "kebab",
     "poke",
+    "almond",
+    "candy",
+    "dinner",
   ],
   religion: [
+    "angel",
     "pastor",
     "priest",
     "sermon",
@@ -2358,8 +2370,12 @@ export const _categoryWords: Record<string, string[]> = {
     "bamboo",
     "rattan",
     "cork",
+    "coal",
+    "electric",
   ],
   color: [
+    "color",
+    "dark",
     "red",
     "orange",
     "yellow",
@@ -2791,6 +2807,7 @@ export const _categoryWords: Record<string, string[]> = {
     "foothills",
     "arch",
     "cove",
+    "entry",
   ],
 
   disposition: [
@@ -3742,6 +3759,7 @@ export const _categoryWords: Record<string, string[]> = {
     "trafficking",
     "cybercrime",
     "hacking",
+    "crime",
   ],
   relationship: [
     "fiance",
@@ -3935,6 +3953,8 @@ export const _categoryWords: Record<string, string[]> = {
     "shaker",
     "maracas",
     "cowbell",
+    "album",
+    "echo",
   ],
   health: [
     "diagnosis",
@@ -3984,9 +4004,12 @@ export const _categoryWords: Record<string, string[]> = {
     "bloodtest",
     "urinetest",
     "biopsy",
+    "diet",
+    "dose",
   ],
 
   game: [
+    "doll",
     "chess",
     "checkers",
     "backgammon",
@@ -4176,6 +4199,11 @@ export const _categoryWords: Record<string, string[]> = {
     "awed",
     "startled",
     "flustered",
+    "alone",
+    "cheer",
+    "comfort",
+    "excite",
+    "danger",
   ],
   trigger: [
     "loudnoise",
@@ -4471,6 +4499,10 @@ export const _categoryWords: Record<string, string[]> = {
     "oct",
     "nov",
     "dec",
+    "clock",
+    "daily",
+    "early",
+    "ever",
   ],
   shape: [
     "circle",
@@ -4531,8 +4563,10 @@ export const _categoryWords: Record<string, string[]> = {
     "ring",
     "donut",
     "pyramid",
+    "corner",
   ],
   number: [
+    "double",
     "zero",
     "one",
     "two",
@@ -4783,6 +4817,9 @@ export const _categoryWords: Record<string, string[]> = {
     "productowner",
     "ux",
     "ui",
+    "cowboy",
+    "critic",
+    "expert",
   ],
   family: [
     "mother",
@@ -5015,6 +5052,8 @@ export const _categoryWords: Record<string, string[]> = {
     "earpods",
     "firewall",
     "vpn",
+    "data",
+    "device",
   ],
   internet: [
     "dm",
@@ -5825,6 +5864,15 @@ export const _categoryWords: Record<string, string[]> = {
     "deploy",
     "refactor",
     "debug",
+    "battle",
+    "claim",
+    "combine",
+    "deliver",
+    "demand",
+    "deny",
+    "detect",
+    "escape",
+    "expect",
   ],
   size: [
     "big",
@@ -5962,6 +6010,7 @@ export const _categoryWords: Record<string, string[]> = {
     "logging",
     "alerting",
     "reporting",
+    "alarm",
   ],
 
   quality: [
@@ -6165,6 +6214,8 @@ export const _categoryWords: Record<string, string[]> = {
     "basic",
     "advanced",
     "nice",
+    "beauty",
+    "dead",
   ],
 
   art: [
@@ -6346,6 +6397,7 @@ export const _categoryWords: Record<string, string[]> = {
     "backward",
     "clockwise",
     "counterclockwise",
+    "along",
   ],
 
   // School / education
@@ -6380,6 +6432,7 @@ export const _categoryWords: Record<string, string[]> = {
     "lockerroom",
     "homeroom",
     "detention",
+    "example",
   ],
   person: [
     "student",
@@ -6445,6 +6498,9 @@ export const _categoryWords: Record<string, string[]> = {
     "bond",
     "portfolio",
     "dividend",
+    "cost",
+    "deal",
+    "debt",
   ],
 
   // Math (useful for hinting/classification)
@@ -6484,6 +6540,7 @@ export const _categoryWords: Record<string, string[]> = {
     "percent",
     "ratio",
     "proportion",
+    "equal",
   ],
 
   // Science
@@ -6552,6 +6609,7 @@ export const _categoryWords: Record<string, string[]> = {
     "mercury",
     "neptune",
     "uranus",
+    "earth",
   ],
 
   // Kitchen items (more specific than household/food)
@@ -6872,6 +6930,7 @@ export const _categoryWords: Record<string, string[]> = {
     "improv",
     "standup",
     "comedyshow",
+    "event",
   ],
 
   // Common programming terms (separate from general technology)

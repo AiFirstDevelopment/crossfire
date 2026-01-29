@@ -411,6 +411,8 @@ export class GameClient {
 
   leaveRoom() {
     this.send({ type: 'leave-room' });
+    // Set phase to 'finished' before disconnect to prevent error message in onclose handler
+    this.state.phase = 'finished';
     this.disconnect();
     this.state = this.createInitialState();
     this.stateHandlers.forEach(h => h(this.state));

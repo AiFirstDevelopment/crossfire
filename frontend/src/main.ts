@@ -5,6 +5,7 @@ import { BotGame, BotGameState } from './bot';
 import englishWords from 'an-array-of-english-words';
 import humanId from 'human-id';
 import { getCategorizedWords, getHint as getWordCategory, stemToken } from '../../shared/get-hint';
+import { botWords as easyBotWords } from '../../shared/terms/bot.words';
 
 // Create a Set for O(1) word lookup - only words with categories are valid
 const categorizedWords = getCategorizedWords();
@@ -13,8 +14,8 @@ const validWords = new Set(
     .map(w => w.toUpperCase())
     .filter(w => categorizedWords.has(stemToken(w)))
 );
-// Word list for bot - only categorized words
-const wordList = englishWords.filter(w => categorizedWords.has(stemToken(w)));
+// Word list for bot - use curated easy words, filtered to valid dictionary words
+const wordList = easyBotWords.filter(w => categorizedWords.has(stemToken(w)));
 
 // Elements
 const screens = {
@@ -46,6 +47,9 @@ const resultTitle = document.getElementById('result-title')!;
 const resultDetails = document.getElementById('result-details')!;
 const playAgainBtn = document.getElementById('play-again-btn') as HTMLButtonElement;
 const leaveRoomBtn = document.getElementById('leave-room-btn') as HTMLButtonElement;
+const leaveWaitingBtn = document.getElementById('leave-waiting-btn') as HTMLButtonElement;
+const leaveSubmitBtn = document.getElementById('leave-submit-btn') as HTMLButtonElement;
+const leaveSolveBtn = document.getElementById('leave-solve-btn') as HTMLButtonElement;
 const rematchStatus = document.getElementById('rematch-status')!;
 const errorToast = document.getElementById('error-toast')!;
 const hintToast = document.getElementById('hint-toast')!;
@@ -170,6 +174,47 @@ function init() {
       isBotMode = false;
       botGameActive = false;
       // Update active games count (removes bot game addition)
+      updateActiveGames(game.getState().activeGames);
+    } else {
+      game.leaveRoom();
+    }
+    lastSubmittedWords = [];
+    crosswordUI = null;
+    hideSolutionGrid();
+    showScreen('menu');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+  });
+
+  leaveWaitingBtn.addEventListener('click', () => {
+    game.leaveRoom();
+    showScreen('menu');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+  });
+
+  leaveSubmitBtn.addEventListener('click', () => {
+    if (isBotMode && botGame) {
+      botGame.destroy();
+      botGame = null;
+      isBotMode = false;
+      botGameActive = false;
+      updateActiveGames(game.getState().activeGames);
+    } else {
+      game.leaveRoom();
+    }
+    lastSubmittedWords = [];
+    showScreen('menu');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+  });
+
+  leaveSolveBtn.addEventListener('click', () => {
+    if (isBotMode && botGame) {
+      botGame.destroy();
+      botGame = null;
+      isBotMode = false;
+      botGameActive = false;
       updateActiveGames(game.getState().activeGames);
     } else {
       game.leaveRoom();
@@ -893,6 +938,7 @@ function initPlayerIdUI(): void {
           return;
         }
       } catch (error) {
+        console.error('Failed to verify player ID:', error);
         showError('Failed to verify player ID');
         return;
       }
@@ -964,6 +1010,7 @@ async function fetchOpponentLevel(opponentName: string): Promise<number> {
       return 1;
     }
   } catch (error) {
+    console.error('Failed to fetch opponent level:', error);
     opponentLevelEl.textContent = '1';
     return 1;
   }
