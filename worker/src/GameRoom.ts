@@ -73,13 +73,15 @@ export class GameRoom {
     return new Response('Not found', { status: 404 });
   }
 
-  async handleWebSocket(_request: Request): Promise<Response> {
+  async handleWebSocket(request: Request): Promise<Response> {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
     server.accept();
 
-    const playerId = crypto.randomUUID();
+    // Get playerId from query string (sent by client) or generate one as fallback
+    const url = new URL(request.url);
+    const playerId = url.searchParams.get('playerId') || crypto.randomUUID();
     const playerName = `Player ${this.players.size + 1}`;
 
     // Debug: log connection attempt
@@ -97,6 +99,14 @@ export class GameRoom {
       console.log(`Rejecting: game in phase ${this.gameState.phase}`);
       this.sendTo(server, { type: 'error', code: 'GAME_IN_PROGRESS', message: 'Game already in progress' });
       server.close(1008, 'Game in progress');
+      return new Response(null, { status: 101, webSocket: client });
+    }
+
+    // Check if player is already in the room (prevent playing against yourself)
+    if (this.gameState.players[playerId]) {
+      console.log(`Rejecting: player ${playerId} is already in the room`);
+      this.sendTo(server, { type: 'error', code: 'ALREADY_IN_ROOM', message: 'You are already in this room' });
+      server.close(1008, 'Already in room');
       return new Response(null, { status: 101, webSocket: client });
     }
 

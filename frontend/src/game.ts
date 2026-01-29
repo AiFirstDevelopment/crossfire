@@ -36,6 +36,7 @@ export class GameClient {
   private matchmakingTimer: number | null = null;
   private isProduction: boolean;
   private intentionalDisconnect: boolean = false;
+  private playerId: string = '';
 
   // How long to wait before offering bot match (10 seconds)
   private static readonly MATCHMAKING_TIMEOUT_MS = 10000;
@@ -44,6 +45,10 @@ export class GameClient {
     this.isProduction = window.location.hostname !== 'localhost';
     this.state = this.createInitialState();
     this.connectToStats();
+  }
+
+  setPlayerId(id: string) {
+    this.playerId = id;
   }
 
   // Connect to matchmaking just for stats updates
@@ -224,7 +229,7 @@ export class GameClient {
   connectToRoom(roomId: string) {
     this.updateState({ phase: 'connecting', roomId, error: null });
 
-    const url = this.getWsUrl(`/api/room/join?roomId=${roomId}`);
+    const url = this.getWsUrl(`/api/room/join?roomId=${roomId}&playerId=${encodeURIComponent(this.playerId)}`);
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
@@ -352,7 +357,7 @@ export class GameClient {
       case 'error':
         // Mark as intentional disconnect if this is a connection rejection
         // (server will close the connection after sending this error)
-        if (message.code === 'ROOM_FULL' || message.code === 'GAME_IN_PROGRESS') {
+        if (message.code === 'ROOM_FULL' || message.code === 'GAME_IN_PROGRESS' || message.code === 'ALREADY_IN_ROOM') {
           this.intentionalDisconnect = true;
           // Reset to menu so user isn't stuck on waiting screen
           this.updateState({ phase: 'connecting', error: message.message, roomId: null });

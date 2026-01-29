@@ -86,9 +86,11 @@ let lastSubmittedWords: string[] = []; // Store words for resubmit scenarios
 let accumulatedPenalty = 0;
 let isBotMode = false;
 let botGameActive = false; // Track if bot game is active for game count
+let winRecordedForCurrentGame = false; // Prevent duplicate win recording
 
 function init() {
   game = new GameClient();
+  game.setPlayerId(currentPlayerId);
 
   game.onStateChange(handleStateChange);
   game.onHintUsed(showHintUsed);
@@ -253,6 +255,8 @@ function startBotGame() {
 function handleBotStateChange(state: BotGameState) {
   switch (state.phase) {
     case 'submitting':
+      // Reset win tracking for new game
+      winRecordedForCurrentGame = false;
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
@@ -422,6 +426,8 @@ function handleStateChange(state: GameState) {
       break;
 
     case 'submitting':
+      // Reset win tracking for new game
+      winRecordedForCurrentGame = false;
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
@@ -1113,6 +1119,13 @@ async function updatePlayerStats(): Promise<void> {
 }
 
 async function recordWin(): Promise<void> {
+  // Prevent duplicate win recording for the same game
+  if (winRecordedForCurrentGame) {
+    console.log('Win already recorded for this game, skipping');
+    return;
+  }
+  winRecordedForCurrentGame = true;
+
   try {
     const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/record-win`, {
       method: 'POST',
