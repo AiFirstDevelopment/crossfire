@@ -256,6 +256,7 @@ export const _categoryWords: Record<string, string[]> = {
 
   animal: [
     "dog",
+    "salimander",
     "cat",
     "bird",
     "fish",
@@ -530,7 +531,17 @@ export const _categoryWords: Record<string, string[]> = {
     "markhor",
     "okapi",
     "cattle",
+    "bighorn",
+    "sheep",
+    "goats",
+    "antelope",
+    "buffaloe",
+    "bison",
+    "deer",
+    "moose",
+    "elk",
   ],
+  "grapes on a stem": ["bunch", "cluster"],
   ingredient: [
     "cornstarch",
     "balsamic",
@@ -757,6 +768,7 @@ export const _categoryWords: Record<string, string[]> = {
     "hedgerow",
     "crop",
   ],
+  "Instinct without evidence": ["hunch", "gutfeeling", "intuition"],
   weather: [
     "rain",
     "snow",
@@ -6546,7 +6558,7 @@ export const _categoryWords: Record<string, string[]> = {
     "manager",
     "executive",
     "intern",
-    "workers"
+    "workers",
   ],
   // Office / business
   office: [
