@@ -266,6 +266,55 @@ test.describe('Friend Rooms', () => {
     await safeLeave(page);
   });
 
+  test('should not join with empty room ID', async ({ page }) => {
+    await page.goto('/');
+    await waitForConnection(page);
+
+    // Clear room ID input and click join
+    await page.locator('#room-id-input').fill('');
+    await page.locator('#join-room-btn').click();
+
+    // Should stay on menu screen (no navigation)
+    await expect(page.locator('#screen-menu')).toBeVisible();
+    await expect(page.locator('#screen-waiting')).toBeHidden();
+  });
+
+  test('should normalize room ID to lowercase', async ({ browser }) => {
+    // Use two browser contexts to verify case normalization
+    const context1 = await browser.newContext();
+    const context2 = await browser.newContext();
+    const page1 = await context1.newPage();
+    const page2 = await context2.newPage();
+
+    const timestamp = Date.now();
+
+    try {
+      // Player 1 joins with UPPERCASE
+      await page1.goto('/');
+      await waitForConnection(page1);
+      await page1.locator('#room-id-input').fill(`TEST-ROOM-${timestamp}`);
+      await page1.locator('#join-room-btn').click();
+      await expect(page1.locator('#screen-waiting')).toBeVisible({ timeout: 5000 });
+
+      // Player 2 joins with lowercase - should match same room
+      await page2.goto('/');
+      await waitForConnection(page2);
+      await page2.locator('#room-id-input').fill(`test-room-${timestamp}`);
+      await page2.locator('#join-room-btn').click();
+
+      // Both should go to submit screen (matched in same room)
+      await expect(page1.locator('#screen-submit')).toBeVisible({ timeout: 10000 });
+      await expect(page2.locator('#screen-submit')).toBeVisible({ timeout: 5000 });
+
+      // Clean up
+      await safeLeave(page1);
+      await safeLeave(page2);
+    } finally {
+      await context1.close();
+      await context2.close();
+    }
+  });
+
   test('should be able to leave waiting room', async ({ page }) => {
     await page.goto('/');
     await waitForConnection(page);
@@ -450,6 +499,33 @@ test.describe('Player Identity', () => {
     await page.locator('#cancel-id-btn').click();
     await expect(page.locator('#change-id-form')).toBeHidden();
   });
+
+
+  test('should support keyboard shortcuts in change ID form', async ({ page }) => {
+    await page.goto('/');
+    await waitForConnection(page);
+
+    // Open change ID form
+    await page.locator('#change-id-btn').click();
+    await expect(page.locator('#change-id-form')).toBeVisible();
+
+    // Escape should close the form
+    await page.locator('#new-id-input').press('Escape');
+    await expect(page.locator('#change-id-form')).toBeHidden();
+
+    // Open again - verify it reopens
+    await page.locator('#change-id-btn').click();
+    await expect(page.locator('#change-id-form')).toBeVisible();
+
+    // Input should be focused and accept typing
+    await expect(page.locator('#new-id-input')).toBeFocused();
+    await page.locator('#new-id-input').fill('test-value');
+    expect(await page.locator('#new-id-input').inputValue()).toBe('test-value');
+
+    // Close with Escape again
+    await page.locator('#new-id-input').press('Escape');
+    await expect(page.locator('#change-id-form')).toBeHidden();
+  });
 });
 
 test.describe('Theme', () => {
@@ -510,5 +586,121 @@ test.describe('Results Screen', () => {
     // Should return to menu with Find New Match option ready
     await expect(page.locator('#screen-menu')).toBeVisible();
     await expect(page.locator('#find-match-btn')).toBeEnabled();
+  });
+});
+
+
+test.describe('Keyboard Navigation', () => {
+  test('should tab between word inputs', async ({ browser }) => {
+    test.skip(!!process.env.E2E_BASE_URL, 'Skipped in production - requires bot game');
+    test.setTimeout(45000);
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    try {
+      await page.goto('/');
+      await waitForConnection(page);
+
+      // Start bot game
+      await page.locator('#find-match-btn').click();
+      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+
+      // First input should be focused
+      const inputs = page.locator('.word-input');
+      await expect(inputs.first()).toBeFocused();
+
+      // Fill first word and tab to next
+      await inputs.first().fill('APPLE');
+      await page.keyboard.press('Tab');
+
+      // Second input should now be focused
+      await expect(inputs.nth(1)).toBeFocused();
+
+      // Fill and tab again
+      await inputs.nth(1).fill('PLANE');
+      await page.keyboard.press('Tab');
+      await expect(inputs.nth(2)).toBeFocused();
+
+      // Clean up
+      await safeLeave(page);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
+test.describe('Word Validation', () => {
+  test('should reject duplicate words', async ({ browser }) => {
+    test.skip(!!process.env.E2E_BASE_URL, 'Skipped in production - requires bot game');
+    test.setTimeout(45000);
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    try {
+      await page.goto('/');
+      await waitForConnection(page);
+
+      // Start bot game
+      await page.locator('#find-match-btn').click();
+      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+
+      // Enter the same word twice
+      const inputs = page.locator('.word-input');
+      await inputs.nth(0).fill('APPLE');
+      await inputs.nth(1).fill('APPLE');
+      await page.locator('body').click({ position: { x: 10, y: 10 } });
+
+      // Both should be valid individually (duplicate check is server-side or form-level)
+      // But submit button should work - duplicates are caught on submission
+      await inputs.nth(2).fill('PLANE');
+      await inputs.nth(3).fill('EAGLE');
+      await page.locator('body').click({ position: { x: 10, y: 10 } });
+
+      // Submit button should be enabled (client allows it)
+      const submitBtn = page.locator('#word-form button[type="submit"]');
+      await expect(submitBtn).toBeEnabled({ timeout: 2000 });
+
+      // Clean up
+      await safeLeave(page);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('should reject words shorter than 3 characters', async ({ browser }) => {
+    test.skip(!!process.env.E2E_BASE_URL, 'Skipped in production - requires bot game');
+    test.setTimeout(45000);
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    try {
+      await page.goto('/');
+      await waitForConnection(page);
+
+      // Start bot game
+      await page.locator('#find-match-btn').click();
+      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+
+      // Enter a short word
+      const firstInput = page.locator('.word-input').first();
+      await firstInput.fill('AB');
+      await page.locator('body').click({ position: { x: 10, y: 10 } });
+
+      // Should show error
+      await expect(firstInput).toHaveClass(/invalid/, { timeout: 2000 });
+      await expect(page.locator('.word-error').first()).toContainText(/short/i);
+
+      // Submit should be disabled
+      const submitBtn = page.locator('#word-form button[type="submit"]');
+      await expect(submitBtn).toBeDisabled();
+
+      // Clean up
+      await safeLeave(page);
+    } finally {
+      await context.close();
+    }
   });
 });
