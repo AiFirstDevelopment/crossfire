@@ -45,12 +45,10 @@ const opponentProgressEl = document.getElementById('opponent-progress')!;
 const crosswordContainer = document.getElementById('crossword-container')!;
 const resultTitle = document.getElementById('result-title')!;
 const resultDetails = document.getElementById('result-details')!;
-const playAgainBtn = document.getElementById('play-again-btn') as HTMLButtonElement;
 const leaveRoomBtn = document.getElementById('leave-room-btn') as HTMLButtonElement;
 const leaveWaitingBtn = document.getElementById('leave-waiting-btn') as HTMLButtonElement;
 const leaveSubmitBtn = document.getElementById('leave-submit-btn') as HTMLButtonElement;
 const leaveSolveBtn = document.getElementById('leave-solve-btn') as HTMLButtonElement;
-const rematchStatus = document.getElementById('rematch-status')!;
 const errorToast = document.getElementById('error-toast')!;
 const hintToast = document.getElementById('hint-toast')!;
 const solutionContainer = document.getElementById('solution-container')!;
@@ -159,14 +157,6 @@ function init() {
     stopTimer();
     submitFormSection.classList.add('hidden');
     submitWaitingSection.classList.remove('hidden');
-  });
-
-  playAgainBtn.addEventListener('click', () => {
-    if (isBotMode && botGame) {
-      botGame.playAgain();
-    } else {
-      game.playAgain();
-    }
   });
 
   leaveRoomBtn.addEventListener('click', () => {
@@ -311,9 +301,6 @@ function handleBotStateChange(state: BotGameState) {
       showScreen('results');
       stopTimer();
       showBotResults(state);
-      // Hide rematch status for bot games (bot always accepts rematch)
-      rematchStatus.classList.add('hidden');
-      playAgainBtn.disabled = false;
       crosswordUI = null;
       break;
   }
@@ -398,7 +385,7 @@ function handleStateChange(state: GameState) {
   // Always update stats displays
   updateActiveGames(state.activeGames);
   updateTotalGames(state.totalGamesPlayed);
-  updateTotalPlayers(state.totalPlayers);
+  updateTotalPlayers(state.totalPlayers, state.returningUsers);
 
   // Update error display
   if (state.error) {
@@ -508,7 +495,6 @@ function handleStateChange(state: GameState) {
       showScreen('results');
       stopTimer();
       showResults(state);
-      updateRematchStatus(state);
       crosswordUI = null;
       break;
   }
@@ -530,8 +516,13 @@ function updateTotalGames(count: number) {
   totalGamesEl.textContent = `${count.toLocaleString()} games played`;
 }
 
-function updateTotalPlayers(count: number) {
+function updateTotalPlayers(count: number, returning: number) {
   totalPlayersEl.textContent = `Players: ${count.toLocaleString()}`;
+  if (returning > 0) {
+    totalPlayersEl.title = `${returning.toLocaleString()} returning`;
+  } else {
+    totalPlayersEl.title = '';
+  }
 }
 
 function showError(message: string) {
@@ -883,30 +874,6 @@ function showResults(state: GameState) {
     renderSolutionGrid(state.grid, result.solution, state.grid.words);
   } else {
     hideSolutionGrid();
-  }
-}
-
-function updateRematchStatus(state: GameState) {
-  if (state.waitingForRematch) {
-    if (state.opponentWantsRematch) {
-      // Both want rematch - game should restart automatically
-      rematchStatus.textContent = 'Starting new game...';
-      rematchStatus.classList.remove('hidden');
-      rematchStatus.classList.add('waiting');
-    } else {
-      rematchStatus.textContent = 'Waiting for opponent...';
-      rematchStatus.classList.remove('hidden');
-      rematchStatus.classList.add('waiting');
-    }
-    playAgainBtn.disabled = true;
-  } else if (state.opponentWantsRematch) {
-    rematchStatus.textContent = 'Opponent wants to play again!';
-    rematchStatus.classList.remove('hidden', 'waiting');
-    playAgainBtn.disabled = false;
-  } else {
-    rematchStatus.classList.add('hidden');
-    rematchStatus.classList.remove('waiting');
-    playAgainBtn.disabled = false;
   }
 }
 

@@ -20,6 +20,7 @@ export interface GameState {
   activeGames: number;
   totalGamesPlayed: number;
   totalPlayers: number;
+  returningUsers: number;
 }
 
 type StateChangeHandler = (state: GameState) => void;
@@ -59,10 +60,11 @@ export class GameClient {
     this.statsWs.onmessage = (event) => {
       const message = JSON.parse(event.data) as ServerMessage;
       if (message.type === 'welcome' || message.type === 'stats-update') {
-        const activeGames = 'activeGames' in message ? message.activeGames : 0;
-        const totalGamesPlayed = 'totalGamesPlayed' in message ? message.totalGamesPlayed : 0;
-        const totalPlayers = 'totalPlayers' in message ? message.totalPlayers : 0;
-        this.updateState({ activeGames: activeGames ?? 0, totalGamesPlayed: totalGamesPlayed ?? 0, totalPlayers: totalPlayers ?? 0 });
+        const activeGames = 'activeGames' in message ? (message.activeGames ?? 0) : 0;
+        const totalGamesPlayed = 'totalGamesPlayed' in message ? (message.totalGamesPlayed ?? 0) : 0;
+        const totalPlayers = 'totalPlayers' in message ? (message.totalPlayers ?? 0) : 0;
+        const returningUsers = 'returningUsers' in message ? (message.returningUsers ?? 0) : 0;
+        this.updateState({ activeGames, totalGamesPlayed, totalPlayers, returningUsers });
       }
     };
 
@@ -130,6 +132,7 @@ export class GameClient {
       activeGames: 0,
       totalGamesPlayed: 0,
       totalPlayers: 0,
+      returningUsers: 0,
     };
   }
 
@@ -197,6 +200,7 @@ export class GameClient {
           activeGames: message.activeGames ?? 0,
           totalGamesPlayed: message.totalGamesPlayed ?? 0,
           totalPlayers: message.totalPlayers ?? 0,
+          returningUsers: message.returningUsers ?? 0,
         });
         break;
 
@@ -205,7 +209,7 @@ export class GameClient {
         break;
 
       case 'stats-update':
-        this.updateState({ activeGames: message.activeGames, totalGamesPlayed: message.totalGamesPlayed, totalPlayers: message.totalPlayers });
+        this.updateState({ activeGames: message.activeGames, totalGamesPlayed: message.totalGamesPlayed, totalPlayers: message.totalPlayers, returningUsers: message.returningUsers ?? 0 });
         break;
 
       case 'match-found':
