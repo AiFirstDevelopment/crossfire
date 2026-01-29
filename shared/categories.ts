@@ -1,6 +1,6 @@
 // Word categories for hint system
 // Words are mapped to simple, recognizable categories
-import { transformCategoryKeys } from "./transform-category-keys"; 
+import { transformCategoryKeys } from "./transform-category-keys";
 
 export const _categoryWords: Record<string, string[]> = {
   // Nature
@@ -4073,20 +4073,6 @@ export const _categoryWords: Record<string, string[]> = {
     "mmorpg",
   ],
 
-  person: [
-    "man",
-    "woman",
-    "child",
-    "boy",
-    "girl",
-    "adult",
-    "teenager",
-    "elderly",
-    "baby",
-    "infant",
-    "toddler",
-    "adolescent",
-  ],
   // Concepts
   emotion: [
     "happy",
@@ -6459,6 +6445,18 @@ export const _categoryWords: Record<string, string[]> = {
     "alien",
     "giant",
     "dwarf",
+    "man",
+    "woman",
+    "child",
+    "boy",
+    "girl",
+    "adult",
+    "teenager",
+    "elderly",
+    "baby",
+    "infant",
+    "toddler",
+    "adolescent",
   ],
   // Office / business
   office: [
