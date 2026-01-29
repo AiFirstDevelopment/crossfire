@@ -350,6 +350,11 @@ export class GameClient {
         break;
 
       case 'error':
+        // Mark as intentional disconnect if this is a connection rejection
+        // (server will close the connection after sending this error)
+        if (message.code === 'ROOM_FULL' || message.code === 'GAME_IN_PROGRESS') {
+          this.intentionalDisconnect = true;
+        }
         this.updateState({ error: message.message });
         break;
     }

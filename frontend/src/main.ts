@@ -394,11 +394,12 @@ function handleStateChange(state: GameState) {
 
   // Update error display
   if (state.error) {
-    showError(state.error);
-    // If this is a grid failure error (words don't share letters), generate suggestions
+    // If this is a grid failure error (words don't share letters), show inline suggestions instead of toast
     if (state.error.includes("share no letters") || state.error.includes("can't make a crossword")) {
       const suggestions = generateGridFailureSuggestions(lastSubmittedWords);
       showErrorWithSuggestions(state.error, suggestions);
+    } else {
+      showError(state.error);
     }
   }
 
@@ -538,20 +539,14 @@ function generateGridFailureSuggestions(words: string[]): { wordIndex: number; r
     return [...letters1].filter(l => letters2.has(l));
   };
 
-  // Build connectivity map
-  const connections: Record<number, number[]> = {};
-  const sharedWith: Record<string, string[]> = {};
-
+  // Find all pairs that don't share letters and track problematic word indices
+  const problematicIndices = new Set<number>();
   for (let i = 0; i < normalized.length; i++) {
-    connections[i] = [];
-    for (let j = 0; j < normalized.length; j++) {
-      if (i !== j) {
-        const shared = sharedLetters(normalized[i], normalized[j]);
-        if (shared.length > 0) {
-          connections[i].push(j);
-          const key = i < j ? `${i}-${j}` : `${j}-${i}`;
-          sharedWith[key] = shared;
-        }
+    for (let j = i + 1; j < normalized.length; j++) {
+      const shared = sharedLetters(normalized[i], normalized[j]);
+      if (shared.length === 0) {
+        problematicIndices.add(i);
+        problematicIndices.add(j);
       }
     }
   }
@@ -579,26 +574,23 @@ function generateGridFailureSuggestions(words: string[]): { wordIndex: number; r
     return shuffled.slice(0, 5).map(w => w.toUpperCase());
   };
 
-  // Find isolated words (no shared letters with any other word)
-  const isolatedIndices = normalized.map((_, i) => i).filter(i => connections[i].length === 0);
-
-  if (isolatedIndices.length > 0) {
-    return isolatedIndices.map(idx => ({
+  // If we found problematic pairs, show suggestions for all involved words
+  if (problematicIndices.size > 0) {
+    return [...problematicIndices].map(idx => ({
       wordIndex: idx,
       replacements: findReplacements(idx)
     }));
   }
 
-  // If no isolated words, find word with weakest connections
-  const connectionScores = normalized.map((_, i) => {
-    let score = 0;
+  // Fallback: find word with weakest overall connectivity
+  const connectionScores = normalized.map((word, i) => {
+    let totalShared = 0;
     for (let j = 0; j < normalized.length; j++) {
       if (i !== j) {
-        const key = i < j ? `${i}-${j}` : `${j}-${i}`;
-        score += (sharedWith[key]?.length || 0);
+        totalShared += sharedLetters(word, normalized[j]).length;
       }
     }
-    return { index: i, score };
+    return { index: i, score: totalShared };
   });
 
   connectionScores.sort((a, b) => a.score - b.score);

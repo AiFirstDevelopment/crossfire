@@ -150,6 +150,12 @@ export class GameRoom {
         this.endGame(remainingPlayer.id, 'opponent-left');
       }
     }
+
+    // If everyone has left, reset the room so it can be reused
+    if (this.players.size === 0) {
+      this.gameState = this.createInitialGameState();
+      this.gameEndedNotified = false;
+    }
   }
 
   private handleMessage(sender: WebSocket, message: ClientMessage) {
