@@ -248,8 +248,12 @@ function startBotGame() {
   // Update active games count (adds 1 for bot game)
   updateActiveGames(game.getState().activeGames);
 
-  // Show submission screen immediately
+  // Update status text
   statusText.textContent = `Playing against ${botGame.getBotName()}`;
+
+  // Trigger initial state change to show the submit screen
+  // (constructor sets state before handler is registered)
+  handleBotStateChange(botGame.getState());
 }
 
 function handleBotStateChange(state: BotGameState) {
@@ -408,6 +412,9 @@ function handleStateChange(state: GameState) {
   }
 
   // Update screens based on phase
+  // Skip screen updates if we're in bot mode (bot game handles its own screens)
+  if (isBotMode) return;
+
   switch (state.phase) {
     case 'connecting':
       // Return to menu screen (e.g., after connection rejection)
@@ -1081,6 +1088,17 @@ async function fetchWins(): Promise<number> {
   return 0;
 }
 
+// Record a visit (for returning user tracking)
+async function recordVisit(): Promise<void> {
+  try {
+    await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/visit`, {
+      method: 'POST',
+    });
+  } catch (error) {
+    // Silently fail - visit tracking is non-critical
+  }
+}
+
 async function fetchOpponentLevel(opponentName: string): Promise<number> {
   // The opponent name is used as the player ID (lowercase)
   const opponentId = opponentName.toLowerCase();
@@ -1163,6 +1181,9 @@ initPlayerIdUI();
 
 // Initialize player stats (fetches from cloud)
 updatePlayerStats();
+
+// Record visit for returning user tracking
+recordVisit();
 
 // Initialize app
 init();

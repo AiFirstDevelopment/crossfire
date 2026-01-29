@@ -119,6 +119,25 @@ export default {
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
+    // Record visit - POST /api/player/:playerId/visit
+    const visitMatch = url.pathname.match(/^\/api\/player\/([^/]+)\/visit$/);
+    if (visitMatch && request.method === 'POST') {
+      const playerId = visitMatch[1].toLowerCase();
+      const id = env.PLAYER_STATS.idFromName(playerId);
+      const stats = env.PLAYER_STATS.get(id);
+      const response = await stats.fetch(new Request('https://stats/visit', { method: 'POST' }));
+      const data = await response.json() as { isReturning: boolean; visitCount: number; wins: number };
+
+      // Notify Matchmaking if this is a returning user
+      if (data.isReturning) {
+        const matchmakingId = env.MATCHMAKING.idFromName('global');
+        const matchmaking = env.MATCHMAKING.get(matchmakingId);
+        await matchmaking.fetch(new Request('https://matchmaking/returning-user', { method: 'POST' }));
+      }
+
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
     // Default 404 response
     return new Response(
       JSON.stringify({ error: 'Not Found' }),

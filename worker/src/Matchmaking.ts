@@ -20,6 +20,7 @@ export class Matchmaking {
   private activeGames: number;
   private totalGamesPlayed: number;
   private totalPlayers: number;
+  private returningUsers: number;
 
   // Seed value for historical players before tracking began
   private static readonly INITIAL_PLAYER_COUNT = 10;
@@ -32,6 +33,7 @@ export class Matchmaking {
     this.activeGames = 0;
     this.totalGamesPlayed = 0;
     this.totalPlayers = Matchmaking.INITIAL_PLAYER_COUNT;
+    this.returningUsers = 0;
 
     // Load persisted counts
     this.state.blockConcurrencyWhile(async () => {
@@ -46,6 +48,10 @@ export class Matchmaking {
       const storedPlayers = await this.state.storage.get<number>('totalPlayers');
       if (storedPlayers !== undefined) {
         this.totalPlayers = storedPlayers;
+      }
+      const storedReturning = await this.state.storage.get<number>('returningUsers');
+      if (storedReturning !== undefined) {
+        this.returningUsers = storedReturning;
       }
     });
   }
@@ -99,6 +105,16 @@ export class Matchmaking {
       });
     }
 
+    // Handle returning user notification
+    if (url.pathname === '/returning-user' && request.method === 'POST') {
+      this.returningUsers++;
+      await this.state.storage.put('returningUsers', this.returningUsers);
+      this.broadcastStats();
+      return new Response(JSON.stringify({ returningUsers: this.returningUsers }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Return current stats
     return new Response(
       JSON.stringify({
@@ -107,6 +123,7 @@ export class Matchmaking {
         activeGames: this.activeGames,
         totalGamesPlayed: this.totalGamesPlayed,
         totalPlayers: this.totalPlayers,
+        returningUsers: this.returningUsers,
       }),
       { headers: { 'Content-Type': 'application/json' } }
     );
@@ -145,6 +162,7 @@ export class Matchmaking {
       activeGames: this.activeGames,
       totalGamesPlayed: this.totalGamesPlayed,
       totalPlayers: this.totalPlayers,
+      returningUsers: this.returningUsers,
     });
 
     // Handle messages
@@ -266,6 +284,7 @@ export class Matchmaking {
       activeGames: this.activeGames,
       totalGamesPlayed: this.totalGamesPlayed,
       totalPlayers: this.totalPlayers,
+      returningUsers: this.returningUsers,
     });
     for (const ws of this.connectedSockets) {
       try {

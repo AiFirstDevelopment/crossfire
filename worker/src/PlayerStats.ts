@@ -6,6 +6,8 @@ interface PlayerData {
   wins: number;
   createdAt: number;
   lastWinAt?: number;
+  lastVisitAt?: number;
+  visitCount?: number;
 }
 
 export class PlayerStats {
@@ -70,6 +72,34 @@ export class PlayerStats {
       await this.state.storage.put('data', data);
 
       return new Response(JSON.stringify({ wins: data.wins }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // POST /visit - Record a visit (for returning user tracking)
+    if (request.method === 'POST' && url.pathname === '/visit') {
+      let data = await this.state.storage.get<PlayerData>('data');
+      const isReturning = data !== undefined && (data.visitCount ?? 0) > 0;
+
+      if (!data) {
+        data = {
+          wins: 0,
+          createdAt: Date.now(),
+          visitCount: 1,
+          lastVisitAt: Date.now(),
+        };
+      } else {
+        data.visitCount = (data.visitCount ?? 0) + 1;
+        data.lastVisitAt = Date.now();
+      }
+
+      await this.state.storage.put('data', data);
+
+      return new Response(JSON.stringify({
+        isReturning,
+        visitCount: data.visitCount,
+        wins: data.wins,
+      }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
