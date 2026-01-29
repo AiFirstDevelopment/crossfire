@@ -580,6 +580,28 @@ input[type="text"]::placeholder {
   margin-bottom: 0.5rem;
 }
 
+.submit-instructions {
+  background: rgba(100, 108, 255, 0.15);
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 1rem;
+  font-size: 1.05em;
+  text-align: center;
+}
+
+.submit-instructions strong {
+  color: #646cff;
+}
+
+.light-mode .submit-instructions {
+  background: rgba(100, 108, 255, 0.1);
+}
+
+.light-mode .submit-instructions strong {
+  color: #535bf2;
+}
+
 .opponent-level-badge {
   background: rgba(100, 108, 255, 0.2);
   color: #646cff;
