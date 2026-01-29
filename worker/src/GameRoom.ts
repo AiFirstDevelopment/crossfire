@@ -356,6 +356,12 @@ export class GameRoom {
         }
       }
 
+      // Add pre-filled cells to progress so they count toward completion
+      const progress = this.gameState.progress[playerId];
+      if (progress) {
+        Object.assign(progress.filledCells, preFilledCells);
+      }
+
       this.sendTo(player.websocket, {
         type: 'grid-ready',
         grid: clientGrid,
