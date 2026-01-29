@@ -30,6 +30,26 @@ async function fillWords(page: Page, words: string[]) {
 // Sample valid words that should work (common English words with shared letters)
 const VALID_WORDS = ['APPLE', 'PLANE', 'EAGLE', 'PLATE'];
 
+// Helper to safely leave any game/room state (prevents orphaned games on server)
+async function safeLeave(page: Page) {
+  try {
+    // Check which screen we're on and click the appropriate leave button
+    if (await page.locator('#leave-solve-btn').isVisible({ timeout: 500 })) {
+      await page.locator('#leave-solve-btn').click();
+    } else if (await page.locator('#leave-submit-btn').isVisible({ timeout: 500 })) {
+      await page.locator('#leave-submit-btn').click();
+    } else if (await page.locator('#leave-waiting-btn').isVisible({ timeout: 500 })) {
+      await page.locator('#leave-waiting-btn').click();
+    } else if (await page.locator('#leave-room-btn').isVisible({ timeout: 500 })) {
+      await page.locator('#leave-room-btn').click();
+    }
+    // Wait a moment for the leave action to process
+    await page.waitForTimeout(200);
+  } catch {
+    // Ignore errors - page may already be closed or in menu
+  }
+}
+
 test.describe('Page Load', () => {
   test('should load the menu screen with all elements', async ({ page }) => {
     await page.goto('/');
@@ -241,6 +261,9 @@ test.describe('Friend Rooms', () => {
     // Should go to waiting screen
     await expect(page.locator('#screen-waiting')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#waiting-info')).toContainText(/Waiting for opponent/i);
+
+    // Clean up: leave the room
+    await safeLeave(page);
   });
 
   test('should be able to leave waiting room', async ({ page }) => {
@@ -281,6 +304,9 @@ test.describe('Friend Rooms', () => {
     // Should show error (already in room)
     await expect(page2.locator('#error-toast')).toBeVisible({ timeout: 5000 });
     await expect(page2.locator('#error-toast')).toContainText(/already/i);
+
+    // Clean up: leave the room from first tab
+    await safeLeave(page);
   });
 });
 
@@ -319,6 +345,10 @@ test.describe('Two Player Game', () => {
 
       // At least one player should see opponent info (the one who joined second receives player-joined)
       await expect(page1.locator('#submit-opponent-info')).toBeVisible({ timeout: 5000 });
+
+      // Clean up: leave the game properly to avoid orphaned games on server
+      await safeLeave(page1);
+      await safeLeave(page2);
     } finally {
       await context1.close();
       await context2.close();
@@ -375,6 +405,9 @@ test.describe('Two Player Game', () => {
       await expect(page2.locator('#screen-results')).toBeVisible({ timeout: 10000 });
       await expect(page2.locator('#result-title')).toContainText(/Win/i);
       await expect(page2.locator('#result-details')).toContainText(/Opponent left/i);
+
+      // Clean up: leave from results screen
+      await safeLeave(page2);
     } finally {
       await context1.close();
       await context2.close();
