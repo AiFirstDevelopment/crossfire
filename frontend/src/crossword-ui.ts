@@ -35,13 +35,14 @@ export class CrosswordUI {
     table.style.gridTemplateRows = `repeat(${grid.height}, 44px)`;
     table.style.gap = '2px';
 
-    // Create word number labels map
-    const wordNumbers = new Map<string, number>();
+    // Create word number labels map - store all numbers for cells where multiple words start
+    const wordNumbers = new Map<string, number[]>();
     for (const word of grid.words) {
       const key = `${word.startRow},${word.startCol}`;
       if (!wordNumbers.has(key)) {
-        wordNumbers.set(key, word.index);
+        wordNumbers.set(key, []);
       }
+      wordNumbers.get(key)!.push(word.index);
     }
 
     for (let row = 0; row < grid.height; row++) {
@@ -94,7 +95,7 @@ export class CrosswordUI {
     this.container.appendChild(layout);
   }
 
-  private createCell(row: number, col: number, cell: ClientCell | null, wordNumber?: number): HTMLElement {
+  private createCell(row: number, col: number, cell: ClientCell | null, wordNumbers?: number[]): HTMLElement {
     const wrapper = document.createElement('div');
     wrapper.className = 'crossword-cell-wrapper';
 
@@ -107,10 +108,11 @@ export class CrosswordUI {
     const filledLetter = this.options.filledCells[key] || '';
     const isCorrect = this.options.cellCorrectness[key];
 
-    if (wordNumber) {
+    if (wordNumbers && wordNumbers.length > 0) {
       const numberEl = document.createElement('span');
       numberEl.className = 'cell-number';
-      numberEl.textContent = String(wordNumber);
+      // Sort and join numbers if multiple words start here
+      numberEl.textContent = wordNumbers.sort((a, b) => a - b).join('/');
       wrapper.appendChild(numberEl);
     }
 
