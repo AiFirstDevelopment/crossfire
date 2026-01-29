@@ -406,8 +406,8 @@ function handleStateChange(state: GameState) {
   // Update screens based on phase
   switch (state.phase) {
     case 'connecting':
-      // Only show "Connecting..." if user has initiated a connection
-      // (status text will be set when they click Find Match)
+      // Return to menu screen (e.g., after connection rejection)
+      showScreen('menu');
       break;
 
     case 'matchmaking':

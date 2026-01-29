@@ -354,8 +354,11 @@ export class GameClient {
         // (server will close the connection after sending this error)
         if (message.code === 'ROOM_FULL' || message.code === 'GAME_IN_PROGRESS') {
           this.intentionalDisconnect = true;
+          // Reset to menu so user isn't stuck on waiting screen
+          this.updateState({ phase: 'connecting', error: message.message, roomId: null });
+        } else {
+          this.updateState({ error: message.message });
         }
-        this.updateState({ error: message.message });
         break;
     }
   }
