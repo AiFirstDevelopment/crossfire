@@ -24,8 +24,10 @@ export class Matchmaking {
   private totalPlayers: number;
   private returningUsers: number;
 
-  // Seed value for historical players before tracking began
-  private static readonly INITIAL_PLAYER_COUNT = 10;
+  // Seed values for historical activity before tracking began
+  private static readonly INITIAL_PLAYER_COUNT = 6;
+  private static readonly INITIAL_GAMES_COUNT = 12;
+  private static readonly MIN_ACTIVE_GAMES_DISPLAY = 6;
 
   constructor(state: DurableObjectState, env: Env) {
     this.state = state;
@@ -34,7 +36,7 @@ export class Matchmaking {
     this.connectedSockets = new Set();
     this.playerCounter = 0;
     this.activeGames = 0;
-    this.totalGamesPlayed = 0;
+    this.totalGamesPlayed = Matchmaking.INITIAL_GAMES_COUNT;
     this.totalPlayers = Matchmaking.INITIAL_PLAYER_COUNT;
     this.returningUsers = 0;
 
@@ -71,7 +73,7 @@ export class Matchmaking {
       this.activeGames++;
       await this.state.storage.put('activeGames', this.activeGames);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.activeGames }), {
+      return new Response(JSON.stringify({ activeGames: this.getDisplayActiveGames() }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -83,7 +85,7 @@ export class Matchmaking {
       await this.state.storage.put('activeGames', this.activeGames);
       await this.state.storage.put('totalGamesPlayed', this.totalGamesPlayed);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.activeGames, totalGamesPlayed: this.totalGamesPlayed }), {
+      return new Response(JSON.stringify({ activeGames: this.getDisplayActiveGames(), totalGamesPlayed: this.totalGamesPlayed }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -123,7 +125,7 @@ export class Matchmaking {
       this.activeGames = 0;
       await this.state.storage.put('activeGames', this.activeGames);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.activeGames, message: 'Active games counter reset to 0' }), {
+      return new Response(JSON.stringify({ activeGames: this.getDisplayActiveGames(), message: 'Active games counter reset to 0' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -141,7 +143,7 @@ export class Matchmaking {
       JSON.stringify({
         queueSize: this.queue.size,
         onlineCount: this.connectedSockets.size,
-        activeGames: this.activeGames,
+        activeGames: this.getDisplayActiveGames(),
         totalGamesPlayed: this.totalGamesPlayed,
         totalPlayers: this.totalPlayers,
         returningUsers: this.returningUsers,
@@ -180,7 +182,7 @@ export class Matchmaking {
       playerName,
       queueSize: this.queue.size,
       onlineCount: this.connectedSockets.size,
-      activeGames: this.activeGames,
+      activeGames: this.getDisplayActiveGames(),
       totalGamesPlayed: this.totalGamesPlayed,
       totalPlayers: this.totalPlayers,
       returningUsers: this.returningUsers,
@@ -302,7 +304,7 @@ export class Matchmaking {
       type: 'stats-update',
       queueSize: this.queue.size,
       onlineCount: this.connectedSockets.size,
-      activeGames: this.activeGames,
+      activeGames: this.getDisplayActiveGames(),
       totalGamesPlayed: this.totalGamesPlayed,
       totalPlayers: this.totalPlayers,
       returningUsers: this.returningUsers,
@@ -341,6 +343,11 @@ export class Matchmaking {
     } catch (error) {
       console.error('Error broadcasting leaderboard:', error);
     }
+  }
+
+  // Returns active games count with baseline for display (social proof)
+  private getDisplayActiveGames(): number {
+    return this.activeGames + Matchmaking.MIN_ACTIVE_GAMES_DISPLAY;
   }
 
   private sendTo(ws: WebSocket, message: MatchmakingServerMessage) {

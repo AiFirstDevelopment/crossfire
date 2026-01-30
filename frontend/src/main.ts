@@ -605,7 +605,7 @@ function showScreen(name: keyof typeof screens) {
 }
 
 function updateActiveGames(serverCount: number) {
-  // Add 1 to server count if a bot game is active
+  // Add 1 to server count if a bot game is active (backend already applies minimum)
   const count = botGameActive ? serverCount + 1 : serverCount;
   const plural = count === 1 ? 'game' : 'games';
   activeGamesEl.textContent = `${count} ${plural} in progress`;
