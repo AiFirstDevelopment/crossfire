@@ -122,6 +122,7 @@ test.describe('Bot Game', () => {
 
   test('should complete a full bot game', async ({ page }) => {
     test.skip(!!process.env.E2E_BASE_URL, 'Skipped in production - bot timeout unreliable with shared queue');
+    test.skip(!process.env.RUN_SLOW_TESTS, 'Slow test - run with RUN_SLOW_TESTS=1');
     test.setTimeout(180000); // 3 minutes for full game
 
     await page.goto('/');
@@ -406,6 +407,7 @@ test.describe('Two Player Game', () => {
 
   test('should complete two-player game', async ({ browser }) => {
     test.skip(!!process.env.E2E_BASE_URL, 'Skipped in production - grid generation timeout issues');
+    test.skip(!process.env.RUN_SLOW_TESTS, 'Slow test - run with RUN_SLOW_TESTS=1');
     test.setTimeout(180000); // 3 minutes
 
     // Create two separate browser contexts for two players
