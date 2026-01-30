@@ -90,7 +90,6 @@ const achievementsListEl = document.getElementById('achievements-list')!;
 const resultStreakDisplayEl = document.getElementById('result-streak-display')!;
 const newAchievementsEl = document.getElementById('new-achievements')!;
 const dailyChallengeCompleteEl = document.getElementById('daily-challenge-complete')!;
-const quickRematchBtn = document.getElementById('quick-rematch-btn') as HTMLButtonElement;
 const confettiContainer = document.getElementById('confetti-container')!;
 const achievementToast = document.getElementById('achievement-toast')!;
 const achievementTextEl = document.getElementById('achievement-text')!;
@@ -1557,30 +1556,6 @@ function showResultsWithEngagement(isWinner: boolean, newStats: PlayerEngagement
   previousDailyChallengeCompleted = newStats.dailyChallengeCompleted;
 }
 
-// Quick rematch handler
-function initQuickRematch() {
-  quickRematchBtn.addEventListener('click', () => {
-    // Clean up current game state
-    if (isBotMode && botGame) {
-      botGame.destroy();
-      botGame = null;
-    }
-    crosswordUI = null;
-    hideSolutionGrid();
-    lastSubmittedWords = [];
-
-    // Start a new match
-    findMatchBtn.disabled = true;
-    statusText.textContent = 'Finding match...';
-
-    if (isBotMode) {
-      // Start another bot game immediately
-      startBotGame();
-    } else {
-      game.findMatch();
-    }
-  });
-}
 
 // Initialize all engagement features
 async function initEngagementFeatures() {
@@ -1600,9 +1575,6 @@ async function initEngagementFeatures() {
 
   // Fetch leaderboard
   await fetchLeaderboard();
-
-  // Init quick rematch
-  initQuickRematch();
 }
 
 // Theme management

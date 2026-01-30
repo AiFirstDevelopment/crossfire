@@ -566,6 +566,18 @@ test.describe('Theme', () => {
 });
 
 test.describe('Results Screen', () => {
+  test('should not have Play Again button', async ({ page }) => {
+    await page.goto('/');
+
+    // Verify that the quick-rematch-btn (Play Again) does not exist in the HTML
+    await expect(page.locator('#quick-rematch-btn')).toHaveCount(0);
+
+    // Verify that the leave-room-btn exists and has correct text
+    await expect(page.locator('#leave-room-btn')).toHaveCount(1);
+    const buttonText = await page.locator('#leave-room-btn').textContent();
+    expect(buttonText).toBe('Find New Match');
+  });
+
   test('should show Find New Match button after game ends', async ({ page }) => {
     test.skip(!!process.env.E2E_BASE_URL, 'Skipped in production - uses matchmaking which is unreliable with shared queue');
     test.setTimeout(120000);
