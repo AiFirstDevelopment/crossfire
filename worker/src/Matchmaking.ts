@@ -79,7 +79,7 @@ export class Matchmaking {
       this.activeGames++;
       await this.state.storage.put('activeGames', this.activeGames);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.getDisplayActiveGames() }), {
+      return new Response(JSON.stringify({ activePlayers: this.getDisplayActivePlayers() }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -91,7 +91,7 @@ export class Matchmaking {
       await this.state.storage.put('activeGames', this.activeGames);
       await this.state.storage.put('totalGamesPlayed', this.totalGamesPlayed);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.getDisplayActiveGames(), totalGamesPlayed: this.totalGamesPlayed }), {
+      return new Response(JSON.stringify({ activePlayers: this.getDisplayActivePlayers(), totalGamesPlayed: this.totalGamesPlayed }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -140,7 +140,7 @@ export class Matchmaking {
       this.activeGames = 0;
       await this.state.storage.put('activeGames', this.activeGames);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activeGames: this.getDisplayActiveGames(), message: 'Active games counter reset to 0' }), {
+      return new Response(JSON.stringify({ activePlayers: this.getDisplayActivePlayers(), message: 'Active games counter reset to 0' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -158,7 +158,7 @@ export class Matchmaking {
       JSON.stringify({
         queueSize: this.queue.size,
         onlineCount: this.connectedSockets.size,
-        activeGames: this.getDisplayActiveGames(),
+        activePlayers: this.getDisplayActivePlayers(),
         totalGamesPlayed: this.totalGamesPlayed,
         totalPlayers: this.totalPlayers,
         returningUsers: this.returningUsers,
@@ -198,7 +198,7 @@ export class Matchmaking {
       playerName,
       queueSize: this.queue.size,
       onlineCount: this.connectedSockets.size,
-      activeGames: this.getDisplayActiveGames(),
+      activePlayers: this.getDisplayActivePlayers(),
       totalGamesPlayed: this.totalGamesPlayed,
       totalPlayers: this.totalPlayers,
       returningUsers: this.returningUsers,
@@ -320,7 +320,7 @@ export class Matchmaking {
       type: 'stats-update',
       queueSize: this.queue.size,
       onlineCount: this.connectedSockets.size,
-      activeGames: this.getDisplayActiveGames(),
+      activePlayers: this.getDisplayActivePlayers(),
       totalGamesPlayed: this.totalGamesPlayed,
       totalPlayers: this.totalPlayers,
       returningUsers: this.returningUsers,
@@ -361,9 +361,9 @@ export class Matchmaking {
     }
   }
 
-  // Returns active games count with baseline for display (social proof)
-  private getDisplayActiveGames(): number {
-    return this.activeGames + Matchmaking.MIN_ACTIVE_GAMES_DISPLAY;
+  // Returns active players count with baseline for display (social proof)
+  private getDisplayActivePlayers(): number {
+    return 6 + this.connectedSockets.size;
   }
 
   private sendTo(ws: WebSocket, message: MatchmakingServerMessage) {
