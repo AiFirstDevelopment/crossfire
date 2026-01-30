@@ -1,7 +1,7 @@
 // Word categories for hint system
 // Now uses stemming-based lookup from shared module
 
-import { getHint, isValidWord, stemToken, getCategorizedWords } from "../../shared/get-hint";
+import { getHint, isValidWord, stemToken, getCategorizedWords } from "../../shared/dictionary/get-hint";
 
 // Re-export the new functions
 export { getHint, isValidWord, stemToken, getCategorizedWords };

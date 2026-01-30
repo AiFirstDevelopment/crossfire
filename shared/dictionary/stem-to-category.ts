@@ -3,7 +3,7 @@
  * Built from _categoryWords at module load time.
  */
 
-import { _categoryWords } from "./dictionary/categories";
+import { _categoryWords } from "./categories";
 import { stemToken } from "./stem";
 
 function buildStemToCategory(): Record<string, string> {
