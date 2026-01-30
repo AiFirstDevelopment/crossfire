@@ -55,7 +55,6 @@ const solutionContainer = document.getElementById('solution-container')!;
 const solutionGridEl = document.getElementById('solution-grid')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
-const hintsRemainingEl = document.getElementById('hints-remaining')!;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 const opponentNameDisplay = document.getElementById('opponent-name-display')!;
 const opponentLevelEl = document.getElementById('opponent-level')!;
@@ -85,6 +84,7 @@ const dailyChallengeStatusEl = document.getElementById('daily-challenge-status')
 const leaderboardListEl = document.getElementById('leaderboard-list')!;
 const playerRankDisplayEl = document.getElementById('player-rank-display')!;
 const playerRankEl = document.getElementById('player-rank')!;
+const playerWeeklyWinsEl = document.getElementById('player-weekly-wins')!;
 const achievementsListEl = document.getElementById('achievements-list')!;
 const resultStreakDisplayEl = document.getElementById('result-streak-display')!;
 const newAchievementsEl = document.getElementById('new-achievements')!;
@@ -330,8 +330,6 @@ function handleBotStateChange(state: BotGameState) {
       opponentNameDisplay.textContent = state.botName;
       opponentLevelEl.textContent = '1';
       if (state.playerGrid && !crosswordUI) {
-        // Reset hints display for bot mode
-        hintsRemainingEl.textContent = String(state.maxHints - state.hintsUsed);
         penaltyDisplay.classList.add('hidden');
 
         crosswordUI = new CrosswordUI(crosswordContainer, {
@@ -720,7 +718,6 @@ function showHintUsed(hintsRemainingOrPenaltyMs: number) {
   if (isBotMode) {
     // Bot mode: parameter is hints remaining
     const remaining = hintsRemainingOrPenaltyMs;
-    hintsRemainingEl.textContent = String(remaining);
     if (remaining === 0) {
       hintToast.textContent = 'No hints left';
     } else {
@@ -1335,14 +1332,14 @@ async function fetchLeaderboard(): Promise<void> {
     const response = await fetch(`${getApiUrl()}/api/leaderboard/weekly?playerId=${currentPlayerId}`);
     if (response.ok) {
       const data = await response.json();
-      displayLeaderboard(data.leaderboard, data.playerRank);
+      displayLeaderboard(data.leaderboard, data.playerRank, data.playerWins);
     }
   } catch (error) {
     console.error('Failed to fetch leaderboard:', error);
   }
 }
 
-function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | null) {
+function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | null, playerWins: number) {
   leaderboardListEl.innerHTML = '';
 
   if (entries.length === 0) {
@@ -1360,15 +1357,21 @@ function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | nu
     item.innerHTML = `
       <span class="leaderboard-rank">#${index + 1}</span>
       <span class="leaderboard-name">${entry.playerId}</span>
+      <span class="leaderboard-wins">${entry.wins}</span>
     `;
 
     leaderboardListEl.appendChild(item);
   });
 
   // Show player's rank if not in top 10
-  if (playerRank) {
+  if (playerRank && playerRank > 10) {
     playerRankDisplayEl.classList.remove('hidden');
     playerRankEl.textContent = `#${playerRank}`;
+    playerWeeklyWinsEl.textContent = String(playerWins);
+  } else if (playerRank) {
+    playerRankDisplayEl.classList.remove('hidden');
+    playerRankEl.textContent = `#${playerRank}`;
+    playerWeeklyWinsEl.textContent = String(playerWins);
   } else {
     playerRankDisplayEl.classList.add('hidden');
   }
