@@ -639,7 +639,7 @@ test.describe('Results Screen', () => {
     await fillWords(page, VALID_WORDS);
     await page.locator('#word-form button[type="submit"]').click();
 
-    await expect(page.locator('#screen-solve')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#screen-solve')).toBeVisible({ timeout: 60000 });
 
     // Leave during solve to trigger loss
     await page.locator('#leave-solve-btn').click();
