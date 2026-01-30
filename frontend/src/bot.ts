@@ -2,6 +2,7 @@ import humanId from 'human-id';
 import clg from 'crossword-layout-generator';
 import type { ClientGrid, ClientCell, ClientWordPlacement, GameResult } from './types';
 import { getWordCategory, hasCategory } from '../../shared/dictionary/categories';
+import { SUBMISSION_TIMEOUT_MS, SOLVING_TIMEOUT_MS } from '../../worker/src/types';
 
 interface LayoutInput {
   clue: string;
@@ -132,8 +133,8 @@ export class BotGame {
       botFilledCells: {},
       botProgress: 0,
       phaseStartedAt: Date.now(),
-      submissionTimeoutMs: 60000,
-      solvingTimeoutMs: 300000,
+      submissionTimeoutMs: SUBMISSION_TIMEOUT_MS,
+      solvingTimeoutMs: SOLVING_TIMEOUT_MS,
       hintsUsed: 0,
       maxHints: 4,
       result: null,
@@ -141,9 +142,8 @@ export class BotGame {
   }
 
   private formatBotName(id: string): string {
-    // Convert "blue-table-stop" to "Blue Table"
-    const parts = id.split('-').slice(0, 2);
-    return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+    // Keep the same format as player IDs (lowercase with dashes)
+    return id;
   }
 
   onStateChange(handler: StateChangeHandler): () => void {
