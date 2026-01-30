@@ -477,6 +477,7 @@ function handleStateChange(state: GameState) {
       break;
 
     case 'matchmaking':
+      cancelMatchmakingBtn.classList.remove('hidden');
       statusText.textContent = 'In queue, waiting for opponent...';
       break;
 
