@@ -170,6 +170,12 @@ export class GameRoom {
 
     // If everyone has left, reset the room so it can be reused
     if (this.players.size === 0) {
+      // If a game was in progress but wasn't properly ended, notify matchmaking
+      const wasGameInProgress = this.gameState.phase === 'submitting' || this.gameState.phase === 'solving';
+      if (wasGameInProgress && !this.gameEndedNotified) {
+        this.gameEndedNotified = true;
+        this.notifyGameEnded();
+      }
       this.gameState = this.createInitialGameState();
       this.gameEndedNotified = false;
     }
