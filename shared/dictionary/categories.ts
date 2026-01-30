@@ -2191,6 +2191,10 @@ export const _categoryWords: Record<string, string[]> = {
     "wetland",
     "woods",
   ],
+  geography: [
+    "direction",
+    "weather"
+  ],
   sport: [
     "aerobics",
     "aikido",
@@ -2483,6 +2487,7 @@ export const _categoryWords: Record<string, string[]> = {
     "acrylic",
     "animation",
     "animator",
+    "art",
     "aperture",
     "beads",
     "calligrapher",
@@ -2517,6 +2522,7 @@ export const _categoryWords: Record<string, string[]> = {
     "lighting",
     "marker",
     "mural",
+    "music",
     "museum",
     "oilpaint",
     "palette",
@@ -2537,6 +2543,12 @@ export const _categoryWords: Record<string, string[]> = {
     "typography",
     "watercolor",
     "weaving"
+  ],
+  artConcept: [
+    "color",
+    "game",
+    "shape",
+    "sport"
   ],
   game: [
     "arcade",
@@ -3209,6 +3221,19 @@ export const _categoryWords: Record<string, string[]> = {
     "teammates",
     "ward",
     "wives"
+  ],
+  concept: [
+    "animal",
+    "clothing",
+    "emotion",
+    "family",
+    "food",
+    "furniture",
+    "health",
+    "job",
+    "time",
+    "tool",
+    "vehicle"
   ],
   person: [
     "adolescent",
