@@ -23,6 +23,7 @@ export class Matchmaking {
   private totalGamesPlayed: number;
   private totalPlayers: number;
   private returningUsers: number;
+  private sharedLinkClicks: number;
 
   // Seed values for historical activity before tracking began
   private static readonly INITIAL_PLAYER_COUNT = 6;
@@ -39,6 +40,7 @@ export class Matchmaking {
     this.totalGamesPlayed = Matchmaking.INITIAL_GAMES_COUNT;
     this.totalPlayers = Matchmaking.INITIAL_PLAYER_COUNT;
     this.returningUsers = 0;
+    this.sharedLinkClicks = 0;
 
     // Load persisted counts
     this.state.blockConcurrencyWhile(async () => {
@@ -57,6 +59,10 @@ export class Matchmaking {
       const storedReturning = await this.state.storage.get<number>('returningUsers');
       if (storedReturning !== undefined) {
         this.returningUsers = storedReturning;
+      }
+      const storedSharedLinkClicks = await this.state.storage.get<number>('sharedLinkClicks');
+      if (storedSharedLinkClicks !== undefined) {
+        this.sharedLinkClicks = storedSharedLinkClicks;
       }
     });
   }
@@ -120,6 +126,15 @@ export class Matchmaking {
       });
     }
 
+    // Handle shared link click notification (tracks when someone joins via ?room= URL)
+    if (url.pathname === '/shared-link-clicked' && request.method === 'POST') {
+      this.sharedLinkClicks++;
+      await this.state.storage.put('sharedLinkClicks', this.sharedLinkClicks);
+      return new Response(JSON.stringify({ sharedLinkClicks: this.sharedLinkClicks }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Admin endpoint to reset active games counter (for fixing stuck counters)
     if (url.pathname === '/admin/reset-active-games' && request.method === 'POST') {
       this.activeGames = 0;
@@ -147,6 +162,7 @@ export class Matchmaking {
         totalGamesPlayed: this.totalGamesPlayed,
         totalPlayers: this.totalPlayers,
         returningUsers: this.returningUsers,
+        sharedLinkClicks: this.sharedLinkClicks,
       }),
       { headers: { 'Content-Type': 'application/json' } }
     );

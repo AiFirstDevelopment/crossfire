@@ -314,13 +314,17 @@ test.describe('Friend Rooms', () => {
     await page.goto('/');
     await waitForConnection(page);
 
-    // Clear room ID input and click join
+    // Button should be disabled when input is empty
     await page.locator('#room-id-input').fill('');
-    await page.locator('#join-room-btn').click();
+    await expect(page.locator('#join-room-btn')).toBeDisabled();
 
-    // Should stay on menu screen (no navigation)
+    // Should stay on menu screen
     await expect(page.locator('#screen-menu')).toBeVisible();
     await expect(page.locator('#screen-waiting')).toBeHidden();
+
+    // Button should enable when text is entered
+    await page.locator('#room-id-input').fill('test-room');
+    await expect(page.locator('#join-room-btn')).toBeEnabled();
   });
 
   test('should normalize room ID to lowercase', async ({ browser }) => {

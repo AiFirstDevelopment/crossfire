@@ -170,6 +170,12 @@ function init() {
     statusText.textContent = '';
   });
 
+  // Disable join room button when input is empty
+  joinRoomBtn.disabled = true;
+  roomIdInput.addEventListener('input', () => {
+    joinRoomBtn.disabled = !roomIdInput.value.trim();
+  });
+
   joinRoomBtn.addEventListener('click', () => {
     const roomId = roomIdInput.value.trim();
     if (roomId) {
@@ -1684,6 +1690,9 @@ init();
 // Check for room ID in URL and auto-join if present
 const roomFromUrl = getRoomFromUrl();
 if (roomFromUrl) {
+  // Track that a shared link was clicked (fire-and-forget)
+  fetch(`${getApiUrl()}/api/shared-link-clicked`, { method: 'POST' }).catch(() => {});
+
   // Small delay to ensure WebSocket is connected
   setTimeout(() => {
     roomIdInput.value = roomFromUrl;

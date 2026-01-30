@@ -58,6 +58,15 @@ export default {
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
+    // Shared link clicked notification (tracks when someone joins via ?room= URL)
+    if (url.pathname === '/api/shared-link-clicked' && request.method === 'POST') {
+      const id = env.MATCHMAKING.idFromName('global');
+      const matchmaking = env.MATCHMAKING.get(id);
+      const response = await matchmaking.fetch(new Request('https://matchmaking/shared-link-clicked', { method: 'POST' }));
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
     // Create or join a room
     if (url.pathname === '/api/room/join') {
       const roomId = (url.searchParams.get('roomId') || 'default-room').toLowerCase();
