@@ -34,7 +34,28 @@
           <span class="level-badge">Level <span id="player-level">1</span></span>
           <span class="wins-info"><span id="player-wins">0</span> <span id="wins-label">wins</span> • <span id="wins-to-next">1</span> to next level</span>
         </div>
+        <div id="streak-display" class="streak-display hidden">
+          <span id="win-streak" class="win-streak"></span>
+          <span id="daily-streak" class="daily-streak"></span>
+        </div>
       </header>
+
+      <!-- Daily Challenge Banner -->
+      <div id="daily-challenge" class="daily-challenge hidden">
+        <div class="daily-challenge-header">
+          <span class="daily-challenge-icon">&#9733;</span>
+          <span>Daily Challenge</span>
+        </div>
+        <div class="daily-challenge-content">
+          <span id="daily-challenge-desc"></span>
+          <div class="daily-challenge-progress-container">
+            <div class="daily-challenge-bar-bg">
+              <div id="daily-challenge-bar" class="daily-challenge-bar"></div>
+            </div>
+            <span id="daily-challenge-status" class="daily-challenge-status"></span>
+          </div>
+        </div>
+      </div>
 
       <!-- Connecting / Matchmaking Screen -->
       <section id="screen-menu" class="screen">
@@ -47,6 +68,21 @@
         <div class="manual-join">
           <input type="text" id="room-id-input" placeholder="e.g. pizza-party" />
           <button id="join-room-btn">Join Room</button>
+        </div>
+
+        <!-- Leaderboard Section -->
+        <div class="divider">Weekly Leaderboard</div>
+        <div id="leaderboard-section" class="leaderboard-section">
+          <div id="leaderboard-list" class="leaderboard-list"></div>
+          <div id="player-rank-display" class="player-rank-display hidden">
+            Your rank: <span id="player-rank">#--</span> (<span id="player-weekly-wins">0</span> wins this week)
+          </div>
+        </div>
+
+        <!-- Achievements Section -->
+        <div class="divider">Achievements</div>
+        <div id="achievements-section" class="achievements-section">
+          <div id="achievements-list" class="achievements-list"></div>
         </div>
       </section>
 
@@ -136,21 +172,43 @@
       <!-- Results Screen -->
       <section id="screen-results" class="screen hidden">
         <h2 id="result-title"></h2>
+        <div id="result-streak-display" class="result-streak-display hidden"></div>
+        <div id="new-achievements" class="new-achievements hidden"></div>
+        <div id="daily-challenge-complete" class="daily-challenge-complete hidden">
+          <span class="challenge-complete-icon">&#9733;</span>
+          <span>Daily Challenge Complete!</span>
+        </div>
         <div id="result-details"></div>
         <div id="solution-container" class="solution-container hidden">
           <h3>The Solution</h3>
           <div id="solution-grid"></div>
         </div>
         <div class="results-buttons">
-          <button id="leave-room-btn" class="primary-btn">Find New Match</button>
+          <button id="quick-rematch-btn" class="primary-btn">Play Again</button>
+          <button id="leave-room-btn" class="secondary-btn">Back to Menu</button>
         </div>
       </section>
+
+      <!-- Victory Confetti Container -->
+      <div id="confetti-container" class="confetti-container hidden"></div>
 
       <!-- Error display -->
       <div id="error-toast" class="error-toast hidden"></div>
 
       <!-- Hint notification -->
       <div id="hint-toast" class="hint-toast hidden">3 hints left</div>
+
+      <!-- Achievement notification -->
+      <div id="achievement-toast" class="achievement-toast hidden">
+        <span class="achievement-icon">&#127942;</span>
+        <span id="achievement-text">Achievement Unlocked!</span>
+      </div>
+
+      <!-- Streak notification -->
+      <div id="streak-toast" class="streak-toast hidden">
+        <span class="streak-icon">&#128293;</span>
+        <span id="streak-text">3 Win Streak!</span>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

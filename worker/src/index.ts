@@ -1,13 +1,15 @@
 import { GameRoom } from './GameRoom';
 import { Matchmaking } from './Matchmaking';
-import { PlayerStats } from './PlayerStats';
+import { PlayerStats, ACHIEVEMENTS } from './PlayerStats';
+import { Leaderboard } from './Leaderboard';
 
-export { GameRoom, Matchmaking, PlayerStats };
+export { GameRoom, Matchmaking, PlayerStats, Leaderboard };
 
 export interface Env {
   GAME_ROOM: DurableObjectNamespace;
   MATCHMAKING: DurableObjectNamespace;
   PLAYER_STATS: DurableObjectNamespace;
+  LEADERBOARD: DurableObjectNamespace;
 }
 
 export default {
@@ -112,9 +114,43 @@ export default {
     const recordWinMatch = url.pathname.match(/^\/api\/player\/([^/]+)\/record-win$/);
     if (recordWinMatch && request.method === 'POST') {
       const playerId = recordWinMatch[1].toLowerCase();
+
+      // Forward body with hintsUsed and timeMs
+      let body = '{}';
+      try {
+        body = await request.text();
+      } catch {
+        // No body
+      }
+
       const id = env.PLAYER_STATS.idFromName(playerId);
       const stats = env.PLAYER_STATS.get(id);
-      const response = await stats.fetch(new Request('https://stats/record-win', { method: 'POST' }));
+      const response = await stats.fetch(new Request('https://stats/record-win', {
+        method: 'POST',
+        body,
+        headers: { 'Content-Type': 'application/json' },
+      }));
+      const data = await response.json();
+
+      // Also update leaderboard
+      const leaderboardId = env.LEADERBOARD.idFromName('global');
+      const leaderboard = env.LEADERBOARD.get(leaderboardId);
+      await leaderboard.fetch(new Request('https://leaderboard/record', {
+        method: 'POST',
+        body: JSON.stringify({ playerId }),
+        headers: { 'Content-Type': 'application/json' },
+      }));
+
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
+    // Record loss - POST /api/player/:playerId/record-loss
+    const recordLossMatch = url.pathname.match(/^\/api\/player\/([^/]+)\/record-loss$/);
+    if (recordLossMatch && request.method === 'POST') {
+      const playerId = recordLossMatch[1].toLowerCase();
+      const id = env.PLAYER_STATS.idFromName(playerId);
+      const stats = env.PLAYER_STATS.get(id);
+      const response = await stats.fetch(new Request('https://stats/record-loss', { method: 'POST' }));
       const data = await response.json();
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
@@ -145,6 +181,37 @@ export default {
       const response = await matchmaking.fetch(new Request('https://matchmaking/admin/reset-active-games', { method: 'POST' }));
       const data = await response.json();
       return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
+    // Leaderboard - GET /api/leaderboard/weekly
+    if (url.pathname === '/api/leaderboard/weekly' && request.method === 'GET') {
+      const leaderboardId = env.LEADERBOARD.idFromName('global');
+      const leaderboard = env.LEADERBOARD.get(leaderboardId);
+      const playerId = url.searchParams.get('playerId') || '';
+      const limit = url.searchParams.get('limit') || '10';
+      const response = await leaderboard.fetch(
+        new Request(`https://leaderboard/weekly?playerId=${playerId}&limit=${limit}`, { method: 'GET' })
+      );
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
+    // Player rank - GET /api/leaderboard/rank/:playerId
+    const playerRankMatch = url.pathname.match(/^\/api\/leaderboard\/rank\/([^/]+)$/);
+    if (playerRankMatch && request.method === 'GET') {
+      const playerId = playerRankMatch[1].toLowerCase();
+      const leaderboardId = env.LEADERBOARD.idFromName('global');
+      const leaderboard = env.LEADERBOARD.get(leaderboardId);
+      const response = await leaderboard.fetch(
+        new Request(`https://leaderboard/player-rank?playerId=${playerId}`, { method: 'GET' })
+      );
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
+    // Achievements list - GET /api/achievements
+    if (url.pathname === '/api/achievements' && request.method === 'GET') {
+      return new Response(JSON.stringify(ACHIEVEMENTS), { headers: corsHeaders });
     }
 
     // Default 404 response

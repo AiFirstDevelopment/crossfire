@@ -26,6 +26,10 @@ class_name = "Matchmaking"
 name = "PLAYER_STATS"
 class_name = "PlayerStats"
 
+[[durable_objects.bindings]]
+name = "LEADERBOARD"
+class_name = "Leaderboard"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["GameRoom"]
@@ -37,3 +41,7 @@ new_sqlite_classes = ["Matchmaking"]
 [[migrations]]
 tag = "v3"
 new_sqlite_classes = ["PlayerStats"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["Leaderboard"]

@@ -74,7 +74,43 @@ const newIdInput = document.getElementById('new-id-input') as HTMLInputElement;
 const saveIdBtn = document.getElementById('save-id-btn') as HTMLButtonElement;
 const cancelIdBtn = document.getElementById('cancel-id-btn') as HTMLButtonElement;
 
+// Engagement feature elements
+const streakDisplay = document.getElementById('streak-display')!;
+const winStreakEl = document.getElementById('win-streak')!;
+const dailyStreakEl = document.getElementById('daily-streak')!;
+const dailyChallengeEl = document.getElementById('daily-challenge')!;
+const dailyChallengeDescEl = document.getElementById('daily-challenge-desc')!;
+const dailyChallengeBarEl = document.getElementById('daily-challenge-bar')!;
+const dailyChallengeStatusEl = document.getElementById('daily-challenge-status')!;
+const leaderboardListEl = document.getElementById('leaderboard-list')!;
+const playerRankDisplayEl = document.getElementById('player-rank-display')!;
+const playerRankEl = document.getElementById('player-rank')!;
+const playerWeeklyWinsEl = document.getElementById('player-weekly-wins')!;
+const achievementsListEl = document.getElementById('achievements-list')!;
+const resultStreakDisplayEl = document.getElementById('result-streak-display')!;
+const newAchievementsEl = document.getElementById('new-achievements')!;
+const dailyChallengeCompleteEl = document.getElementById('daily-challenge-complete')!;
+const quickRematchBtn = document.getElementById('quick-rematch-btn') as HTMLButtonElement;
+const confettiContainer = document.getElementById('confetti-container')!;
+const achievementToast = document.getElementById('achievement-toast')!;
+const achievementTextEl = document.getElementById('achievement-text')!;
+const streakToast = document.getElementById('streak-toast')!;
+const streakTextEl = document.getElementById('streak-text')!;
+
 let currentPlayerId: string = '';
+
+// Sound effects (loaded lazily)
+let sounds: {
+  win?: HTMLAudioElement;
+  lose?: HTMLAudioElement;
+  correct?: HTMLAudioElement;
+  achievement?: HTMLAudioElement;
+} = {};
+
+// Track previous stats for achievement detection
+let previousAchievements: string[] = [];
+let previousWinStreak = 0;
+let previousDailyChallengeCompleted = false;
 
 let game: GameClient;
 let botGame: BotGame | null = null;
@@ -358,9 +394,10 @@ function showBotResults(state: BotGameState) {
     resultTitle.textContent = "It's a Tie!";
   } else if (isWinner) {
     resultTitle.textContent = 'You Win!';
-    recordWin();
+    recordWin(state.hintsUsed, result.yourTime);
   } else {
     resultTitle.textContent = 'Your opponent Wins!';
+    recordLoss();
   }
 
   let details = `<p><strong>Reason:</strong> ${formatWinReason(result.winReason)}</p>`;
@@ -870,13 +907,17 @@ function showResults(state: GameState) {
   const isWinner = result.winnerId === state.playerId;
   const isTie = result.winReason === 'tie';
 
+  // Get hints used from accumulated penalty (15s per hint = 15000ms)
+  const hintsUsed = Math.round(accumulatedPenalty / 15000);
+
   if (isTie) {
     resultTitle.textContent = "It's a Tie!";
   } else if (isWinner) {
     resultTitle.textContent = 'You Win!';
-    recordWin();
+    recordWin(hintsUsed, result.yourTime);
   } else {
     resultTitle.textContent = 'You Lose';
+    recordLoss();
   }
 
   let details = `<p><strong>Reason:</strong> ${formatWinReason(result.winReason)}</p>`;
@@ -1126,7 +1167,7 @@ async function updatePlayerStats(): Promise<void> {
   displayStats(wins);
 }
 
-async function recordWin(): Promise<void> {
+async function recordWin(hintsUsed: number = 0, timeMs: number = 0): Promise<void> {
   // Prevent duplicate win recording for the same game
   if (winRecordedForCurrentGame) {
     console.log('Win already recorded for this game, skipping');
@@ -1137,14 +1178,431 @@ async function recordWin(): Promise<void> {
   try {
     const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/record-win`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hintsUsed, timeMs }),
     });
     if (response.ok) {
       const data = await response.json();
       displayStats(data.wins);
+
+      // Show engagement features (confetti, achievements, streaks)
+      showResultsWithEngagement(true, data);
+
+      // Update engagement UI in menu
+      displayStreaks(data);
+      displayDailyChallenge(data);
+      displayAchievements(data.achievements || []);
+
+      // Refresh leaderboard
+      fetchLeaderboard();
     }
   } catch (error) {
     console.error('Failed to record win:', error);
   }
+}
+
+async function recordLoss(): Promise<void> {
+  try {
+    await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/record-loss`, {
+      method: 'POST',
+    });
+
+    // Refresh stats to update streaks etc
+    const stats = await fetchEngagementStats();
+    if (stats) {
+      displayStreaks(stats);
+      displayDailyChallenge(stats);
+      showResultsWithEngagement(false, stats);
+    }
+  } catch (error) {
+    console.error('Failed to record loss:', error);
+  }
+}
+
+// ============== ENGAGEMENT FEATURES ==============
+
+// Achievement definitions (must match backend)
+const ACHIEVEMENTS: Record<string, { name: string; description: string; icon: string }> = {
+  first_win: { name: 'First Blood', description: 'Win your first game', icon: '🏆' },
+  win_streak_3: { name: 'Hot Streak', description: 'Win 3 games in a row', icon: '🔥' },
+  win_streak_5: { name: 'On Fire', description: 'Win 5 games in a row', icon: '💥' },
+  win_streak_10: { name: 'Unstoppable', description: 'Win 10 games in a row', icon: '⚡' },
+  daily_streak_3: { name: 'Dedicated', description: 'Play 3 days in a row', icon: '📅' },
+  daily_streak_7: { name: 'Weekly Warrior', description: 'Play 7 days in a row', icon: '🗓️' },
+  daily_streak_30: { name: 'Monthly Master', description: 'Play 30 days in a row', icon: '👑' },
+  speed_demon: { name: 'Speed Demon', description: 'Win in under 60 seconds', icon: '⏱️' },
+  perfectionist: { name: 'Perfectionist', description: 'Win without using hints', icon: '✨' },
+  veteran_10: { name: 'Veteran', description: 'Win 10 games total', icon: '🎖️' },
+  champion_50: { name: 'Champion', description: 'Win 50 games total', icon: '🏅' },
+  legend_100: { name: 'Legend', description: 'Win 100 games total', icon: '🌟' },
+};
+
+// Daily challenge descriptions
+const CHALLENGE_TYPES: Record<string, { description: (target: number) => string }> = {
+  win_games: { description: (t) => `Win ${t} game${t > 1 ? 's' : ''} today` },
+  play_games: { description: (t) => `Play ${t} game${t > 1 ? 's' : ''} today` },
+  no_hints: { description: () => 'Win a game without using hints' },
+  fast_win: { description: (t) => `Win a game in under ${t} seconds` },
+};
+
+// Fetch player stats including streaks, achievements, daily challenge
+interface PlayerEngagementStats {
+  wins: number;
+  losses: number;
+  currentWinStreak: number;
+  bestWinStreak: number;
+  dailyStreak: number;
+  bestDailyStreak: number;
+  achievements: string[];
+  dailyChallengeType: string;
+  dailyChallengeTarget: number;
+  dailyChallengeProgress: number;
+  dailyChallengeCompleted: boolean;
+}
+
+async function fetchEngagementStats(): Promise<PlayerEngagementStats | null> {
+  try {
+    const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/stats`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error('Failed to fetch engagement stats:', error);
+  }
+  return null;
+}
+
+// Display streaks in header
+function displayStreaks(stats: PlayerEngagementStats) {
+  if (stats.currentWinStreak > 0 || stats.dailyStreak > 0) {
+    streakDisplay.classList.remove('hidden');
+
+    if (stats.currentWinStreak > 0) {
+      winStreakEl.textContent = `🔥 ${stats.currentWinStreak} win streak`;
+      winStreakEl.classList.remove('hidden');
+    } else {
+      winStreakEl.classList.add('hidden');
+    }
+
+    if (stats.dailyStreak > 0) {
+      dailyStreakEl.textContent = `📅 ${stats.dailyStreak} day streak`;
+      dailyStreakEl.classList.remove('hidden');
+    } else {
+      dailyStreakEl.classList.add('hidden');
+    }
+  } else {
+    streakDisplay.classList.add('hidden');
+  }
+}
+
+// Display daily challenge
+function displayDailyChallenge(stats: PlayerEngagementStats) {
+  if (!stats.dailyChallengeType) {
+    dailyChallengeEl.classList.add('hidden');
+    return;
+  }
+
+  dailyChallengeEl.classList.remove('hidden');
+
+  const challengeInfo = CHALLENGE_TYPES[stats.dailyChallengeType];
+  if (challengeInfo) {
+    dailyChallengeDescEl.textContent = challengeInfo.description(stats.dailyChallengeTarget);
+  } else {
+    dailyChallengeDescEl.textContent = 'Complete today\'s challenge';
+  }
+
+  const progress = stats.dailyChallengeProgress;
+  const target = stats.dailyChallengeTarget;
+  const percent = Math.min(100, Math.round((progress / target) * 100));
+
+  dailyChallengeBarEl.style.width = `${percent}%`;
+
+  if (stats.dailyChallengeCompleted) {
+    dailyChallengeEl.classList.add('completed');
+    dailyChallengeStatusEl.textContent = '✓ Complete!';
+  } else {
+    dailyChallengeEl.classList.remove('completed');
+    dailyChallengeStatusEl.textContent = `${progress}/${target}`;
+  }
+}
+
+// Fetch and display leaderboard
+interface LeaderboardEntry {
+  playerId: string;
+  wins: number;
+}
+
+async function fetchLeaderboard(): Promise<void> {
+  try {
+    const response = await fetch(`${getApiUrl()}/api/leaderboard/weekly?playerId=${currentPlayerId}`);
+    if (response.ok) {
+      const data = await response.json();
+      displayLeaderboard(data.leaderboard, data.playerRank, data.playerWins);
+    }
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
+  }
+}
+
+function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | null, playerWins: number) {
+  leaderboardListEl.innerHTML = '';
+
+  if (entries.length === 0) {
+    leaderboardListEl.innerHTML = '<div class="leaderboard-item"><span style="color: rgba(255,255,255,0.5)">No games played this week yet</span></div>';
+    playerRankDisplayEl.classList.add('hidden');
+    return;
+  }
+
+  entries.slice(0, 10).forEach((entry, index) => {
+    const item = document.createElement('div');
+    item.className = 'leaderboard-item';
+    if (index < 3) item.classList.add('top-3');
+    if (entry.playerId === currentPlayerId) item.classList.add('current-player');
+
+    item.innerHTML = `
+      <span class="leaderboard-rank">#${index + 1}</span>
+      <span class="leaderboard-name">${entry.playerId}</span>
+      <span class="leaderboard-wins">${entry.wins}</span>
+    `;
+
+    leaderboardListEl.appendChild(item);
+  });
+
+  // Show player's rank if not in top 10
+  if (playerRank && playerRank > 10) {
+    playerRankDisplayEl.classList.remove('hidden');
+    playerRankEl.textContent = `#${playerRank}`;
+    playerWeeklyWinsEl.textContent = String(playerWins);
+  } else if (playerRank) {
+    playerRankDisplayEl.classList.remove('hidden');
+    playerRankEl.textContent = `#${playerRank}`;
+    playerWeeklyWinsEl.textContent = String(playerWins);
+  } else {
+    playerRankDisplayEl.classList.add('hidden');
+  }
+}
+
+// Display achievements
+function displayAchievements(unlockedAchievements: string[]) {
+  achievementsListEl.innerHTML = '';
+
+  for (const [id, info] of Object.entries(ACHIEVEMENTS)) {
+    const isUnlocked = unlockedAchievements.includes(id);
+    const item = document.createElement('div');
+    item.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+    item.innerHTML = `
+      <span class="achievement-badge">${info.icon}</span>
+      <span class="achievement-name">${info.name}</span>
+      <span class="achievement-desc">${info.description}</span>
+    `;
+    achievementsListEl.appendChild(item);
+  }
+}
+
+// Show confetti celebration
+function showConfetti() {
+  confettiContainer.classList.remove('hidden');
+  confettiContainer.innerHTML = '';
+
+  const colors = ['#ff0', '#f0f', '#0ff', '#f00', '#0f0', '#00f', '#ff6600', '#646cff'];
+
+  for (let i = 0; i < 100; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.left = `${Math.random() * 100}%`;
+    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+    confetti.style.animationDuration = `${2 + Math.random() * 2}s`;
+    confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+    confetti.style.width = `${6 + Math.random() * 8}px`;
+    confetti.style.height = `${6 + Math.random() * 8}px`;
+    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    confettiContainer.appendChild(confetti);
+  }
+
+  // Clean up after animation
+  setTimeout(() => {
+    confettiContainer.classList.add('hidden');
+    confettiContainer.innerHTML = '';
+  }, 4000);
+}
+
+// Show achievement toast
+function showAchievementToast(achievementId: string) {
+  const info = ACHIEVEMENTS[achievementId];
+  if (!info) return;
+
+  achievementTextEl.textContent = `${info.icon} ${info.name} Unlocked!`;
+  achievementToast.classList.remove('hidden');
+
+  // Play sound if available
+  playSound('achievement');
+
+  setTimeout(() => {
+    achievementToast.classList.add('hidden');
+  }, 4000);
+}
+
+// Show streak toast
+function showStreakToast(streak: number) {
+  streakTextEl.textContent = `${streak} Win Streak!`;
+  streakToast.classList.remove('hidden');
+
+  setTimeout(() => {
+    streakToast.classList.add('hidden');
+  }, 3000);
+}
+
+// Sound effects
+function playSound(type: 'win' | 'lose' | 'correct' | 'achievement') {
+  // Lazy load sounds
+  if (!sounds[type]) {
+    // Use simple beep sounds via Web Audio API (no external files needed)
+    try {
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Different frequencies for different sounds
+      const frequencies: Record<string, number> = {
+        win: 523.25, // C5
+        lose: 261.63, // C4
+        correct: 659.25, // E5
+        achievement: 783.99, // G5
+      };
+
+      oscillator.frequency.value = frequencies[type] || 440;
+      oscillator.type = type === 'win' || type === 'achievement' ? 'sine' : 'triangle';
+
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch {
+      // Audio not supported, silently fail
+    }
+  }
+}
+
+// Show results screen with engagement features
+function showResultsWithEngagement(isWinner: boolean, newStats: PlayerEngagementStats | null) {
+  // Show confetti for wins
+  if (isWinner) {
+    showConfetti();
+    playSound('win');
+  } else {
+    playSound('lose');
+  }
+
+  if (!newStats) return;
+
+  // Check for new achievements
+  const newAchievements = newStats.achievements.filter(a => !previousAchievements.includes(a));
+  if (newAchievements.length > 0) {
+    newAchievementsEl.classList.remove('hidden');
+    newAchievementsEl.innerHTML = '';
+
+    for (const achId of newAchievements) {
+      const info = ACHIEVEMENTS[achId];
+      if (!info) continue;
+
+      const item = document.createElement('div');
+      item.className = 'new-achievement-item';
+      item.innerHTML = `
+        <span class="new-achievement-icon">${info.icon}</span>
+        <div class="new-achievement-info">
+          <div class="new-achievement-name">${info.name}</div>
+          <div class="new-achievement-desc">${info.description}</div>
+        </div>
+      `;
+      newAchievementsEl.appendChild(item);
+
+      // Show toast for first new achievement
+      if (newAchievements.indexOf(achId) === 0) {
+        setTimeout(() => showAchievementToast(achId), 500);
+      }
+    }
+  } else {
+    newAchievementsEl.classList.add('hidden');
+  }
+
+  // Show win streak on results
+  if (isWinner && newStats.currentWinStreak >= 2) {
+    resultStreakDisplayEl.classList.remove('hidden');
+    resultStreakDisplayEl.innerHTML = `
+      <div class="result-streak-badge win-streak">🔥 ${newStats.currentWinStreak} Win Streak!</div>
+    `;
+
+    // Show streak toast if it increased
+    if (newStats.currentWinStreak > previousWinStreak && newStats.currentWinStreak >= 3) {
+      setTimeout(() => showStreakToast(newStats.currentWinStreak), 1000);
+    }
+  } else {
+    resultStreakDisplayEl.classList.add('hidden');
+  }
+
+  // Show daily challenge completion
+  if (newStats.dailyChallengeCompleted && !previousDailyChallengeCompleted) {
+    dailyChallengeCompleteEl.classList.remove('hidden');
+  } else {
+    dailyChallengeCompleteEl.classList.add('hidden');
+  }
+
+  // Update previous state for next comparison
+  previousAchievements = [...newStats.achievements];
+  previousWinStreak = newStats.currentWinStreak;
+  previousDailyChallengeCompleted = newStats.dailyChallengeCompleted;
+}
+
+// Quick rematch handler
+function initQuickRematch() {
+  quickRematchBtn.addEventListener('click', () => {
+    // Clean up current game state
+    if (isBotMode && botGame) {
+      botGame.destroy();
+      botGame = null;
+    }
+    crosswordUI = null;
+    hideSolutionGrid();
+    lastSubmittedWords = [];
+
+    // Start a new match
+    findMatchBtn.disabled = true;
+    statusText.textContent = 'Finding match...';
+
+    if (isBotMode) {
+      // Start another bot game immediately
+      startBotGame();
+    } else {
+      game.findMatch();
+    }
+  });
+}
+
+// Initialize all engagement features
+async function initEngagementFeatures() {
+  const stats = await fetchEngagementStats();
+
+  if (stats) {
+    // Store initial state for comparison
+    previousAchievements = stats.achievements || [];
+    previousWinStreak = stats.currentWinStreak || 0;
+    previousDailyChallengeCompleted = stats.dailyChallengeCompleted || false;
+
+    // Display all engagement UI
+    displayStreaks(stats);
+    displayDailyChallenge(stats);
+    displayAchievements(stats.achievements || []);
+  }
+
+  // Fetch leaderboard
+  await fetchLeaderboard();
+
+  // Init quick rematch
+  initQuickRematch();
 }
 
 // Theme management
@@ -1174,6 +1632,9 @@ updatePlayerStats();
 
 // Record visit for returning user tracking
 recordVisit();
+
+// Initialize engagement features (streaks, leaderboard, achievements, daily challenges)
+initEngagementFeatures();
 
 // Initialize app
 init();
