@@ -46,7 +46,9 @@ export default {
       // Use a single global matchmaking instance
       const id = env.MATCHMAKING.idFromName('global');
       const matchmaking = env.MATCHMAKING.get(id);
-      return matchmaking.fetch(request);
+      const response = await matchmaking.fetch(request);
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
     // Bot game ended notification (bot games are client-side only)

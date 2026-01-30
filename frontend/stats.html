@@ -44,11 +44,37 @@
       }
       .error { color: #f87171; }
       .loading { color: #888; }
+      h2 { color: #7c3aed; margin-top: 40px; margin-bottom: 20px; }
+      .leaderboard {
+        max-width: 500px;
+        background: #252542;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .leaderboard-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #333;
+      }
+      .leaderboard-item:last-child { border-bottom: none; }
+      .leaderboard-rank {
+        color: #7c3aed;
+        font-weight: bold;
+        width: 40px;
+      }
+      .leaderboard-name { flex: 1; }
+      .leaderboard-wins {
+        color: #10b981;
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
     <h1>Crossfire Stats</h1>
     <div id="stats-container" class="loading">Loading stats...</div>
+    <h2>Weekly Leaderboard</h2>
+    <div id="leaderboard-container" class="loading">Loading leaderboard...</div>
     <p class="refresh-info">Auto-refreshes every 10 seconds</p>
 
     <script>
@@ -59,12 +85,17 @@
 
       async function fetchStats() {
         try {
+          console.log('Fetching from:', `${apiUrl}/api/matchmaking`);
           const response = await fetch(`${apiUrl}/api/matchmaking`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
           const data = await response.json();
           renderStats(data);
         } catch (error) {
+          console.error('Stats fetch error:', error);
           document.getElementById('stats-container').innerHTML =
-            '<p class="error">Failed to load stats. Please refresh.</p>';
+            `<p class="error">Failed to load stats: ${error.message}</p>`;
         }
       }
 
@@ -103,11 +134,44 @@
         `;
       }
 
+      async function fetchLeaderboard() {
+        try {
+          const response = await fetch(`${apiUrl}/api/leaderboard/weekly?limit=20`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          renderLeaderboard(data.leaderboard);
+        } catch (error) {
+          console.error('Leaderboard fetch error:', error);
+          document.getElementById('leaderboard-container').innerHTML =
+            `<p class="error">Failed to load leaderboard: ${error.message}</p>`;
+        }
+      }
+
+      function renderLeaderboard(leaderboard) {
+        const container = document.getElementById('leaderboard-container');
+        if (!leaderboard || leaderboard.length === 0) {
+          container.innerHTML = '<p class="loading">No players on leaderboard yet</p>';
+          return;
+        }
+        container.className = 'leaderboard';
+        container.innerHTML = leaderboard.map(player => `
+          <div class="leaderboard-item">
+            <span class="leaderboard-rank">#${player.rank}</span>
+            <span class="leaderboard-name">${player.playerId}</span>
+            <span class="leaderboard-wins">${player.wins} wins</span>
+          </div>
+        `).join('');
+      }
+
       // Initial fetch
       fetchStats();
+      fetchLeaderboard();
 
       // Auto-refresh every 10 seconds
       setInterval(fetchStats, 10000);
+      setInterval(fetchLeaderboard, 10000);
     </script>
   </body>
 </html>
