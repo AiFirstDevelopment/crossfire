@@ -85,7 +85,6 @@ const dailyChallengeStatusEl = document.getElementById('daily-challenge-status')
 const leaderboardListEl = document.getElementById('leaderboard-list')!;
 const playerRankDisplayEl = document.getElementById('player-rank-display')!;
 const playerRankEl = document.getElementById('player-rank')!;
-const playerWeeklyWinsEl = document.getElementById('player-weekly-wins')!;
 const achievementsListEl = document.getElementById('achievements-list')!;
 const resultStreakDisplayEl = document.getElementById('result-streak-display')!;
 const newAchievementsEl = document.getElementById('new-achievements')!;
@@ -1336,14 +1335,14 @@ async function fetchLeaderboard(): Promise<void> {
     const response = await fetch(`${getApiUrl()}/api/leaderboard/weekly?playerId=${currentPlayerId}`);
     if (response.ok) {
       const data = await response.json();
-      displayLeaderboard(data.leaderboard, data.playerRank, data.playerWins);
+      displayLeaderboard(data.leaderboard, data.playerRank);
     }
   } catch (error) {
     console.error('Failed to fetch leaderboard:', error);
   }
 }
 
-function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | null, playerWins: number) {
+function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | null) {
   leaderboardListEl.innerHTML = '';
 
   if (entries.length === 0) {
@@ -1361,21 +1360,15 @@ function displayLeaderboard(entries: LeaderboardEntry[], playerRank: number | nu
     item.innerHTML = `
       <span class="leaderboard-rank">#${index + 1}</span>
       <span class="leaderboard-name">${entry.playerId}</span>
-      <span class="leaderboard-wins">${entry.wins}</span>
     `;
 
     leaderboardListEl.appendChild(item);
   });
 
   // Show player's rank if not in top 10
-  if (playerRank && playerRank > 10) {
+  if (playerRank) {
     playerRankDisplayEl.classList.remove('hidden');
     playerRankEl.textContent = `#${playerRank}`;
-    playerWeeklyWinsEl.textContent = String(playerWins);
-  } else if (playerRank) {
-    playerRankDisplayEl.classList.remove('hidden');
-    playerRankEl.textContent = `#${playerRank}`;
-    playerWeeklyWinsEl.textContent = String(playerWins);
   } else {
     playerRankDisplayEl.classList.add('hidden');
   }
