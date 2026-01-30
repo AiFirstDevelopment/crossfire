@@ -55,6 +55,7 @@ const solutionContainer = document.getElementById('solution-container')!;
 const solutionGridEl = document.getElementById('solution-grid')!;
 const penaltyDisplay = document.getElementById('penalty-display')!;
 const penaltyTime = document.getElementById('penalty-time')!;
+const hintsRemainingEl = document.getElementById('hints-remaining')!;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 const opponentNameDisplay = document.getElementById('opponent-name-display')!;
 const opponentLevelEl = document.getElementById('opponent-level')!;
@@ -330,6 +331,8 @@ function handleBotStateChange(state: BotGameState) {
       opponentNameDisplay.textContent = state.botName;
       opponentLevelEl.textContent = '1';
       if (state.playerGrid && !crosswordUI) {
+        // Reset hints display for bot mode
+        hintsRemainingEl.textContent = String(state.maxHints - state.hintsUsed);
         penaltyDisplay.classList.add('hidden');
 
         crosswordUI = new CrosswordUI(crosswordContainer, {
@@ -718,6 +721,7 @@ function showHintUsed(hintsRemainingOrPenaltyMs: number) {
   if (isBotMode) {
     // Bot mode: parameter is hints remaining
     const remaining = hintsRemainingOrPenaltyMs;
+    hintsRemainingEl.textContent = String(remaining);
     if (remaining === 0) {
       hintToast.textContent = 'No hints left';
     } else {

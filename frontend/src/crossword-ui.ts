@@ -70,7 +70,7 @@ export class CrosswordUI {
       const acrossList = document.createElement('ul');
       for (const word of acrossWords) {
         const li = document.createElement('li');
-        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span> <span class="clue-length">(${word.length})</span>`;
+        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span>`;
         acrossList.appendChild(li);
       }
       acrossSection.appendChild(acrossList);
@@ -84,7 +84,7 @@ export class CrosswordUI {
       const downList = document.createElement('ul');
       for (const word of downWords) {
         const li = document.createElement('li');
-        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span> <span class="clue-length">(${word.length})</span>`;
+        li.innerHTML = `<span class="clue-number">${word.index}.</span> <span class="clue-category">${word.category}</span>`;
         downList.appendChild(li);
       }
       downSection.appendChild(downList);
