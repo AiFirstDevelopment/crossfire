@@ -48,6 +48,9 @@ const resultTitle = document.getElementById('result-title')!;
 const resultDetails = document.getElementById('result-details')!;
 const leaveRoomBtn = document.getElementById('leave-room-btn') as HTMLButtonElement;
 const leaveWaitingBtn = document.getElementById('leave-waiting-btn') as HTMLButtonElement;
+const shareLinkInput = document.getElementById('share-link-input') as HTMLInputElement;
+const copyLinkBtn = document.getElementById('copy-link-btn') as HTMLButtonElement;
+const copyFeedback = document.getElementById('copy-feedback')!;
 const leaveSubmitBtn = document.getElementById('leave-submit-btn') as HTMLButtonElement;
 const leaveSolveBtn = document.getElementById('leave-solve-btn') as HTMLButtonElement;
 const errorToast = document.getElementById('error-toast')!;
@@ -245,9 +248,24 @@ function init() {
 
   leaveWaitingBtn.addEventListener('click', () => {
     game.leaveRoom();
+    clearRoomFromUrl();
     showScreen('menu');
     findMatchBtn.disabled = false;
     statusText.textContent = '';
+  });
+
+  // Copy share link button
+  copyLinkBtn.addEventListener('click', () => {
+    shareLinkInput.select();
+    navigator.clipboard.writeText(shareLinkInput.value).then(() => {
+      copyFeedback.classList.remove('hidden');
+      setTimeout(() => copyFeedback.classList.add('hidden'), 2000);
+    }).catch(() => {
+      // Fallback for older browsers
+      document.execCommand('copy');
+      copyFeedback.classList.remove('hidden');
+      setTimeout(() => copyFeedback.classList.add('hidden'), 2000);
+    });
   });
 
   leaveSubmitBtn.addEventListener('click', () => {
@@ -487,6 +505,10 @@ function handleStateChange(state: GameState) {
       waitingInfo.textContent = state.opponentName
         ? `Playing against ${state.opponentName}`
         : 'Waiting for opponent to join...';
+      // Update share link with current room ID
+      if (state.roomId) {
+        updateShareLink(state.roomId);
+      }
       break;
 
     case 'submitting':
@@ -594,6 +616,30 @@ function updateTotalPlayers(count: number, returning: number) {
   } else {
     totalPlayersEl.title = '';
   }
+}
+
+// URL helper functions for shareable room links
+function getRoomFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('room');
+}
+
+function clearRoomFromUrl(): void {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('room');
+  window.history.replaceState({}, '', url.pathname + url.search);
+}
+
+function generateShareLink(roomId: string): string {
+  const url = new URL(window.location.href);
+  url.searchParams.set('room', roomId);
+  // Remove any hash and just return the clean URL
+  return url.origin + url.pathname + '?room=' + encodeURIComponent(roomId);
+}
+
+function updateShareLink(roomId: string): void {
+  const link = generateShareLink(roomId);
+  shareLinkInput.value = link;
 }
 
 function showError(message: string) {
@@ -1628,4 +1674,15 @@ initEngagementFeatures();
 
 // Initialize app
 init();
+
+// Check for room ID in URL and auto-join if present
+const roomFromUrl = getRoomFromUrl();
+if (roomFromUrl) {
+  // Small delay to ensure WebSocket is connected
+  setTimeout(() => {
+    roomIdInput.value = roomFromUrl;
+    game.connectToRoom(roomFromUrl);
+  }, 500);
+}
+
 console.log('Crossfire initialized');

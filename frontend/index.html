@@ -65,7 +65,7 @@
 
         <div class="divider">Play with a friend</div>
 
-        <p class="room-help">Make up any room name and share it with a friend. You'll both join the same game!</p>
+        <p class="room-help">Make up any room name and click Join Room — you'll get a link to share with your friend!</p>
         <div class="manual-join">
           <input type="text" id="room-id-input" placeholder="e.g. pizza-party" />
           <button id="join-room-btn">Join Room</button>
@@ -92,6 +92,14 @@
         <div class="spinner"></div>
         <p>Waiting for opponent...</p>
         <p id="waiting-info"></p>
+        <div id="share-link-section" class="share-link-section">
+          <p class="share-link-label">Share this link with a friend:</p>
+          <div class="share-link-row">
+            <input type="text" id="share-link-input" class="share-link-input" readonly />
+            <button id="copy-link-btn" class="small-btn">Copy</button>
+          </div>
+          <p id="copy-feedback" class="copy-feedback hidden">Link copied!</p>
+        </div>
         <button id="leave-waiting-btn" class="secondary-btn leave-waiting-btn">Leave Room</button>
       </section>
 

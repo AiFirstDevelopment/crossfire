@@ -415,6 +415,52 @@ input[type="text"]::placeholder {
   to { transform: rotate(360deg); }
 }
 
+/* Share Link Section */
+.share-link-section {
+  margin: 1.5rem auto;
+  max-width: 400px;
+  text-align: center;
+}
+
+.share-link-label {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.5rem;
+}
+
+.light-mode .share-link-label {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.share-link-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.share-link-input {
+  flex: 1;
+  max-width: 280px;
+  padding: 0.6em 0.8em;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font-size: 0.9em;
+  text-overflow: ellipsis;
+}
+
+.light-mode .share-link-input {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.copy-feedback {
+  font-size: 0.85em;
+  color: #4ade80;
+  margin-top: 0.5rem;
+}
+
 /* Word Submission */
 #word-form {
   display: flex;

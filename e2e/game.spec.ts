@@ -687,6 +687,79 @@ test.describe('Keyboard Navigation', () => {
   });
 });
 
+test.describe('Shareable Room Links', () => {
+  test('should show share link section on waiting screen', async ({ page }) => {
+    await page.goto('/');
+    await waitForConnection(page);
+
+    // Join a room
+    const roomId = `share-test-${Date.now()}`;
+    await page.locator('#room-id-input').fill(roomId);
+    await page.locator('#join-room-btn').click();
+
+    // Wait for waiting screen
+    await expect(page.locator('#screen-waiting')).toBeVisible({ timeout: 5000 });
+
+    // Share link section should be visible
+    await expect(page.locator('#share-link-section')).toBeVisible();
+    await expect(page.locator('#share-link-input')).toBeVisible();
+    await expect(page.locator('#copy-link-btn')).toBeVisible();
+
+    // Share link input should contain the room ID
+    const shareLink = await page.locator('#share-link-input').inputValue();
+    expect(shareLink).toContain(`room=${roomId}`);
+
+    // Clean up
+    await safeLeave(page);
+  });
+
+  test('should auto-join room from URL parameter', async ({ browser }) => {
+    const roomId = `url-join-${Date.now()}`;
+
+    // First player creates the room
+    const context1 = await browser.newContext();
+    const page1 = await context1.newPage();
+
+    try {
+      await page1.goto('/');
+      await waitForConnection(page1);
+      await page1.locator('#room-id-input').fill(roomId);
+      await page1.locator('#join-room-btn').click();
+      await expect(page1.locator('#screen-waiting')).toBeVisible({ timeout: 5000 });
+
+      // Second player joins via URL
+      const context2 = await browser.newContext();
+      const page2 = await context2.newPage();
+
+      try {
+        await page2.goto(`/?room=${roomId}`);
+        await waitForConnection(page2);
+
+        // Both should go to submit screen (game started)
+        await expect(page1.locator('#screen-submit')).toBeVisible({ timeout: 10000 });
+        await expect(page2.locator('#screen-submit')).toBeVisible({ timeout: 5000 });
+
+        // Clean up
+        await safeLeave(page1);
+        await safeLeave(page2);
+      } finally {
+        await context2.close();
+      }
+    } finally {
+      await context1.close();
+    }
+  });
+
+  test('should have share link elements in waiting screen', async ({ page }) => {
+    await page.goto('/');
+
+    // Share link elements should exist (hidden in DOM initially)
+    await expect(page.locator('#share-link-input')).toHaveCount(1);
+    await expect(page.locator('#copy-link-btn')).toHaveCount(1);
+    await expect(page.locator('#copy-feedback')).toHaveCount(1);
+  });
+});
+
 test.describe('Critical UI Elements', () => {
   // These tests verify that essential UI elements exist and haven't been accidentally removed
 
@@ -722,6 +795,11 @@ test.describe('Critical UI Elements', () => {
     await expect(page.locator('#screen-waiting')).toHaveCount(1);
     await expect(page.locator('#leave-waiting-btn')).toHaveCount(1);
     await expect(page.locator('#waiting-info')).toHaveCount(1);
+
+    // Share link elements
+    await expect(page.locator('#share-link-input')).toHaveCount(1);
+    await expect(page.locator('#copy-link-btn')).toHaveCount(1);
+    await expect(page.locator('#copy-feedback')).toHaveCount(1);
   });
 
   test('should have all submit screen elements', async ({ page }) => {
