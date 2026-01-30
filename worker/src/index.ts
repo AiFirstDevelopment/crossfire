@@ -141,6 +141,11 @@ export default {
         headers: { 'Content-Type': 'application/json' },
       }));
 
+      // Broadcast leaderboard update to all connected clients
+      const matchmakingId = env.MATCHMAKING.idFromName('global');
+      const matchmaking = env.MATCHMAKING.get(matchmakingId);
+      await matchmaking.fetch(new Request('https://matchmaking/broadcast-leaderboard', { method: 'POST' }));
+
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 

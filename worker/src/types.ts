@@ -146,6 +146,7 @@ export type MatchmakingServerMessage =
   | { type: 'queue-joined'; position: number }
   | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number; totalGamesPlayed: number; totalPlayers: number; returningUsers: number }
   | { type: 'match-found'; roomId: string; opponent: { id: string; name: string } }
+  | { type: 'leaderboard-update'; leaderboard: Array<{ rank: number; playerId: string; wins: number }> }
   | { type: 'error'; code: string; message: string };
 
 // Constants

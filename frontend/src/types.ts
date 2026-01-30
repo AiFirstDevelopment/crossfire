@@ -59,6 +59,7 @@ export type ServerMessage =
   | { type: 'player-left'; playerId: string; playerName: string; playerCount: number }
   | { type: 'queue-joined'; position: number }
   | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number; totalGamesPlayed: number; totalPlayers: number; returningUsers?: number }
+  | { type: 'leaderboard-update'; leaderboard: Array<{ rank: number; playerId: string; wins: number }> }
   | { type: 'match-found'; roomId: string; opponent: { id: string; name: string } }
   | { type: 'game-start'; phase: 'submitting'; timeoutMs: number }
   | { type: 'words-accepted'; wordCount: number }

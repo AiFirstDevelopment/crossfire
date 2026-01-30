@@ -142,6 +142,11 @@ function handleSubmissionTimeout() {
   statusText.textContent = 'Time expired - returned to menu';
 }
 
+// Handle real-time leaderboard updates from WebSocket
+function handleLeaderboardUpdate(leaderboard: Array<{ rank: number; playerId: string; wins: number }>) {
+  displayLeaderboard(leaderboard, null, 0);
+}
+
 function init() {
   game = new GameClient();
   game.setPlayerId(currentPlayerId);
@@ -149,6 +154,7 @@ function init() {
   game.onStateChange(handleStateChange);
   game.onHintUsed(showHintUsed);
   game.onMatchmakingTimeout(startBotGame);
+  game.onLeaderboardUpdate(handleLeaderboardUpdate);
 
   findMatchBtn.addEventListener('click', () => {
     findMatchBtn.disabled = true;

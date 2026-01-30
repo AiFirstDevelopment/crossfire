@@ -26,6 +26,7 @@ export interface GameState {
 type StateChangeHandler = (state: GameState) => void;
 type HintUsedHandler = (penaltyMs: number) => void;
 type MatchmakingTimeoutHandler = () => void;
+type LeaderboardUpdateHandler = (leaderboard: Array<{ rank: number; playerId: string; wins: number }>) => void;
 
 export class GameClient {
   private ws: WebSocket | null = null;
@@ -34,6 +35,7 @@ export class GameClient {
   private stateHandlers: Set<StateChangeHandler> = new Set();
   private hintHandler: HintUsedHandler | null = null;
   private matchmakingTimeoutHandler: MatchmakingTimeoutHandler | null = null;
+  private leaderboardUpdateHandler: LeaderboardUpdateHandler | null = null;
   private matchmakingTimer: number | null = null;
   private isProduction: boolean;
   private intentionalDisconnect: boolean = false;
@@ -65,6 +67,10 @@ export class GameClient {
         const totalPlayers = 'totalPlayers' in message ? (message.totalPlayers ?? 0) : 0;
         const returningUsers = 'returningUsers' in message ? (message.returningUsers ?? 0) : 0;
         this.updateState({ activeGames, totalGamesPlayed, totalPlayers, returningUsers });
+      } else if (message.type === 'leaderboard-update') {
+        if (this.leaderboardUpdateHandler) {
+          this.leaderboardUpdateHandler(message.leaderboard);
+        }
       }
     };
 
@@ -84,6 +90,10 @@ export class GameClient {
 
   onMatchmakingTimeout(handler: MatchmakingTimeoutHandler) {
     this.matchmakingTimeoutHandler = handler;
+  }
+
+  onLeaderboardUpdate(handler: LeaderboardUpdateHandler) {
+    this.leaderboardUpdateHandler = handler;
   }
 
   private clearMatchmakingTimer() {

@@ -3,6 +3,7 @@ import type { MatchmakingServerMessage } from './types';
 export interface Env {
   GAME_ROOM: DurableObjectNamespace;
   MATCHMAKING: DurableObjectNamespace;
+  LEADERBOARD: DurableObjectNamespace;
 }
 
 interface QueuedPlayer {
@@ -14,6 +15,7 @@ interface QueuedPlayer {
 
 export class Matchmaking {
   private state: DurableObjectState;
+  private env: Env;
   private queue: Map<WebSocket, QueuedPlayer>;
   private connectedSockets: Set<WebSocket>;
   private playerCounter: number;
@@ -25,8 +27,9 @@ export class Matchmaking {
   // Seed value for historical players before tracking began
   private static readonly INITIAL_PLAYER_COUNT = 10;
 
-  constructor(state: DurableObjectState, _env: Env) {
+  constructor(state: DurableObjectState, env: Env) {
     this.state = state;
+    this.env = env;
     this.queue = new Map();
     this.connectedSockets = new Set();
     this.playerCounter = 0;
@@ -121,6 +124,14 @@ export class Matchmaking {
       await this.state.storage.put('activeGames', this.activeGames);
       this.broadcastStats();
       return new Response(JSON.stringify({ activeGames: this.activeGames, message: 'Active games counter reset to 0' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Broadcast leaderboard update to all connected clients
+    if (url.pathname === '/broadcast-leaderboard' && request.method === 'POST') {
+      await this.broadcastLeaderboard();
+      return new Response(JSON.stringify({ success: true, clientCount: this.connectedSockets.size }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -302,6 +313,33 @@ export class Matchmaking {
       } catch (error) {
         // Connection may be closed
       }
+    }
+  }
+
+  private async broadcastLeaderboard() {
+    try {
+      // Fetch leaderboard data
+      const leaderboardId = this.env.LEADERBOARD.idFromName('global');
+      const leaderboard = this.env.LEADERBOARD.get(leaderboardId);
+      const response = await leaderboard.fetch(
+        new Request('https://leaderboard/weekly?limit=10', { method: 'GET' })
+      );
+      const data = await response.json() as { leaderboard: Array<{ rank: number; playerId: string; wins: number }> };
+
+      // Broadcast to all connected clients
+      const message = JSON.stringify({
+        type: 'leaderboard-update',
+        leaderboard: data.leaderboard,
+      });
+      for (const ws of this.connectedSockets) {
+        try {
+          ws.send(message);
+        } catch (error) {
+          // Connection may be closed
+        }
+      }
+    } catch (error) {
+      console.error('Error broadcasting leaderboard:', error);
     }
   }
 
