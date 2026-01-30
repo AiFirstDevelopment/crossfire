@@ -12,14 +12,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   // Retry flaky tests (network issues common against production)
   retries: process.env.E2E_BASE_URL ? 2 : (process.env.CI ? 2 : 0),
-  // Reduce parallelism for production to avoid network congestion
-  workers: process.env.E2E_BASE_URL ? 2 : (process.env.CI ? 1 : undefined),
+  // Reduce parallelism to avoid tests matching with each other during matchmaking
+  workers: process.env.E2E_BASE_URL ? 2 : 1,
   // Increase overall timeout for production
   timeout: process.env.E2E_BASE_URL ? 60000 : 30000,
   reporter: 'html',
 
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -34,12 +34,21 @@ export default defineConfig({
     },
   ],
 
-  // Run local dev server before tests (when not testing production)
-  webServer: process.env.E2E_BASE_URL ? undefined : {
-    command: 'npm run dev --workspace=frontend',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 120000,
-    stdout: 'pipe',
-  },
+  // Run local dev servers before tests (when not testing production)
+  webServer: process.env.E2E_BASE_URL ? undefined : [
+    {
+      command: 'npm run dev --workspace=worker',
+      url: 'http://localhost:8787/api/health',
+      reuseExistingServer: true,
+      timeout: 120000,
+      stdout: 'pipe',
+    },
+    {
+      command: 'npm run dev --workspace=frontend',
+      url: 'http://localhost:3000',
+      reuseExistingServer: true,
+      timeout: 120000,
+      stdout: 'pipe',
+    },
+  ],
 });

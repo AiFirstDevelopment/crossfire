@@ -1,6 +1,6 @@
 // Word categories for hint system
 // Words are mapped to simple, recognizable categories
-import { transformCategoryKeys } from "./transform-category-keys";
+import { transformCategoryKeys } from "../transform-category-keys";
 
 export const _categoryWords: Record<string, string[]> = {
   // Nature

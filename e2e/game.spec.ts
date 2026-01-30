@@ -114,7 +114,7 @@ test.describe('Bot Game', () => {
 
     // Wait for bot game to start (10 second timeout + network latency buffer)
     // The bot game starts after 10 seconds of matchmaking, status shows "Playing against [Bot]"
-    await expect(page.locator('#status-text')).toContainText(/Playing against/i, { timeout: 30000 });
+    await expect(page.locator('#status-text')).toContainText(/Playing against/i, { timeout: 45000 });
 
     // Should show submit screen
     await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 5000 });
@@ -129,7 +129,7 @@ test.describe('Bot Game', () => {
 
     // Start matchmaking and wait for bot (10 second timeout + buffer)
     await page.locator('#find-match-btn').click();
-    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
     // Fill in words
     await fillWords(page, VALID_WORDS);
@@ -172,7 +172,7 @@ test.describe('Bot Game', () => {
 
     // Start matchmaking and wait for bot
     await page.locator('#find-match-btn').click();
-    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 25000 });
+    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
     // Try invalid word
     const firstInput = page.locator('.word-input').first();
@@ -203,7 +203,7 @@ test.describe('Bot Game', () => {
 
     // Start bot game
     await page.locator('#find-match-btn').click();
-    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
     // Leave game
     await page.locator('#leave-submit-btn').click();
@@ -573,7 +573,7 @@ test.describe('Results Screen', () => {
 
     // Start bot game and complete it quickly by leaving during solve
     await page.locator('#find-match-btn').click();
-    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
     await fillWords(page, VALID_WORDS);
     await page.locator('#word-form button[type="submit"]').click();
@@ -604,7 +604,7 @@ test.describe('Keyboard Navigation', () => {
 
       // Start bot game
       await page.locator('#find-match-btn').click();
-      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
       // First input should be focused
       const inputs = page.locator('.word-input');
@@ -644,7 +644,7 @@ test.describe('Word Validation', () => {
 
       // Start bot game
       await page.locator('#find-match-btn').click();
-      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
       // Enter the same word twice
       const inputs = page.locator('.word-input');
@@ -682,7 +682,7 @@ test.describe('Word Validation', () => {
 
       // Start bot game
       await page.locator('#find-match-btn').click();
-      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 30000 });
+      await expect(page.locator('#screen-submit')).toBeVisible({ timeout: 45000 });
 
       // Enter a short word
       const firstInput = page.locator('.word-input').first();

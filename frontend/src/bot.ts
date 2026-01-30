@@ -1,7 +1,7 @@
 import humanId from 'human-id';
 import clg from 'crossword-layout-generator';
 import type { ClientGrid, ClientCell, ClientWordPlacement, GameResult } from './types';
-import { getWordCategory, hasCategory } from '../../shared/categories';
+import { getWordCategory, hasCategory } from '../../shared/dictionary/categories';
 
 interface LayoutInput {
   clue: string;

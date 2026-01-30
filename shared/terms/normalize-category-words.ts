@@ -1,7 +1,7 @@
 // Word categories for hint system
 // Words are mapped to simple, recognizable categories
 import { transformCategoryKeys } from "../transform-category-keys"; // adjust path
-import { _categoryWords } from "../categories";
+import { _categoryWords } from "../dictionary/categories";
 import fs from "node:fs";
 
 function hasVowel(s: string): boolean {

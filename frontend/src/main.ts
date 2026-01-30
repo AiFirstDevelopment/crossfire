@@ -5,7 +5,7 @@ import { BotGame, BotGameState } from './bot';
 import englishWords from 'an-array-of-english-words';
 import humanId from 'human-id';
 import { getCategorizedWords, getHint as getWordCategory, stemToken } from '../../shared/get-hint';
-import { botWords as easyBotWords } from '../../shared/terms/bot.words';
+import { botWords as easyBotWords } from '../../shared/dictionary/bot.words';
 
 // Create a Set for O(1) word lookup - only words with categories are valid
 const categorizedWords = getCategorizedWords();
