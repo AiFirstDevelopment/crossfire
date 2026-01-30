@@ -46,6 +46,12 @@ export default {
       // Use a single global matchmaking instance
       const id = env.MATCHMAKING.idFromName('global');
       const matchmaking = env.MATCHMAKING.get(id);
+
+      // WebSocket upgrade requests must be passed through directly
+      if (request.headers.get('Upgrade') === 'websocket') {
+        return matchmaking.fetch(request);
+      }
+
       const response = await matchmaking.fetch(request);
       const data = await response.json();
       return new Response(JSON.stringify(data), { headers: corsHeaders });

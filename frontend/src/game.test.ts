@@ -148,7 +148,7 @@ describe('GameClient', () => {
 
     it('should initialize with zero active games', () => {
       const state = gameClient.getState();
-      expect(state.activeGames).toBe(0);
+      expect(state.activePlayers).toBe(0);
     });
 
     it('should initialize with zero total games played', () => {

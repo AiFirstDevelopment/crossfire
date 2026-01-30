@@ -17,7 +17,7 @@ export interface GameState {
   error: string | null;
   opponentWantsRematch: boolean;
   waitingForRematch: boolean;
-  activeGames: number;
+  activePlayers: number;
   totalGamesPlayed: number;
   totalPlayers: number;
   returningUsers: number;
@@ -62,11 +62,11 @@ export class GameClient {
     this.statsWs.onmessage = (event) => {
       const message = JSON.parse(event.data) as ServerMessage;
       if (message.type === 'welcome' || message.type === 'stats-update') {
-        const activeGames = 'activeGames' in message ? (message.activeGames ?? 0) : 0;
+        const activePlayers = 'activePlayers' in message ? (message.activePlayers ?? 0) : 0;
         const totalGamesPlayed = 'totalGamesPlayed' in message ? (message.totalGamesPlayed ?? 0) : 0;
         const totalPlayers = 'totalPlayers' in message ? (message.totalPlayers ?? 0) : 0;
         const returningUsers = 'returningUsers' in message ? (message.returningUsers ?? 0) : 0;
-        this.updateState({ activeGames, totalGamesPlayed, totalPlayers, returningUsers });
+        this.updateState({ activePlayers, totalGamesPlayed, totalPlayers, returningUsers });
       } else if (message.type === 'leaderboard-update') {
         if (this.leaderboardUpdateHandler) {
           this.leaderboardUpdateHandler(message.leaderboard);
@@ -139,7 +139,7 @@ export class GameClient {
       error: null,
       opponentWantsRematch: false,
       waitingForRematch: false,
-      activeGames: 0,
+      activePlayers: 0,
       totalGamesPlayed: 0,
       totalPlayers: 0,
       returningUsers: 0,
@@ -207,7 +207,7 @@ export class GameClient {
         this.updateState({
           playerId: message.playerId,
           playerName: message.playerName,
-          activeGames: message.activeGames ?? 0,
+          activePlayers: message.activePlayers ?? 0,
           totalGamesPlayed: message.totalGamesPlayed ?? 0,
           totalPlayers: message.totalPlayers ?? 0,
           returningUsers: message.returningUsers ?? 0,
@@ -219,7 +219,7 @@ export class GameClient {
         break;
 
       case 'stats-update':
-        this.updateState({ activeGames: message.activeGames, totalGamesPlayed: message.totalGamesPlayed, totalPlayers: message.totalPlayers, returningUsers: message.returningUsers ?? 0 });
+        this.updateState({ activePlayers: message.activePlayers, totalGamesPlayed: message.totalGamesPlayed, totalPlayers: message.totalPlayers, returningUsers: message.returningUsers ?? 0 });
         break;
 
       case 'match-found':

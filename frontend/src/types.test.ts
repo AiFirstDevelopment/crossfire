@@ -212,7 +212,7 @@ describe('Type Definitions', () => {
         type: 'welcome',
         playerId: 'player-123',
         playerName: 'John',
-        activeGames: 5,
+        activePlayers: 5,
         totalGamesPlayed: 10,
       };
 
@@ -284,7 +284,7 @@ describe('Type Definitions', () => {
         type: 'stats-update',
         queueSize: 10,
         onlineCount: 50,
-        activeGames: 20,
+        activePlayers: 20,
         totalGamesPlayed: 100,
         totalPlayers: 500,
       };
@@ -292,7 +292,7 @@ describe('Type Definitions', () => {
       expect(msg.type).toBe('stats-update');
       if (msg.type === 'stats-update') {
         expect(msg.queueSize).toBe(10);
-        expect(msg.activeGames).toBe(20);
+        expect(msg.activePlayers).toBe(20);
         expect(msg.totalPlayers).toBe(500);
       }
     });

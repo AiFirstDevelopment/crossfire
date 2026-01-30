@@ -14,7 +14,7 @@ import { test, expect, Page } from '@playwright/test';
 // Helper to wait for WebSocket connection
 async function waitForConnection(page: Page) {
   // Wait for stats to load (indicates WebSocket connected)
-  await expect(page.locator('#active-games')).toContainText(/\d+ game/);
+  await expect(page.locator('#active-games')).toContainText(/\d+ player/);
 }
 
 // Helper to fill in word inputs
@@ -78,7 +78,7 @@ test.describe('Page Load', () => {
     await waitForConnection(page);
 
     // Stats should show numbers
-    await expect(page.locator('#active-games')).toContainText(/\d+ games? in progress/);
+    await expect(page.locator('#active-games')).toContainText(/\d+ players? active/);
     await expect(page.locator('#total-games')).toContainText(/\d+ games played/);
     await expect(page.locator('#total-players')).toContainText(/Players: \d+/);
   });

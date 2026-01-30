@@ -132,7 +132,7 @@ function handleSubmissionTimeout() {
     botGame = null;
     isBotMode = false;
     botGameActive = false;
-    updateActiveGames(game.getState().activeGames);
+    updateActivePlayers(game.getState().activePlayers);
   } else {
     game.leaveRoom();
   }
@@ -242,7 +242,7 @@ function init() {
       isBotMode = false;
       botGameActive = false;
       // Update active games count (removes bot game addition)
-      updateActiveGames(game.getState().activeGames);
+      updateActivePlayers(game.getState().activePlayers);
     } else {
       game.leaveRoom();
     }
@@ -286,7 +286,7 @@ function init() {
       botGame = null;
       isBotMode = false;
       botGameActive = false;
-      updateActiveGames(game.getState().activeGames);
+      updateActivePlayers(game.getState().activePlayers);
     } else {
       game.leaveRoom();
     }
@@ -302,7 +302,7 @@ function init() {
       botGame = null;
       isBotMode = false;
       botGameActive = false;
-      updateActiveGames(game.getState().activeGames);
+      updateActivePlayers(game.getState().activePlayers);
     } else {
       game.leaveRoom();
     }
@@ -332,7 +332,7 @@ function startBotGame() {
   botGame.onHintUsed(showHintUsed);
 
   // Update active games count (adds 1 for bot game)
-  updateActiveGames(game.getState().activeGames);
+  updateActivePlayers(game.getState().activePlayers);
 
   // Update status text
   statusText.textContent = `Playing against ${botGame.getBotName()}`;
@@ -480,7 +480,7 @@ function showBotResults(state: BotGameState) {
 
 function handleStateChange(state: GameState) {
   // Always update stats displays
-  updateActiveGames(state.activeGames);
+  updateActivePlayers(state.activePlayers);
   updateTotalGames(state.totalGamesPlayed);
   updateTotalPlayers(state.totalPlayers, state.returningUsers);
 
@@ -610,11 +610,11 @@ function showScreen(name: keyof typeof screens) {
   screens[name].classList.remove('hidden');
 }
 
-function updateActiveGames(serverCount: number) {
-  // Add 1 to server count if a bot game is active (backend already applies minimum)
+function updateActivePlayers(serverCount: number) {
+  // Add 1 to server count if a bot game is active (backend already applies baseline)
   const count = botGameActive ? serverCount + 1 : serverCount;
-  const plural = count === 1 ? 'game' : 'games';
-  activeGamesEl.textContent = `${count} ${plural} in progress`;
+  const plural = count === 1 ? 'player' : 'players';
+  activeGamesEl.textContent = `${count} ${plural} active`;
 }
 
 function updateTotalGames(count: number) {
