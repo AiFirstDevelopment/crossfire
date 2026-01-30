@@ -28,6 +28,7 @@ const screens = {
 
 const findMatchBtn = document.getElementById('find-match-btn') as HTMLButtonElement;
 const statusText = document.getElementById('status-text')!;
+const cancelMatchmakingBtn = document.getElementById('cancel-matchmaking-btn') as HTMLButtonElement;
 const activeGamesEl = document.getElementById('active-games')!;
 const totalGamesEl = document.getElementById('total-games')!;
 const totalPlayersEl = document.getElementById('total-players')!;
@@ -149,7 +150,15 @@ function init() {
   findMatchBtn.addEventListener('click', () => {
     findMatchBtn.disabled = true;
     statusText.textContent = 'Finding match...';
+    cancelMatchmakingBtn.classList.remove('hidden');
     game.findMatch();
+  });
+
+  cancelMatchmakingBtn.addEventListener('click', () => {
+    game.cancelMatchmaking();
+    cancelMatchmakingBtn.classList.add('hidden');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
   });
 
   joinRoomBtn.addEventListener('click', () => {
@@ -228,6 +237,10 @@ function init() {
     showScreen('menu');
     findMatchBtn.disabled = false;
     statusText.textContent = '';
+    // Auto-start new matchmaking after a brief delay
+    setTimeout(() => {
+      findMatchBtn.click();
+    }, 100);
   });
 
   leaveWaitingBtn.addEventListener('click', () => {
@@ -279,6 +292,7 @@ function init() {
 function startBotGame() {
   // Cancel the real matchmaking
   game.cancelMatchmaking();
+  cancelMatchmakingBtn.classList.add('hidden');
 
   // Create bot game
   isBotMode = true;
@@ -458,6 +472,7 @@ function handleStateChange(state: GameState) {
   switch (state.phase) {
     case 'connecting':
       // Return to menu screen (e.g., after connection rejection)
+      cancelMatchmakingBtn.classList.add('hidden');
       showScreen('menu');
       break;
 
@@ -466,6 +481,7 @@ function handleStateChange(state: GameState) {
       break;
 
     case 'waiting':
+      cancelMatchmakingBtn.classList.add('hidden');
       showScreen('waiting');
       waitingInfo.textContent = state.opponentName
         ? `Playing against ${state.opponentName}`
@@ -473,6 +489,7 @@ function handleStateChange(state: GameState) {
       break;
 
     case 'submitting':
+      cancelMatchmakingBtn.classList.add('hidden');
       // Reset win tracking for new game
       winRecordedForCurrentGame = false;
       showScreen('submit');
