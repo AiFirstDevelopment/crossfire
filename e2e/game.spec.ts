@@ -229,7 +229,50 @@ test.describe('Matchmaking', () => {
     await expect(page.locator('#status-text')).toContainText(/queue|Finding|match/i);
   });
 
-  test('should be able to cancel matchmaking', async ({ page }) => {
+  test('should show cancel button when matchmaking', async ({ page }) => {
+    await page.goto('/');
+    await waitForConnection(page);
+
+    // Cancel button should be hidden initially
+    await expect(page.locator('#cancel-matchmaking-btn')).toBeHidden();
+
+    // Start matchmaking
+    await page.locator('#find-match-btn').click();
+
+    // Cancel button should become visible
+    await expect(page.locator('#cancel-matchmaking-btn')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#cancel-matchmaking-btn')).toHaveText('Cancel');
+
+    // Status should show queue message
+    await expect(page.locator('#status-text')).toContainText(/queue/i);
+  });
+
+  test('should cancel matchmaking when clicking cancel button', async ({ page }) => {
+    await page.goto('/');
+    await waitForConnection(page);
+
+    // Start matchmaking
+    await page.locator('#find-match-btn').click();
+    await expect(page.locator('#cancel-matchmaking-btn')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#status-text')).toContainText(/queue/i);
+
+    // Click cancel button
+    await page.locator('#cancel-matchmaking-btn').click();
+
+    // Cancel button should be hidden
+    await expect(page.locator('#cancel-matchmaking-btn')).toBeHidden();
+
+    // Find match button should be enabled again
+    await expect(page.locator('#find-match-btn')).toBeEnabled();
+
+    // Status text should be cleared
+    await expect(page.locator('#status-text')).toBeEmpty();
+
+    // Should still be on menu screen
+    await expect(page.locator('#screen-menu')).toBeVisible();
+  });
+
+  test('should be able to cancel matchmaking via page refresh', async ({ page }) => {
     await page.goto('/');
     await waitForConnection(page);
 
@@ -641,6 +684,116 @@ test.describe('Keyboard Navigation', () => {
     } finally {
       await context.close();
     }
+  });
+});
+
+test.describe('Critical UI Elements', () => {
+  // These tests verify that essential UI elements exist and haven't been accidentally removed
+
+  test('should have all menu screen elements', async ({ page }) => {
+    await page.goto('/');
+
+    // Main buttons
+    await expect(page.locator('#find-match-btn')).toHaveCount(1);
+    await expect(page.locator('#find-match-btn')).toHaveText('Play Now');
+    await expect(page.locator('#cancel-matchmaking-btn')).toHaveCount(1);
+    await expect(page.locator('#cancel-matchmaking-btn')).toHaveText('Cancel');
+    await expect(page.locator('#join-room-btn')).toHaveCount(1);
+    await expect(page.locator('#room-id-input')).toHaveCount(1);
+
+    // Stats displays
+    await expect(page.locator('#active-games')).toHaveCount(1);
+    await expect(page.locator('#total-games')).toHaveCount(1);
+    await expect(page.locator('#total-players')).toHaveCount(1);
+
+    // Player info
+    await expect(page.locator('#player-id')).toHaveCount(1);
+    await expect(page.locator('#player-level')).toHaveCount(1);
+    await expect(page.locator('#player-wins')).toHaveCount(1);
+
+    // Theme toggle
+    await expect(page.locator('#theme-toggle')).toHaveCount(1);
+  });
+
+  test('should have all waiting screen elements', async ({ page }) => {
+    await page.goto('/');
+
+    // Waiting screen elements (hidden initially but should exist in DOM)
+    await expect(page.locator('#screen-waiting')).toHaveCount(1);
+    await expect(page.locator('#leave-waiting-btn')).toHaveCount(1);
+    await expect(page.locator('#waiting-info')).toHaveCount(1);
+  });
+
+  test('should have all submit screen elements', async ({ page }) => {
+    await page.goto('/');
+
+    // Submit screen elements
+    await expect(page.locator('#screen-submit')).toHaveCount(1);
+    await expect(page.locator('#word-form')).toHaveCount(1);
+    await expect(page.locator('.word-input')).toHaveCount(4);
+    await expect(page.locator('#leave-submit-btn')).toHaveCount(1);
+    await expect(page.locator('#timer-submit')).toHaveCount(1);
+  });
+
+  test('should have all solve screen elements', async ({ page }) => {
+    await page.goto('/');
+
+    // Solve screen elements
+    await expect(page.locator('#screen-solve')).toHaveCount(1);
+    await expect(page.locator('#crossword-container')).toHaveCount(1);
+    await expect(page.locator('#your-progress')).toHaveCount(1);
+    await expect(page.locator('#opponent-progress')).toHaveCount(1);
+    await expect(page.locator('#timer-solve')).toHaveCount(1);
+    await expect(page.locator('#leave-solve-btn')).toHaveCount(1);
+    await expect(page.locator('#hints-remaining')).toHaveCount(1);
+  });
+
+  test('should have all results screen elements', async ({ page }) => {
+    await page.goto('/');
+
+    // Results screen elements
+    await expect(page.locator('#screen-results')).toHaveCount(1);
+    await expect(page.locator('#result-title')).toHaveCount(1);
+    await expect(page.locator('#result-details')).toHaveCount(1);
+    await expect(page.locator('#leave-room-btn')).toHaveCount(1);
+    await expect(page.locator('#leave-room-btn')).toHaveText('Find New Match');
+    await expect(page.locator('#solution-container')).toHaveCount(1);
+    await expect(page.locator('#confetti-container')).toHaveCount(1);
+  });
+
+  test('should have engagement feature elements', async ({ page }) => {
+    await page.goto('/');
+
+    // Streak displays
+    await expect(page.locator('#streak-display')).toHaveCount(1);
+    await expect(page.locator('#win-streak')).toHaveCount(1);
+    await expect(page.locator('#daily-streak')).toHaveCount(1);
+
+    // Daily challenge
+    await expect(page.locator('#daily-challenge')).toHaveCount(1);
+    await expect(page.locator('#daily-challenge-bar')).toHaveCount(1);
+
+    // Leaderboard
+    await expect(page.locator('#leaderboard-list')).toHaveCount(1);
+
+    // Achievements
+    await expect(page.locator('#achievements-list')).toHaveCount(1);
+
+    // Toasts
+    await expect(page.locator('#error-toast')).toHaveCount(1);
+    await expect(page.locator('#hint-toast')).toHaveCount(1);
+    await expect(page.locator('#achievement-toast')).toHaveCount(1);
+    await expect(page.locator('#streak-toast')).toHaveCount(1);
+  });
+
+  test('should have player ID change form elements', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.locator('#change-id-btn')).toHaveCount(1);
+    await expect(page.locator('#change-id-form')).toHaveCount(1);
+    await expect(page.locator('#new-id-input')).toHaveCount(1);
+    await expect(page.locator('#save-id-btn')).toHaveCount(1);
+    await expect(page.locator('#cancel-id-btn')).toHaveCount(1);
   });
 });
 
