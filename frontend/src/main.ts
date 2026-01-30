@@ -86,6 +86,23 @@ let isBotMode = false;
 let botGameActive = false; // Track if bot game is active for game count
 let winRecordedForCurrentGame = false; // Prevent duplicate win recording
 
+// Handle submission timeout - auto-leave the game
+function handleSubmissionTimeout() {
+  if (isBotMode && botGame) {
+    botGame.destroy();
+    botGame = null;
+    isBotMode = false;
+    botGameActive = false;
+    updateActiveGames(game.getState().activeGames);
+  } else {
+    game.leaveRoom();
+  }
+  lastSubmittedWords = [];
+  showScreen('menu');
+  findMatchBtn.disabled = false;
+  statusText.textContent = 'Time expired - returned to menu';
+}
+
 function init() {
   game = new GameClient();
   game.setPlayerId(currentPlayerId);
@@ -268,7 +285,7 @@ function handleBotStateChange(state: BotGameState) {
         });
         wordForm.querySelector('button')!.disabled = true;
       }
-      startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
+      startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit, handleSubmissionTimeout);
       wordInputs[0]?.focus();
       break;
 
@@ -458,7 +475,7 @@ function handleStateChange(state: GameState) {
         });
         wordForm.querySelector('button')!.disabled = true;
       }
-      startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit);
+      startTimer(state.submissionTimeoutMs, state.phaseStartedAt, timerSubmit, handleSubmissionTimeout);
       // Focus first input
       wordInputs[0]?.focus();
       break;
@@ -691,7 +708,7 @@ function showHintUsed(hintsRemainingOrPenaltyMs: number) {
   }
 }
 
-function startTimer(durationMs: number, startedAt: number, element: HTMLElement) {
+function startTimer(durationMs: number, startedAt: number, element: HTMLElement, onExpire?: () => void) {
   stopTimer();
 
   const update = () => {
@@ -706,6 +723,12 @@ function startTimer(durationMs: number, startedAt: number, element: HTMLElement)
       element.classList.add('warning');
     } else {
       element.classList.remove('warning');
+    }
+
+    // When timer expires, call the callback and stop the timer
+    if (remaining === 0 && onExpire) {
+      stopTimer();
+      onExpire();
     }
   };
 

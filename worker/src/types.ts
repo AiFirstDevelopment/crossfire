@@ -149,7 +149,7 @@ export type MatchmakingServerMessage =
   | { type: 'error'; code: string; message: string };
 
 // Constants
-export const SUBMISSION_TIMEOUT_MS = 60000; // 60 seconds
+export const SUBMISSION_TIMEOUT_MS = 90000; // 90 seconds
 export const SOLVING_TIMEOUT_MS = 300000; // 5 minutes
 export const HINT_REVEAL_PENALTY_MS = 15000; // 15 seconds
 export const WORD_COUNT = 4;

@@ -179,7 +179,7 @@ describe('GameRoom', () => {
       expect(gameStart1).toBeDefined();
       expect(gameStart2).toBeDefined();
       expect(gameStart1.phase).toBe('submitting');
-      expect(gameStart1.timeoutMs).toBe(60000);
+      expect(gameStart1.timeoutMs).toBe(90000);
     });
 
     it('should set alarm for submission timeout', async () => {

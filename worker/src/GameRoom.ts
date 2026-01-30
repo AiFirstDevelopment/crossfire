@@ -6,6 +6,7 @@ import type {
   GameResult,
   HintResponse,
 } from './types';
+import { SUBMISSION_TIMEOUT_MS } from './types';
 import { generateCrosswordGrid, gridToClientGrid, checkProgress, countTotalCells } from './crossword';
 import englishWords from 'an-array-of-english-words';
 import { hasCategory, getCategorizedWords, stemToken } from './categories';
@@ -210,11 +211,11 @@ export class GameRoom {
     this.broadcast({
       type: 'game-start',
       phase: 'submitting',
-      timeoutMs: 60000, // 2 minutes
+      timeoutMs: SUBMISSION_TIMEOUT_MS,
     });
 
     // Set alarm for timeout
-    this.state.storage.setAlarm(Date.now() + 60000);
+    this.state.storage.setAlarm(Date.now() + SUBMISSION_TIMEOUT_MS);
   }
 
   private handleSubmitWords(player: ConnectedPlayer, words: string[]) {
@@ -237,7 +238,7 @@ export class GameRoom {
       this.sendTo(player.websocket, {
         type: 'game-start',
         phase: 'submitting',
-        timeoutMs: 60000,
+        timeoutMs: SUBMISSION_TIMEOUT_MS,
       });
       return;
     }
@@ -323,11 +324,11 @@ export class GameRoom {
           this.sendTo(player.websocket, {
             type: 'game-start',
             phase: 'submitting',
-            timeoutMs: 60000,
+            timeoutMs: SUBMISSION_TIMEOUT_MS,
           });
         }
         // Reset alarm for new submission period
-        this.state.storage.setAlarm(Date.now() + 60000);
+        this.state.storage.setAlarm(Date.now() + SUBMISSION_TIMEOUT_MS);
         return;
       }
 
