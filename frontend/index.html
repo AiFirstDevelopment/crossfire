@@ -135,6 +135,7 @@
             <button id="join-room-btn">Enter Room</button>
           </div>
           <p id="friend-battles-count" class="friend-battles-count hidden"></p>
+          <button id="view-h2h-btn" class="link-btn hidden">View history</button>
         </div>
 
         <!-- Leaderboard Section -->
@@ -328,6 +329,17 @@
           <div class="modal-actions">
             <button id="modal-accept-btn" class="accept-btn">Accept</button>
             <button id="modal-decline-btn" class="decline-btn">Decline</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- H2H History Modal -->
+      <div id="h2h-modal" class="modal-overlay hidden">
+        <div class="modal-content h2h-modal-content">
+          <h3>Friend Battles</h3>
+          <div id="h2h-list" class="h2h-list"></div>
+          <div class="modal-actions">
+            <button id="h2h-close-btn" class="secondary-btn">Close</button>
           </div>
         </div>
       </div>

@@ -654,6 +654,104 @@ input[type="text"]::placeholder {
   color: rgba(0, 0, 0, 0.7);
 }
 
+/* H2H History Modal */
+.h2h-modal-content {
+  max-width: 380px;
+}
+
+.h2h-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+}
+
+.h2h-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.h2h-item:last-child {
+  border-bottom: none;
+}
+
+.h2h-opponent {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.h2h-record {
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.h2h-record .wins {
+  color: #4ade80;
+}
+
+.h2h-record .losses {
+  color: #f87171;
+}
+
+.h2h-empty {
+  padding: 2rem 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.light-mode .h2h-item {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode .h2h-opponent {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.light-mode .h2h-record {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light-mode .h2h-empty {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Link Button */
+.link-btn {
+  background: rgba(100, 108, 255, 0.1);
+  border: 1px solid rgba(100, 108, 255, 0.3);
+  border-radius: 1rem;
+  color: #a0a8ff;
+  cursor: pointer;
+  font-size: 0.85em;
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.link-btn:hover {
+  background: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+  color: #c0c8ff;
+}
+
+.light-mode .link-btn {
+  background: rgba(74, 74, 255, 0.08);
+  border-color: rgba(74, 74, 255, 0.25);
+  color: #5a5aff;
+}
+
+.light-mode .link-btn:hover {
+  background: rgba(74, 74, 255, 0.15);
+  border-color: rgba(74, 74, 255, 0.4);
+  color: #4a4aff;
+}
+
 /* Waiting Screen */
 .spinner {
   width: 50px;

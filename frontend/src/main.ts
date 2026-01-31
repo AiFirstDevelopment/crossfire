@@ -109,6 +109,12 @@ const h2hRecordEl = document.getElementById('h2h-record')!;
 const challengePromptEl = document.getElementById('challenge-prompt')!;
 const challengeFriendBtn = document.getElementById('challenge-friend-btn') as HTMLButtonElement;
 
+// H2H history modal elements
+const viewH2HBtn = document.getElementById('view-h2h-btn') as HTMLButtonElement;
+const h2hModal = document.getElementById('h2h-modal')!;
+const h2hListEl = document.getElementById('h2h-list')!;
+const h2hCloseBtn = document.getElementById('h2h-close-btn') as HTMLButtonElement;
+
 // Rematch elements
 const rematchSection = document.getElementById('rematch-section')!;
 const rematchBtn = document.getElementById('rematch-btn') as HTMLButtonElement;
@@ -409,6 +415,18 @@ function init() {
 
   // Theme toggle
   themeToggle.addEventListener('click', toggleTheme);
+
+  // H2H history modal
+  viewH2HBtn.addEventListener('click', showH2HModal);
+  h2hCloseBtn.addEventListener('click', () => {
+    h2hModal.classList.add('hidden');
+  });
+  // Close modal when clicking outside
+  h2hModal.addEventListener('click', (e) => {
+    if (e.target === h2hModal) {
+      h2hModal.classList.add('hidden');
+    }
+  });
 }
 
 // Start a bot game when matchmaking times out
@@ -1591,6 +1609,31 @@ async function displayFriendBattlesCount(): Promise<void> {
   } else {
     friendBattlesCountEl.classList.add('hidden');
   }
+  // Always show "View history" button - modal shows empty state message if no battles
+  viewH2HBtn.classList.remove('hidden');
+}
+
+function showH2HModal(): void {
+  const records = getH2HRecords();
+  const entries = Object.values(records).sort((a, b) => b.lastPlayed - a.lastPlayed);
+
+  h2hListEl.innerHTML = '';
+
+  if (entries.length === 0) {
+    h2hListEl.innerHTML = '<p class="h2h-empty">No friend battles yet. Challenge a friend to get started!</p>';
+  } else {
+    for (const record of entries) {
+      const item = document.createElement('div');
+      item.className = 'h2h-item';
+      item.innerHTML = `
+        <span class="h2h-opponent-name">${record.opponentName}</span>
+        <span class="h2h-score">${record.wins}W - ${record.losses}L</span>
+      `;
+      h2hListEl.appendChild(item);
+    }
+  }
+
+  h2hModal.classList.remove('hidden');
 }
 
 // ============== ENGAGEMENT FEATURES ==============
@@ -1951,6 +1994,9 @@ recordVisit();
 
 // Initialize engagement features (streaks, leaderboard, achievements, daily challenges)
 initEngagementFeatures();
+
+// Initialize friend battles display (shows "View history" button)
+displayFriendBattlesCount();
 
 // Initialize app
 init();
