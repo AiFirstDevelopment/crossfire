@@ -59,6 +59,18 @@ function isSameDay(date1: string, date2: string): boolean {
   return date1 === date2;
 }
 
+// Head-to-head record against a specific opponent
+export interface H2HRecord {
+  opponentId: string;
+  opponentName: string;
+  wins: number;
+  losses: number;
+  lastPlayed: number;
+}
+
+// All h2h records for a player (keyed by opponent ID)
+export type H2HRecords = Record<string, H2HRecord>;
+
 interface PlayerData {
   wins: number;
   losses: number;
@@ -513,6 +525,63 @@ export class PlayerStats {
       return new Response(JSON.stringify(ACHIEVEMENTS), {
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // GET /h2h - Get all head-to-head records for this player
+    if (request.method === 'GET' && url.pathname === '/h2h') {
+      const h2hRecords = await this.state.storage.get<H2HRecords>('h2h') ?? {};
+      return new Response(JSON.stringify(h2hRecords), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // POST /update-h2h - Update head-to-head record against an opponent
+    if (request.method === 'POST' && url.pathname === '/update-h2h') {
+      try {
+        const body = await request.json() as { opponentId: string; opponentName: string; won: boolean };
+        const { opponentId, opponentName, won } = body;
+
+        if (!opponentId || !opponentName) {
+          return new Response(JSON.stringify({ error: 'Missing opponentId or opponentName' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const h2hRecords = await this.state.storage.get<H2HRecords>('h2h') ?? {};
+        const normalizedId = opponentId.toLowerCase();
+
+        const existing = h2hRecords[normalizedId] ?? {
+          opponentId: normalizedId,
+          opponentName,
+          wins: 0,
+          losses: 0,
+          lastPlayed: 0,
+        };
+
+        if (won) {
+          existing.wins += 1;
+        } else {
+          existing.losses += 1;
+        }
+        existing.lastPlayed = Date.now();
+        existing.opponentName = opponentName; // Update name in case it changed
+
+        h2hRecords[normalizedId] = existing;
+        await this.state.storage.put('h2h', h2hRecords);
+
+        return new Response(JSON.stringify({
+          success: true,
+          record: existing,
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     return new Response('Not Found', { status: 404 });

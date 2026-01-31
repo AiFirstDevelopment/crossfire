@@ -54,7 +54,7 @@ export interface HintResponse {
 
 // Server messages
 export type ServerMessage =
-  | { type: 'welcome'; playerId: string; playerName: string; playerCount?: number; queueSize?: number; onlineCount?: number; activePlayers?: number; totalGamesPlayed?: number; totalPlayers?: number; returningUsers?: number }
+  | { type: 'welcome'; playerId: string; playerName: string; playerCount?: number; queueSize?: number; onlineCount?: number; activePlayers?: number; totalGamesPlayed?: number; totalPlayers?: number; returningUsers?: number; opponent?: { id: string; name: string } }
   | { type: 'player-joined'; playerId: string; playerName: string; playerCount: number }
   | { type: 'player-left'; playerId: string; playerName: string; playerCount: number }
   | { type: 'queue-joined'; position: number }

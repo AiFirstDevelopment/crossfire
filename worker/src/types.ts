@@ -111,7 +111,7 @@ export type ClientMessage =
 
 // Server -> Client messages
 export type ServerMessage =
-  | { type: 'welcome'; playerId: string; playerName: string; playerCount: number }
+  | { type: 'welcome'; playerId: string; playerName: string; playerCount: number; opponent?: { id: string; name: string } }
   | { type: 'player-joined'; playerId: string; playerName: string; playerCount: number }
   | { type: 'player-left'; playerId: string; playerName: string; playerCount: number }
   | { type: 'game-start'; phase: 'submitting'; timeoutMs: number }
@@ -142,9 +142,9 @@ export type MatchmakingClientMessage =
   | { type: 'leave-queue' };
 
 export type MatchmakingServerMessage =
-  | { type: 'welcome'; playerId: string; playerName: string; queueSize: number; onlineCount: number; activeGames: number; totalGamesPlayed: number; multiplayerGamesPlayed: number; totalPlayers: number; returningUsers: number }
+  | { type: 'welcome'; playerId: string; playerName: string; queueSize: number; onlineCount: number; activeGames: number; activePlayers: number; totalGamesPlayed: number; multiplayerGamesPlayed: number; totalPlayers: number; returningUsers: number }
   | { type: 'queue-joined'; position: number }
-  | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number; totalGamesPlayed: number; multiplayerGamesPlayed: number; totalPlayers: number; returningUsers: number }
+  | { type: 'stats-update'; queueSize: number; onlineCount: number; activeGames: number; activePlayers: number; totalGamesPlayed: number; multiplayerGamesPlayed: number; totalPlayers: number; returningUsers: number }
   | { type: 'match-found'; roomId: string; opponent: { id: string; name: string } }
   | { type: 'leaderboard-update'; leaderboard: Array<{ rank: number; playerId: string; wins: number }> }
   | { type: 'error'; code: string; message: string };

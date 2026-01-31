@@ -199,6 +199,17 @@ export default {
       return new Response(JSON.stringify(data), { headers: corsHeaders });
     }
 
+    // Get h2h records - GET /api/player/:playerId/h2h
+    const h2hMatch = url.pathname.match(/^\/api\/player\/([^/]+)\/h2h$/);
+    if (h2hMatch && request.method === 'GET') {
+      const playerId = h2hMatch[1].toLowerCase();
+      const id = env.PLAYER_STATS.idFromName(playerId);
+      const stats = env.PLAYER_STATS.get(id);
+      const response = await stats.fetch(new Request('https://stats/h2h', { method: 'GET' }));
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
     // Admin: Reset active games counter - POST /api/admin/reset-active-games
     if (url.pathname === '/api/admin/reset-active-games' && request.method === 'POST') {
       const matchmakingId = env.MATCHMAKING.idFromName('global');

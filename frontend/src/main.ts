@@ -154,6 +154,7 @@ function handleSubmissionTimeout() {
   }
   lastSubmittedWords = [];
   showScreen('menu');
+  window.scrollTo(0, 0);
   findMatchBtn.disabled = false;
   statusText.textContent = 'Time expired - returned to menu';
 }
@@ -266,6 +267,7 @@ function init() {
     crosswordUI = null;
     hideSolutionGrid();
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
     // Auto-start new matchmaking after a brief delay
@@ -288,6 +290,7 @@ function init() {
     crosswordUI = null;
     hideSolutionGrid();
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
     // No auto-matchmaking - just return to menu
@@ -297,6 +300,7 @@ function init() {
     game.leaveRoom();
     clearRoomFromUrl();
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
   });
@@ -318,6 +322,7 @@ function init() {
   // Challenge a friend button (on results screen after bot games)
   challengeFriendBtn.addEventListener('click', () => {
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
     // Focus the room input to encourage creating a friend room
@@ -378,6 +383,7 @@ function init() {
     }
     lastSubmittedWords = [];
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
   });
@@ -396,6 +402,7 @@ function init() {
     crosswordUI = null;
     hideSolutionGrid();
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
   });
@@ -590,13 +597,21 @@ function handleStateChange(state: GameState) {
 
   // Update screens based on phase
   // Skip screen updates if we're in bot mode (bot game handles its own screens)
+  // BUT: if a real multiplayer game starts (has roomId and opponent), reset bot mode
+  if (isBotMode && state.roomId && state.opponentName) {
+    isBotMode = false;
+  }
   if (isBotMode) return;
 
   switch (state.phase) {
     case 'connecting':
-      // Return to menu screen (e.g., after connection rejection)
-      cancelMatchmakingBtn.classList.add('hidden');
-      showScreen('menu');
+      // Only show menu if there's an error (connection rejection)
+      // Otherwise, we're in the middle of connecting - don't change screens
+      if (state.error) {
+        cancelMatchmakingBtn.classList.add('hidden');
+        showScreen('menu');
+        window.scrollTo(0, 0);
+      }
       break;
 
     case 'matchmaking':
@@ -619,6 +634,8 @@ function handleStateChange(state: GameState) {
       rematchModal.classList.add('hidden'); // Hide modal when starting new game
       // Reset win tracking for new game
       winRecordedForCurrentGame = false;
+      // Reset bot mode - this is a real multiplayer game
+      isBotMode = false;
       showScreen('submit');
       submitFormSection.classList.remove('hidden');
       submitWaitingSection.classList.add('hidden');
@@ -1173,16 +1190,6 @@ function updateRematchUI(state: GameState) {
   }
 }
 
-function resetRematchUI() {
-  rematchModal.classList.add('hidden');
-  rematchBtn.disabled = false;
-  rematchBtn.textContent = 'Rematch';
-  rematchBtn.classList.remove('hidden');
-  rematchStatus.classList.add('hidden');
-  rematchRequest.classList.add('hidden');
-  rematchSection.classList.add('hidden');
-}
-
 function showResults(state: GameState) {
   const result = state.result;
   if (!result) return;
@@ -1196,12 +1203,9 @@ function showResults(state: GameState) {
   // Hide challenge prompt (only shown for bot games)
   challengePromptEl.classList.add('hidden');
 
-  // Update and display head-to-head record for multiplayer games
+  // Display head-to-head record for multiplayer games (server updates h2h automatically)
   if (currentOpponentName) {
     const opponentId = currentOpponentName.toLowerCase();
-    if (!isTie) {
-      updateH2HRecord(opponentId, isWinner);
-    }
     displayH2HRecord(opponentId, currentOpponentName);
   } else {
     headToHeadEl.classList.add('hidden');
@@ -1516,41 +1520,45 @@ async function recordLoss(): Promise<void> {
   }
 }
 
-// ============== HEAD-TO-HEAD TRACKING ==============
+// ============== HEAD-TO-HEAD TRACKING (SERVER-SIDE) ==============
 
 interface HeadToHeadRecord {
+  opponentId: string;
+  opponentName: string;
   wins: number;
   losses: number;
   lastPlayed: number;
 }
 
-function getH2HRecords(): Record<string, HeadToHeadRecord> {
+// Cache for server-side h2h records
+let cachedH2HRecords: Record<string, HeadToHeadRecord> = {};
+let h2hRecordsFetched = false;
+
+async function fetchH2HRecords(): Promise<Record<string, HeadToHeadRecord>> {
+  if (!currentPlayerId) return {};
+
   try {
-    const stored = localStorage.getItem('crossfire-h2h-records');
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
+    const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/h2h`);
+    if (response.ok) {
+      cachedH2HRecords = await response.json();
+      h2hRecordsFetched = true;
+    }
+  } catch (error) {
+    console.error('Failed to fetch h2h records:', error);
   }
+  return cachedH2HRecords;
 }
 
-function updateH2HRecord(opponentId: string, won: boolean): void {
-  const records = getH2HRecords();
-  const existing = records[opponentId] || { wins: 0, losses: 0, lastPlayed: 0 };
-
-  if (won) {
-    existing.wins++;
-  } else {
-    existing.losses++;
-  }
-  existing.lastPlayed = Date.now();
-
-  records[opponentId] = existing;
-  localStorage.setItem('crossfire-h2h-records', JSON.stringify(records));
+function getH2HRecords(): Record<string, HeadToHeadRecord> {
+  return cachedH2HRecords;
 }
 
-function displayH2HRecord(opponentId: string, opponentName: string): void {
-  const records = getH2HRecords();
-  const record = records[opponentId];
+async function displayH2HRecord(opponentId: string, opponentName: string): Promise<void> {
+  // Fetch latest h2h records from server
+  await fetchH2HRecords();
+
+  const normalizedId = opponentId.toLowerCase();
+  const record = cachedH2HRecords[normalizedId];
 
   if (record && (record.wins > 0 || record.losses > 0)) {
     h2hOpponentEl.textContent = opponentName;
@@ -1570,7 +1578,12 @@ function getTotalFriendBattles(): number {
   return total;
 }
 
-function displayFriendBattlesCount(): void {
+async function displayFriendBattlesCount(): Promise<void> {
+  // Ensure we have latest records
+  if (!h2hRecordsFetched) {
+    await fetchH2HRecords();
+  }
+
   const total = getTotalFriendBattles();
   if (total > 0) {
     friendBattlesCountEl.textContent = `${total} friend ${total === 1 ? 'battle' : 'battles'} played`;

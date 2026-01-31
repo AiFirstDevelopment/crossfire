@@ -22,6 +22,7 @@ const validWords = new Set(
 export interface Env {
   GAME_ROOM: DurableObjectNamespace;
   MATCHMAKING: DurableObjectNamespace;
+  PLAYER_STATS: DurableObjectNamespace;
 }
 
 interface ConnectedPlayer extends Player {
@@ -155,7 +156,7 @@ export class GameRoom {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  private handlePlayerDisconnect(ws: WebSocket) {
+  private async handlePlayerDisconnect(ws: WebSocket) {
     const player = this.players.get(ws);
     if (!player) return;
 
@@ -168,7 +169,7 @@ export class GameRoom {
     if (this.gameState.phase === 'submitting' || this.gameState.phase === 'solving') {
       const remainingPlayer = Array.from(this.players.values())[0];
       if (remainingPlayer) {
-        this.endGame(remainingPlayer.id, 'opponent-left');
+        await this.endGame(remainingPlayer.id, 'opponent-left');
       }
     }
 
@@ -418,7 +419,7 @@ export class GameRoom {
     this.state.storage.setAlarm(Date.now() + 300000);
   }
 
-  private handleCellUpdate(player: ConnectedPlayer, row: number, col: number, letter: string) {
+  private async handleCellUpdate(player: ConnectedPlayer, row: number, col: number, letter: string) {
     if (this.gameState.phase !== 'solving') {
       this.sendTo(player.websocket, { type: 'error', code: 'INVALID_PHASE', message: 'Cannot update cells now' });
       return;
@@ -457,7 +458,7 @@ export class GameRoom {
 
     if (check.complete) {
       progress.completedAt = Date.now();
-      this.checkForWinner();
+      await this.checkForWinner();
     }
   }
 
@@ -513,14 +514,14 @@ export class GameRoom {
     this.sendTo(player.websocket, { type: 'hint-response', hint: response });
   }
 
-  private handleForfeit(player: ConnectedPlayer) {
+  private async handleForfeit(player: ConnectedPlayer) {
     if (this.gameState.phase !== 'solving') return;
 
     const playerIds = Object.keys(this.gameState.players);
     const opponentId = playerIds.find(id => id !== player.id);
 
     if (opponentId) {
-      this.endGame(opponentId, 'opponent-left');
+      await this.endGame(opponentId, 'opponent-left');
     }
   }
 
@@ -569,7 +570,7 @@ export class GameRoom {
     this.startSubmissionPhase();
   }
 
-  private checkForWinner() {
+  private async checkForWinner() {
     const playerIds = Object.keys(this.gameState.players);
     const completedPlayers = playerIds.filter(id => this.gameState.progress[id]?.completedAt);
 
@@ -588,20 +589,24 @@ export class GameRoom {
       times.sort((a, b) => a.time - b.time);
 
       if (Math.abs(times[0].time - times[1].time) < 100) {
-        this.endGame(null, 'tie');
+        await this.endGame(null, 'tie');
       } else {
-        this.endGame(times[0].id, 'completed');
+        await this.endGame(times[0].id, 'completed');
       }
     } else {
       // First to complete wins
-      this.endGame(completedPlayers[0], 'completed');
+      await this.endGame(completedPlayers[0], 'completed');
     }
   }
 
-  private endGame(winnerId: string | null, reason: 'completed' | 'timeout' | 'opponent-left' | 'tie') {
+  private async endGame(winnerId: string | null, reason: 'completed' | 'timeout' | 'opponent-left' | 'tie') {
     this.gameState.phase = 'finished';
     this.gameState.winnerId = winnerId ?? undefined;
     this.gameState.winReason = reason;
+
+    // Update h2h records BEFORE sending game-over messages
+    // This ensures clients can fetch updated h2h immediately
+    await this.updateH2HRecords(winnerId, reason);
 
     const playerIds = Object.keys(this.gameState.players);
 
@@ -682,15 +687,59 @@ export class GameRoom {
     }
   }
 
+  private async updateH2HRecords(winnerId: string | null, reason: string) {
+    // Only update h2h for multiplayer games with a clear winner/loser
+    if (reason === 'tie') return;
+
+    const playerIds = Object.keys(this.gameState.players);
+    if (playerIds.length !== 2) return;
+
+    const [player1Id, player2Id] = playerIds;
+    const player1Name = this.gameState.players[player1Id]?.name;
+    const player2Name = this.gameState.players[player2Id]?.name;
+
+    if (!player1Name || !player2Name) return;
+
+    try {
+      // Update h2h for player 1
+      const player1StatsId = this.env.PLAYER_STATS.idFromName(player1Id);
+      const player1Stats = this.env.PLAYER_STATS.get(player1StatsId);
+      await player1Stats.fetch(new Request('https://player-stats/update-h2h', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          opponentId: player2Id,
+          opponentName: player2Name,
+          won: winnerId === player1Id,
+        }),
+      }));
+
+      // Update h2h for player 2
+      const player2StatsId = this.env.PLAYER_STATS.idFromName(player2Id);
+      const player2Stats = this.env.PLAYER_STATS.get(player2StatsId);
+      await player2Stats.fetch(new Request('https://player-stats/update-h2h', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          opponentId: player1Id,
+          opponentName: player1Name,
+          won: winnerId === player2Id,
+        }),
+      }));
+    } catch (error) {
+      console.error('Failed to update h2h records:', error);
+    }
+  }
+
   async alarm() {
     // Handle phase timeouts
     if (this.gameState.phase === 'submitting') {
       // Submission timeout - whoever submitted wins, or it's a draw
       const submitted = Object.keys(this.gameState.playerWords);
       if (submitted.length === 1) {
-        this.endGame(submitted[0], 'timeout');
+        await this.endGame(submitted[0], 'timeout');
       } else if (submitted.length === 0) {
-        this.endGame(null, 'timeout');
+        await this.endGame(null, 'timeout');
       }
     } else if (this.gameState.phase === 'solving') {
       // Solving timeout - most progress wins
@@ -715,7 +764,7 @@ export class GameRoom {
         }
       }
 
-      this.endGame(bestId, bestId ? 'timeout' : 'tie');
+      await this.endGame(bestId, bestId ? 'timeout' : 'tie');
     }
   }
 
