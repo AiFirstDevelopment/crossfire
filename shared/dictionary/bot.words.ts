@@ -3,7 +3,6 @@
  * These are common, recognizable words that players can guess.
  */
 export const botWords: string[] = [
-  "about",
   "above",
   "accept",
   "account",
@@ -38,7 +37,6 @@ export const botWords: string[] = [
   "almond",
   "alone",
   "along",
-  "also",
   "altar",
   "always",
   "amazed",
@@ -147,7 +145,6 @@ export const botWords: string[] = [
   "beard",
   "beat",
   "beauty",
-  "because",
   "become",
   "bed",
   "bedroom",
@@ -158,7 +155,6 @@ export const botWords: string[] = [
   "beetle",
   "begin",
   "behind",
-  "being",
   "believe",
   "bell",
   "belt",
