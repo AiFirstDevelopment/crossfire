@@ -204,7 +204,12 @@
           });
         });
 
-        const games = data.map(d => d.games);
+        // Make cumulative
+        let cumulative = 0;
+        const games = data.map(d => {
+          cumulative += d.games;
+          return cumulative;
+        });
 
         if (gamesChart) {
           gamesChart.data.labels = labels;
@@ -216,7 +221,7 @@
             data: {
               labels: labels,
               datasets: [{
-                label: 'Games Completed',
+                label: 'Total Games',
                 data: games,
                 borderColor: '#7c3aed',
                 backgroundColor: 'rgba(124, 58, 237, 0.1)',
