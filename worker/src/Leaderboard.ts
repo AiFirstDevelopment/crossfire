@@ -7,18 +7,88 @@ interface WinRecord {
   timestamp: number;
 }
 
+// Old format for migration
+interface OldLeaderboardEntry {
+  playerId: string;
+  wins: number;
+  updatedAt: number;
+}
+
+interface OldWeeklyData {
+  weekId: string;
+  entries: Record<string, OldLeaderboardEntry>;
+}
+
 // Rolling 7-day window in milliseconds
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class Leaderboard {
   private state: DurableObjectState;
+  private migrationPromise: Promise<void> | null = null;
 
   constructor(state: DurableObjectState, _env: Env) {
     this.state = state;
   }
 
+  // Migrate old weekly bucket data to new rolling window format
+  private async migrateIfNeeded(): Promise<void> {
+    // Only run migration once per instance
+    if (this.migrationPromise) {
+      return this.migrationPromise;
+    }
+
+    this.migrationPromise = this.doMigration();
+    return this.migrationPromise;
+  }
+
+  private async doMigration(): Promise<void> {
+    const migrated = await this.state.storage.get<boolean>('migrated_v2');
+    if (migrated) {
+      return;
+    }
+
+    // Get all keys that start with 'week:'
+    const allKeys = await this.state.storage.list<OldWeeklyData>();
+    const weekKeys = Array.from(allKeys.entries()).filter(([key]) => key.startsWith('week:'));
+
+    if (weekKeys.length === 0) {
+      await this.state.storage.put('migrated_v2', true);
+      return;
+    }
+
+    // Convert old entries to new format
+    const newWins: WinRecord[] = [];
+    const now = Date.now();
+
+    for (const [, weekData] of weekKeys) {
+      if (!weekData?.entries) continue;
+
+      for (const entry of Object.values(weekData.entries)) {
+        // Create win records for each win, spread over the past 7 days
+        // Use updatedAt if available, otherwise spread evenly
+        const baseTime = entry.updatedAt || (now - SEVEN_DAYS_MS / 2);
+        for (let i = 0; i < entry.wins; i++) {
+          // Spread wins out over the time window to avoid clustering
+          const offset = (i / Math.max(entry.wins - 1, 1)) * (SEVEN_DAYS_MS * 0.8);
+          const timestamp = Math.max(baseTime - offset, now - SEVEN_DAYS_MS + 1000);
+          newWins.push({ playerId: entry.playerId, timestamp });
+        }
+      }
+    }
+
+    // Store migrated data
+    if (newWins.length > 0) {
+      const existingWins = await this.state.storage.get<WinRecord[]>('wins') || [];
+      await this.state.storage.put('wins', [...existingWins, ...newWins]);
+    }
+
+    // Mark migration as complete
+    await this.state.storage.put('migrated_v2', true);
+  }
+
   // Get all wins from the last 7 days, grouped by player
   private async getRecentWins(): Promise<Map<string, number>> {
+    await this.migrateIfNeeded();
     const cutoff = Date.now() - SEVEN_DAYS_MS;
     const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
 
@@ -57,6 +127,9 @@ export class Leaderboard {
           headers: { 'Content-Type': 'application/json' },
         });
       }
+
+      // Ensure migration is complete before recording
+      await this.migrateIfNeeded();
 
       // Add new win record
       const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
