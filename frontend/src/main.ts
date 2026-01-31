@@ -102,13 +102,6 @@ const streakTextEl = document.getElementById('streak-text')!;
 
 let currentPlayerId: string = '';
 
-// Sound effects (loaded lazily)
-let sounds: {
-  win?: HTMLAudioElement;
-  lose?: HTMLAudioElement;
-  correct?: HTMLAudioElement;
-  achievement?: HTMLAudioElement;
-} = {};
 
 // Track previous stats for achievement detection
 let previousAchievements: string[] = [];
@@ -1559,37 +1552,44 @@ function showStreakToast(streak: number) {
 }
 
 // Sound effects
+let audioContext: AudioContext | null = null;
+
 function playSound(type: 'win' | 'lose' | 'correct' | 'achievement') {
-  // Lazy load sounds
-  if (!sounds[type]) {
-    // Use simple beep sounds via Web Audio API (no external files needed)
-    try {
-      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      // Different frequencies for different sounds
-      const frequencies: Record<string, number> = {
-        win: 523.25, // C5
-        lose: 261.63, // C4
-        correct: 659.25, // E5
-        achievement: 783.99, // G5
-      };
-
-      oscillator.frequency.value = frequencies[type] || 440;
-      oscillator.type = type === 'win' || type === 'achievement' ? 'sine' : 'triangle';
-
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
-    } catch {
-      // Audio not supported, silently fail
+  try {
+    // Create or resume audio context
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     }
+
+    // Resume if suspended (required by browser autoplay policy)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Different frequencies for different sounds
+    const frequencies: Record<string, number> = {
+      win: 523.25, // C5
+      lose: 261.63, // C4
+      correct: 659.25, // E5
+      achievement: 783.99, // G5
+    };
+
+    oscillator.frequency.value = frequencies[type] || 440;
+    oscillator.type = type === 'win' || type === 'achievement' ? 'sine' : 'triangle';
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  } catch {
+    // Audio not supported, silently fail
   }
 }
 
