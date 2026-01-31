@@ -1963,15 +1963,17 @@ body.light-mode .site-footer a {
   }
 }
 
-/* Results Ad Container */
+/* Results Ad Container - hidden when no ad */
 .results-ad-container {
   margin: 1.5rem 0;
-  min-height: 100px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
   overflow: hidden;
 }
 
-.results-ad-container .adsbygoogle {
-  display: block;
+/* Hide container when empty or ad not filled */
+.results-ad-container:empty {
+  display: none;
+}
+
+.results-ad-container ins.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
 }
