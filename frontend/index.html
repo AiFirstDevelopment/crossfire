@@ -132,7 +132,7 @@
           <p class="challenge-tagline">Create a room, share the link, and pick your hardest words!</p>
           <div class="manual-join">
             <input type="text" id="room-id-input" placeholder="e.g. pizza-party" />
-            <button id="join-room-btn">Create Room</button>
+            <button id="join-room-btn">Enter Room</button>
           </div>
           <p id="friend-battles-count" class="friend-battles-count hidden"></p>
         </div>
@@ -156,8 +156,7 @@
       <!-- Waiting for opponent -->
       <section id="screen-waiting" class="screen hidden">
         <div class="spinner"></div>
-        <p>Waiting for opponent...</p>
-        <p id="waiting-info"></p>
+        <p id="waiting-info">Waiting for opponent...</p>
         <div id="share-link-section" class="share-link-section">
           <p class="share-link-label">Share this link with a friend:</p>
           <div class="share-link-row">
@@ -278,6 +277,19 @@
         <div id="challenge-prompt" class="challenge-prompt hidden">
           <p>Think you're good? Challenge a friend to beat your score!</p>
           <button id="challenge-friend-btn" class="challenge-friend-btn">Challenge a Friend</button>
+        </div>
+
+        <!-- Rematch section (for multiplayer games) -->
+        <div id="rematch-section" class="rematch-section hidden">
+          <button id="rematch-btn" class="rematch-btn">Rematch</button>
+          <p id="rematch-status" class="rematch-status hidden"></p>
+          <div id="rematch-request" class="rematch-request hidden">
+            <p>Opponent wants a rematch!</p>
+            <div class="rematch-actions">
+              <button id="accept-rematch-btn" class="accept-btn">Accept</button>
+              <button id="decline-rematch-btn" class="decline-btn">Decline</button>
+            </div>
+          </div>
         </div>
 
         <div class="results-buttons">

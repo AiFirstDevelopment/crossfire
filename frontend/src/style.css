@@ -483,6 +483,91 @@ input[type="text"]::placeholder {
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
 }
 
+/* Rematch Section */
+.rematch-section {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.rematch-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.75em 2em;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.rematch-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.rematch-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rematch-status {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9em;
+  margin: 0.75rem 0 0;
+}
+
+.rematch-request {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.rematch-request p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.75rem;
+  font-weight: 500;
+}
+
+.rematch-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.accept-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.5em 1.5em;
+  border-radius: 6px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.accept-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.decline-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5em 1.5em;
+  border-radius: 6px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.decline-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* Waiting Screen */
 .spinner {
   width: 50px;
@@ -1224,6 +1309,29 @@ input[type="text"]::placeholder {
 
 .light-mode .challenge-prompt p {
   color: rgba(0, 0, 0, 0.7);
+}
+
+.light-mode .rematch-status {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light-mode .rematch-request {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08));
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.light-mode .rematch-request p {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.light-mode .decline-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.7);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .decline-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .light-mode .word-input.invalid {

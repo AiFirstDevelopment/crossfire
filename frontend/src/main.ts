@@ -109,6 +109,14 @@ const h2hRecordEl = document.getElementById('h2h-record')!;
 const challengePromptEl = document.getElementById('challenge-prompt')!;
 const challengeFriendBtn = document.getElementById('challenge-friend-btn') as HTMLButtonElement;
 
+// Rematch elements
+const rematchSection = document.getElementById('rematch-section')!;
+const rematchBtn = document.getElementById('rematch-btn') as HTMLButtonElement;
+const rematchStatus = document.getElementById('rematch-status')!;
+const rematchRequest = document.getElementById('rematch-request')!;
+const acceptRematchBtn = document.getElementById('accept-rematch-btn') as HTMLButtonElement;
+const declineRematchBtn = document.getElementById('decline-rematch-btn') as HTMLButtonElement;
+
 let currentPlayerId: string = '';
 
 
@@ -311,6 +319,26 @@ function init() {
     roomIdInput.focus();
   });
 
+  // Rematch button handlers
+  rematchBtn.addEventListener('click', () => {
+    game.playAgain();
+    rematchBtn.disabled = true;
+    rematchBtn.textContent = 'Waiting...';
+    rematchStatus.textContent = 'Waiting for opponent to accept...';
+    rematchStatus.classList.remove('hidden');
+  });
+
+  acceptRematchBtn.addEventListener('click', () => {
+    game.playAgain();
+  });
+
+  declineRematchBtn.addEventListener('click', () => {
+    game.leaveRoom();
+    showScreen('menu');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+  });
+
   leaveSubmitBtn.addEventListener('click', () => {
     if (isBotMode && botGame) {
       botGame.destroy();
@@ -465,8 +493,9 @@ function showBotResults(state: BotGameState) {
   const isWinner = result.winnerId === 'player';
   const isTie = result.winReason === 'tie';
 
-  // Hide h2h (only for multiplayer), show challenge prompt for bot games
+  // Hide h2h and rematch (only for multiplayer), show challenge prompt for bot games
   headToHeadEl.classList.add('hidden');
+  rematchSection.classList.add('hidden');
   challengePromptEl.classList.remove('hidden');
   currentOpponentName = null; // Reset for next game
 
@@ -551,9 +580,7 @@ function handleStateChange(state: GameState) {
     case 'waiting':
       cancelMatchmakingBtn.classList.add('hidden');
       showScreen('waiting');
-      waitingInfo.textContent = state.opponentName
-        ? `Playing against ${state.opponentName}`
-        : 'Waiting for opponent to join...';
+      waitingInfo.textContent = 'Waiting for opponent...';
       // Update share link with current room ID
       if (state.roomId) {
         updateShareLink(state.roomId);
@@ -636,10 +663,26 @@ function handleStateChange(state: GameState) {
       break;
 
     case 'finished':
+      // If opponent left after game, return to menu with message
+      if (state.opponentLeftAfterGame) {
+        game.leaveRoom();
+        showScreen('menu');
+        findMatchBtn.disabled = false;
+        statusText.textContent = 'Opponent declined the rematch';
+        // Clear message after a few seconds
+        setTimeout(() => {
+          if (statusText.textContent === 'Opponent declined the rematch') {
+            statusText.textContent = '';
+          }
+        }, 4000);
+        break;
+      }
       showScreen('results');
       stopTimer();
       showResults(state);
       crosswordUI = null;
+      // Update rematch UI based on state
+      updateRematchUI(state);
       break;
   }
 }
@@ -1048,6 +1091,54 @@ function renderSolutionGrid(
 function hideSolutionGrid() {
   solutionContainer.classList.add('hidden');
   solutionGridEl.innerHTML = '';
+}
+
+function updateRematchUI(state: GameState) {
+  // Only show rematch for multiplayer games (not bot games)
+  if (isBotMode) {
+    rematchSection.classList.add('hidden');
+    return;
+  }
+
+  // Show rematch section for multiplayer
+  rematchSection.classList.remove('hidden');
+
+  if (state.opponentLeftAfterGame) {
+    // Opponent left/declined - hide rematch options, show message
+    rematchBtn.classList.add('hidden');
+    rematchRequest.classList.add('hidden');
+    rematchStatus.textContent = 'Opponent has left the room';
+    rematchStatus.classList.remove('hidden');
+  } else if (state.opponentWantsRematch) {
+    // Opponent wants rematch - show accept/decline
+    rematchBtn.classList.add('hidden');
+    rematchStatus.classList.add('hidden');
+    rematchRequest.classList.remove('hidden');
+  } else if (state.waitingForRematch) {
+    // We're waiting for opponent
+    rematchBtn.disabled = true;
+    rematchBtn.textContent = 'Waiting...';
+    rematchBtn.classList.remove('hidden');
+    rematchStatus.textContent = 'Waiting for opponent to accept...';
+    rematchStatus.classList.remove('hidden');
+    rematchRequest.classList.add('hidden');
+  } else {
+    // Initial state - show rematch button
+    rematchBtn.disabled = false;
+    rematchBtn.textContent = 'Rematch';
+    rematchBtn.classList.remove('hidden');
+    rematchStatus.classList.add('hidden');
+    rematchRequest.classList.add('hidden');
+  }
+}
+
+function resetRematchUI() {
+  rematchBtn.disabled = false;
+  rematchBtn.textContent = 'Rematch';
+  rematchBtn.classList.remove('hidden');
+  rematchStatus.classList.add('hidden');
+  rematchRequest.classList.add('hidden');
+  rematchSection.classList.add('hidden');
 }
 
 function showResults(state: GameState) {
@@ -1680,63 +1771,9 @@ function showStreakToast(streak: number) {
   }, 3000);
 }
 
-// Sound effects
-let audioContext: AudioContext | null = null;
-
-function getAudioContext(): AudioContext | null {
-  try {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    }
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-    return audioContext;
-  } catch {
-    return null;
-  }
-}
-
-function playNote(ctx: AudioContext, freq: number, startTime: number, duration: number, volume: number = 0.2) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = freq;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(volume, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-  osc.start(startTime);
-  osc.stop(startTime + duration);
-}
-
-function playSound(type: 'win' | 'lose' | 'correct' | 'achievement') {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const now = ctx.currentTime;
-
-  if (type === 'win') {
-    // Triumphant ascending arpeggio: C-E-G-C (major chord)
-    playNote(ctx, 523.25, now, 0.15, 0.25);        // C5
-    playNote(ctx, 659.25, now + 0.1, 0.15, 0.25);  // E5
-    playNote(ctx, 783.99, now + 0.2, 0.15, 0.25);  // G5
-    playNote(ctx, 1046.50, now + 0.3, 0.4, 0.3);   // C6 (hold longer)
-  } else if (type === 'lose') {
-    // Descending minor tone
-    playNote(ctx, 392.00, now, 0.2, 0.15);         // G4
-    playNote(ctx, 329.63, now + 0.15, 0.2, 0.15);  // E4
-    playNote(ctx, 261.63, now + 0.3, 0.4, 0.15);   // C4
-  } else if (type === 'achievement') {
-    // Sparkly achievement sound - quick ascending with harmony
-    playNote(ctx, 659.25, now, 0.12, 0.2);         // E5
-    playNote(ctx, 783.99, now + 0.08, 0.12, 0.2);  // G5
-    playNote(ctx, 987.77, now + 0.16, 0.12, 0.2);  // B5
-    playNote(ctx, 1318.51, now + 0.24, 0.3, 0.25); // E6
-  } else if (type === 'correct') {
-    // Quick positive blip
-    playNote(ctx, 880, now, 0.1, 0.15);            // A5
-  }
+// Sound effects (disabled)
+function playSound(_type: 'win' | 'lose' | 'correct' | 'achievement') {
+  // All sounds disabled
 }
 
 // Show results screen with engagement features

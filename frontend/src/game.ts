@@ -17,6 +17,7 @@ export interface GameState {
   error: string | null;
   opponentWantsRematch: boolean;
   waitingForRematch: boolean;
+  opponentLeftAfterGame: boolean;
   activePlayers: number;
   totalGamesPlayed: number;
   totalPlayers: number;
@@ -139,6 +140,7 @@ export class GameClient {
       error: null,
       opponentWantsRematch: false,
       waitingForRematch: false,
+      opponentLeftAfterGame: false,
       activePlayers: 0,
       totalGamesPlayed: 0,
       totalPlayers: 0,
@@ -285,7 +287,11 @@ export class GameClient {
         break;
 
       case 'player-left':
-        // Opponent left - game will end via game-over message
+        // Opponent left - if game is finished, notify UI
+        if (this.state.phase === 'finished') {
+          this.updateState({ opponentLeftAfterGame: true });
+        }
+        // During active game, it will end via game-over message
         break;
 
       case 'game-start':
@@ -345,6 +351,7 @@ export class GameClient {
           result: message.result,
           opponentWantsRematch: false,
           waitingForRematch: false,
+          opponentLeftAfterGame: false,
         });
         break;
 
@@ -365,6 +372,7 @@ export class GameClient {
           error: null,
           opponentWantsRematch: false,
           waitingForRematch: false,
+          opponentLeftAfterGame: false,
         });
         break;
 
