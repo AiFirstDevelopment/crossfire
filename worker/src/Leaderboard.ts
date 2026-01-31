@@ -2,23 +2,13 @@ export interface Env {
   LEADERBOARD: DurableObjectNamespace;
 }
 
-interface LeaderboardEntry {
+interface WinRecord {
   playerId: string;
-  wins: number;
-  updatedAt: number;
+  timestamp: number;
 }
 
-interface WeeklyData {
-  weekId: string; // Format: YYYY-WW
-  entries: Record<string, LeaderboardEntry>;
-}
-
-function getWeekId(date?: Date): string {
-  const d = date || new Date();
-  const onejan = new Date(d.getFullYear(), 0, 1);
-  const weekNum = Math.ceil((((d.getTime() - onejan.getTime()) / 86400000) + onejan.getDay() + 1) / 7);
-  return `${d.getFullYear()}-${String(weekNum).padStart(2, '0')}`;
-}
+// Rolling 7-day window in milliseconds
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class Leaderboard {
   private state: DurableObjectState;
@@ -27,9 +17,34 @@ export class Leaderboard {
     this.state = state;
   }
 
+  // Get all wins from the last 7 days, grouped by player
+  private async getRecentWins(): Promise<Map<string, number>> {
+    const cutoff = Date.now() - SEVEN_DAYS_MS;
+    const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
+
+    // Filter to last 7 days and count by player
+    const playerWins = new Map<string, number>();
+    for (const win of wins) {
+      if (win.timestamp >= cutoff) {
+        playerWins.set(win.playerId, (playerWins.get(win.playerId) || 0) + 1);
+      }
+    }
+    return playerWins;
+  }
+
+  // Clean up old wins (older than 7 days)
+  private async cleanupOldWins(): Promise<void> {
+    const cutoff = Date.now() - SEVEN_DAYS_MS;
+    const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
+    const recentWins = wins.filter(w => w.timestamp >= cutoff);
+
+    if (recentWins.length !== wins.length) {
+      await this.state.storage.put('wins', recentWins);
+    }
+  }
+
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const currentWeekId = getWeekId();
 
     // POST /record - Record a win for a player
     if (request.method === 'POST' && url.pathname === '/record') {
@@ -43,79 +58,60 @@ export class Leaderboard {
         });
       }
 
-      // Get or create weekly data
-      let weekData = await this.state.storage.get<WeeklyData>(`week:${currentWeekId}`);
-      if (!weekData) {
-        weekData = { weekId: currentWeekId, entries: {} };
+      // Add new win record
+      const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
+      wins.push({ playerId, timestamp: Date.now() });
+      await this.state.storage.put('wins', wins);
+
+      // Cleanup old wins periodically (every 100 wins)
+      if (wins.length % 100 === 0) {
+        await this.cleanupOldWins();
       }
 
-      // Update player's entry
-      const existing = weekData.entries[playerId];
-      weekData.entries[playerId] = {
-        playerId,
-        wins: (existing?.wins ?? 0) + 1,
-        updatedAt: Date.now(),
-      };
-
-      await this.state.storage.put(`week:${currentWeekId}`, weekData);
-
-      // Return player's current rank
-      const sortedEntries = Object.values(weekData.entries).sort((a, b) => b.wins - a.wins);
-      const rank = sortedEntries.findIndex(e => e.playerId === playerId) + 1;
+      // Get current standings
+      const playerWins = await this.getRecentWins();
+      const sorted = Array.from(playerWins.entries()).sort((a, b) => b[1] - a[1]);
+      const rank = sorted.findIndex(([id]) => id === playerId) + 1;
 
       return new Response(JSON.stringify({
-        wins: weekData.entries[playerId].wins,
+        wins: playerWins.get(playerId) || 0,
         rank,
-        totalPlayers: sortedEntries.length,
+        totalPlayers: sorted.length,
       }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // GET /weekly - Get weekly leaderboard
+    // GET /weekly - Get leaderboard (past 7 days)
     if (request.method === 'GET' && url.pathname === '/weekly') {
-      const weekId = url.searchParams.get('week') || currentWeekId;
       const limit = parseInt(url.searchParams.get('limit') || '10', 10);
       const playerId = url.searchParams.get('playerId');
 
-      const weekData = await this.state.storage.get<WeeklyData>(`week:${weekId}`);
+      const playerWins = await this.getRecentWins();
+      const sorted = Array.from(playerWins.entries()).sort((a, b) => b[1] - a[1]);
 
-      if (!weekData) {
-        return new Response(JSON.stringify({
-          weekId,
-          leaderboard: [],
-          totalPlayers: 0,
-          playerRank: null,
-          playerWins: null,
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      const sortedEntries = Object.values(weekData.entries).sort((a, b) => b.wins - a.wins);
-      const topEntries = sortedEntries.slice(0, limit).map((entry, idx) => ({
+      const topEntries = sorted.slice(0, limit).map(([id, wins], idx) => ({
         rank: idx + 1,
-        playerId: entry.playerId,
-        wins: entry.wins,
+        playerId: id,
+        wins,
       }));
 
       // Find player's rank if requested
       let playerRank: number | null = null;
-      let playerWins: number | null = null;
+      let playerWinsCount: number | null = null;
       if (playerId) {
-        const idx = sortedEntries.findIndex(e => e.playerId === playerId);
+        const idx = sorted.findIndex(([id]) => id === playerId);
         if (idx !== -1) {
           playerRank = idx + 1;
-          playerWins = sortedEntries[idx].wins;
+          playerWinsCount = sorted[idx][1];
         }
       }
 
       return new Response(JSON.stringify({
-        weekId,
         leaderboard: topEntries,
-        totalPlayers: sortedEntries.length,
+        totalPlayers: sorted.length,
         playerRank,
-        playerWins,
+        playerWins: playerWinsCount,
       }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -131,27 +127,14 @@ export class Leaderboard {
         });
       }
 
-      const weekData = await this.state.storage.get<WeeklyData>(`week:${currentWeekId}`);
-
-      if (!weekData || !weekData.entries[playerId]) {
-        return new Response(JSON.stringify({
-          weekId: currentWeekId,
-          rank: null,
-          wins: 0,
-          totalPlayers: weekData ? Object.keys(weekData.entries).length : 0,
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      const sortedEntries = Object.values(weekData.entries).sort((a, b) => b.wins - a.wins);
-      const rank = sortedEntries.findIndex(e => e.playerId === playerId) + 1;
+      const playerWins = await this.getRecentWins();
+      const sorted = Array.from(playerWins.entries()).sort((a, b) => b[1] - a[1]);
+      const idx = sorted.findIndex(([id]) => id === playerId);
 
       return new Response(JSON.stringify({
-        weekId: currentWeekId,
-        rank,
-        wins: weekData.entries[playerId].wins,
-        totalPlayers: sortedEntries.length,
+        rank: idx !== -1 ? idx + 1 : null,
+        wins: playerWins.get(playerId) || 0,
+        totalPlayers: sorted.length,
       }), {
         headers: { 'Content-Type': 'application/json' },
       });
