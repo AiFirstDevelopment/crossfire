@@ -666,6 +666,7 @@ function handleStateChange(state: GameState) {
       // If opponent left after game, return to menu with message
       if (state.opponentLeftAfterGame) {
         game.leaveRoom();
+        clearRoomFromUrl();
         showScreen('menu');
         window.scrollTo(0, 0);
         findMatchBtn.disabled = false;
