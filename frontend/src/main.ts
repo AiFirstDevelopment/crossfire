@@ -1409,7 +1409,7 @@ interface LeaderboardEntry {
 
 async function fetchLeaderboard(): Promise<void> {
   try {
-    const response = await fetch(`${getApiUrl()}/api/leaderboard/weekly?playerId=${currentPlayerId}`);
+    const response = await fetch(`${getApiUrl()}/api/leaderboard/weekly?playerId=${currentPlayerId}&limit=10`);
     if (response.ok) {
       const data = await response.json();
       displayLeaderboard(data.leaderboard, data.playerRank, data.playerWins);
