@@ -1700,4 +1700,74 @@ if (roomFromUrl) {
   }, 500);
 }
 
+// ============== COOKIE CONSENT ==============
+
+type CookieConsent = 'all' | 'essential' | null;
+
+function getCookieConsent(): CookieConsent {
+  const consent = localStorage.getItem('crossfire-cookie-consent');
+  if (consent === 'all' || consent === 'essential') {
+    return consent;
+  }
+  return null;
+}
+
+function setCookieConsent(consent: 'all' | 'essential'): void {
+  localStorage.setItem('crossfire-cookie-consent', consent);
+  localStorage.setItem('crossfire-cookie-consent-date', new Date().toISOString());
+}
+
+function initCookieConsent(): void {
+  const banner = document.getElementById('cookie-consent');
+  const acceptAllBtn = document.getElementById('cookie-accept-all');
+  const essentialBtn = document.getElementById('cookie-essential');
+
+  if (!banner || !acceptAllBtn || !essentialBtn) return;
+
+  const consent = getCookieConsent();
+
+  // Show banner if no consent given
+  if (!consent) {
+    banner.classList.remove('hidden');
+  }
+
+  // Handle Accept All
+  acceptAllBtn.addEventListener('click', () => {
+    setCookieConsent('all');
+    banner.classList.add('hidden');
+    // Enable analytics/ads (Google Tag is already loaded, this just records consent)
+    console.log('Cookie consent: all cookies accepted');
+  });
+
+  // Handle Essential Only
+  essentialBtn.addEventListener('click', () => {
+    setCookieConsent('essential');
+    banner.classList.add('hidden');
+    // Disable non-essential tracking
+    disableNonEssentialTracking();
+    console.log('Cookie consent: essential only');
+  });
+
+  // If user previously chose essential only, disable tracking
+  if (consent === 'essential') {
+    disableNonEssentialTracking();
+  }
+}
+
+function disableNonEssentialTracking(): void {
+  // Disable Google Analytics/Ads tracking
+  // This sets a flag that gtag respects
+  (window as unknown as { [key: string]: unknown })['ga-disable-AW-17918914377'] = true;
+
+  // Optionally delete existing cookies (for GDPR compliance)
+  // Note: This won't delete HttpOnly cookies set by third parties
+  const cookiesToDelete = ['_ga', '_gid', '_gat', '_gcl_au'];
+  cookiesToDelete.forEach(name => {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  });
+}
+
+// Initialize cookie consent banner
+initCookieConsent();
+
 console.log('Crossfire initialized');
