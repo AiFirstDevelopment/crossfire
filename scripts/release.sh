@@ -69,9 +69,26 @@ git commit -m "Release $NEW_VERSION
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
-# Create the tag
+# Generate release notes from commits since last tag
+echo -e "${YELLOW}Generating release notes...${NC}"
+if [ -z "$LATEST_TAG" ]; then
+  # First release - get all commits
+  COMMITS=$(git log --oneline --no-merges | head -20)
+else
+  # Get commits since last tag
+  COMMITS=$(git log ${LATEST_TAG}..HEAD --oneline --no-merges)
+fi
+
+# Create the tag with release notes
 echo -e "${YELLOW}Creating tag $NEW_VERSION...${NC}"
-git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION - $(date +%Y-%m-%d)"
+git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION - $(date +%Y-%m-%d)
+
+Changes:
+$COMMITS"
+
+echo -e "${GREEN}Release notes:${NC}"
+echo "$COMMITS"
+echo ""
 
 # Deploy worker
 echo -e "${YELLOW}Deploying worker...${NC}"
