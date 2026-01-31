@@ -172,7 +172,7 @@ export class GameClient {
   findMatch() {
     this.updateState({ phase: 'connecting', error: null });
 
-    const url = this.getWsUrl('/api/matchmaking');
+    const url = this.getWsUrl(`/api/matchmaking?playerId=${encodeURIComponent(this.playerId)}`);
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {

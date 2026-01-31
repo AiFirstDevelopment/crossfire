@@ -101,6 +101,14 @@ const achievementTextEl = document.getElementById('achievement-text')!;
 const streakToast = document.getElementById('streak-toast')!;
 const streakTextEl = document.getElementById('streak-text')!;
 
+// Challenge a friend elements
+const friendBattlesCountEl = document.getElementById('friend-battles-count')!;
+const headToHeadEl = document.getElementById('head-to-head')!;
+const h2hOpponentEl = document.getElementById('h2h-opponent')!;
+const h2hRecordEl = document.getElementById('h2h-record')!;
+const challengePromptEl = document.getElementById('challenge-prompt')!;
+const challengeFriendBtn = document.getElementById('challenge-friend-btn') as HTMLButtonElement;
+
 let currentPlayerId: string = '';
 
 
@@ -118,6 +126,7 @@ let accumulatedPenalty = 0;
 let isBotMode = false;
 let botGameActive = false; // Track if bot game is active for game count
 let winRecordedForCurrentGame = false; // Prevent duplicate win recording
+let currentOpponentName: string | null = null; // Track current opponent for h2h
 
 // Handle submission timeout - auto-leave the game
 function handleSubmissionTimeout() {
@@ -293,6 +302,15 @@ function init() {
     });
   });
 
+  // Challenge a friend button (on results screen after bot games)
+  challengeFriendBtn.addEventListener('click', () => {
+    showScreen('menu');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+    // Focus the room input to encourage creating a friend room
+    roomIdInput.focus();
+  });
+
   leaveSubmitBtn.addEventListener('click', () => {
     if (isBotMode && botGame) {
       botGame.destroy();
@@ -447,6 +465,11 @@ function showBotResults(state: BotGameState) {
   const isWinner = result.winnerId === 'player';
   const isTie = result.winReason === 'tie';
 
+  // Hide h2h (only for multiplayer), show challenge prompt for bot games
+  headToHeadEl.classList.add('hidden');
+  challengePromptEl.classList.remove('hidden');
+  currentOpponentName = null; // Reset for next game
+
   if (isTie) {
     resultTitle.textContent = "It's a Tie!";
   } else if (isWinner) {
@@ -546,6 +569,7 @@ function handleStateChange(state: GameState) {
       submitWaitingSection.classList.add('hidden');
       // Show opponent info on submit screen
       if (state.opponentName) {
+        currentOpponentName = state.opponentName; // Track for h2h
         submitOpponentInfo.classList.remove('hidden');
         submitOpponentName.textContent = state.opponentName;
         fetchOpponentLevel(state.opponentName).then(level => {
@@ -627,6 +651,11 @@ function showScreen(name: keyof typeof screens) {
   // Load AdSense ad when showing results screen
   if (name === 'results') {
     loadResultsAd();
+  }
+
+  // Update friend battles count when showing menu
+  if (name === 'menu') {
+    displayFriendBattlesCount();
   }
 }
 
@@ -1031,6 +1060,20 @@ function showResults(state: GameState) {
   // Get hints used from accumulated penalty (15s per hint = 15000ms)
   const hintsUsed = Math.round(accumulatedPenalty / 15000);
 
+  // Hide challenge prompt (only shown for bot games)
+  challengePromptEl.classList.add('hidden');
+
+  // Update and display head-to-head record for multiplayer games
+  if (currentOpponentName) {
+    const opponentId = currentOpponentName.toLowerCase();
+    if (!isTie) {
+      updateH2HRecord(opponentId, isWinner);
+    }
+    displayH2HRecord(opponentId, currentOpponentName);
+  } else {
+    headToHeadEl.classList.add('hidden');
+  }
+
   if (isTie) {
     resultTitle.textContent = "It's a Tie!";
   } else if (isWinner) {
@@ -1337,6 +1380,70 @@ async function recordLoss(): Promise<void> {
     }
   } catch (error) {
     console.error('Failed to record loss:', error);
+  }
+}
+
+// ============== HEAD-TO-HEAD TRACKING ==============
+
+interface HeadToHeadRecord {
+  wins: number;
+  losses: number;
+  lastPlayed: number;
+}
+
+function getH2HRecords(): Record<string, HeadToHeadRecord> {
+  try {
+    const stored = localStorage.getItem('crossfire-h2h-records');
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function updateH2HRecord(opponentId: string, won: boolean): void {
+  const records = getH2HRecords();
+  const existing = records[opponentId] || { wins: 0, losses: 0, lastPlayed: 0 };
+
+  if (won) {
+    existing.wins++;
+  } else {
+    existing.losses++;
+  }
+  existing.lastPlayed = Date.now();
+
+  records[opponentId] = existing;
+  localStorage.setItem('crossfire-h2h-records', JSON.stringify(records));
+}
+
+function displayH2HRecord(opponentId: string, opponentName: string): void {
+  const records = getH2HRecords();
+  const record = records[opponentId];
+
+  if (record && (record.wins > 0 || record.losses > 0)) {
+    h2hOpponentEl.textContent = opponentName;
+    h2hRecordEl.textContent = `${record.wins}W - ${record.losses}L`;
+    headToHeadEl.classList.remove('hidden');
+  } else {
+    headToHeadEl.classList.add('hidden');
+  }
+}
+
+function getTotalFriendBattles(): number {
+  const records = getH2HRecords();
+  let total = 0;
+  for (const record of Object.values(records)) {
+    total += record.wins + record.losses;
+  }
+  return total;
+}
+
+function displayFriendBattlesCount(): void {
+  const total = getTotalFriendBattles();
+  if (total > 0) {
+    friendBattlesCountEl.textContent = `${total} friend ${total === 1 ? 'battle' : 'battles'} played`;
+    friendBattlesCountEl.classList.remove('hidden');
+  } else {
+    friendBattlesCountEl.classList.add('hidden');
   }
 }
 

@@ -126,12 +126,15 @@
         <p id="status-text"></p>
         <button id="cancel-matchmaking-btn" class="secondary-btn hidden">Cancel</button>
 
-        <div class="divider">Play with a friend</div>
+        <div class="divider">Challenge a Friend</div>
 
-        <p class="room-help">Make up any room name and click Join Room — you'll get a link to share with your friend!</p>
-        <div class="manual-join">
-          <input type="text" id="room-id-input" placeholder="e.g. pizza-party" />
-          <button id="join-room-btn">Join Room</button>
+        <div class="challenge-card">
+          <p class="challenge-tagline">Create a room, share the link, and pick your hardest words!</p>
+          <div class="manual-join">
+            <input type="text" id="room-id-input" placeholder="e.g. pizza-party" />
+            <button id="join-room-btn">Create Room</button>
+          </div>
+          <p id="friend-battles-count" class="friend-battles-count hidden"></p>
         </div>
 
         <!-- Leaderboard Section -->
@@ -263,6 +266,18 @@
                data-ad-slot="6942531764"
                data-ad-format="auto"
                data-full-width-responsive="true"></ins>
+        </div>
+
+        <!-- Head-to-head record (for rematches) -->
+        <div id="head-to-head" class="head-to-head hidden">
+          <span class="h2h-label">vs <span id="h2h-opponent"></span>:</span>
+          <span id="h2h-record" class="h2h-record"></span>
+        </div>
+
+        <!-- Challenge prompt (shown after bot games) -->
+        <div id="challenge-prompt" class="challenge-prompt hidden">
+          <p>Think you're good? Challenge a friend to beat your score!</p>
+          <button id="challenge-friend-btn" class="challenge-friend-btn">Challenge a Friend</button>
         </div>
 
         <div class="results-buttons">

@@ -177,15 +177,17 @@ export class Matchmaking {
     );
   }
 
-  async handleWebSocket(_request: Request): Promise<Response> {
+  async handleWebSocket(request: Request): Promise<Response> {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
     server.accept();
 
-    const playerId = crypto.randomUUID();
+    // Get playerId from query string (sent by client) or generate one as fallback
+    const url = new URL(request.url);
+    const playerId = url.searchParams.get('playerId') || crypto.randomUUID();
     this.playerCounter++;
-    const playerName = `Player ${this.playerCounter}`;
+    const playerName = playerId;
 
     // Track this connection
     this.connectedSockets.add(server);

@@ -358,7 +358,7 @@ input[type="text"]::placeholder {
 
 .divider {
   margin: 2.5rem 0;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.75);
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -398,6 +398,89 @@ input[type="text"]::placeholder {
 .manual-join button {
   border-radius: 10px;
   padding: 0.75em 1.5em;
+}
+
+/* Challenge a Friend Card */
+.challenge-card {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(124, 58, 237, 0.05));
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.challenge-tagline {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9em;
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
+.room-instructions {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8em;
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
+.friend-battles-count {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8em;
+  margin: 1rem 0 0;
+  text-align: center;
+}
+
+/* Head-to-head record */
+.head-to-head {
+  background: rgba(124, 58, 237, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.h2h-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.h2h-record {
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+/* Challenge prompt after bot games */
+.challenge-prompt {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(124, 58, 237, 0.1));
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.challenge-prompt p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 0.75rem;
+  font-size: 0.95em;
+}
+
+.challenge-friend-btn {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  border: none;
+  padding: 0.6em 1.5em;
+  border-radius: 8px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.challenge-friend-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
 }
 
 /* Waiting Screen */
@@ -1097,7 +1180,7 @@ input[type="text"]::placeholder {
 }
 
 .light-mode .divider {
-  color: rgba(0, 0, 0, 0.4);
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .light-mode .divider::before,
@@ -1107,6 +1190,40 @@ input[type="text"]::placeholder {
 
 .light-mode .room-help {
   color: rgba(0, 0, 0, 0.5);
+}
+
+.light-mode .challenge-card {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.03));
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+.light-mode .challenge-tagline {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light-mode .room-instructions {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.light-mode .friend-battles-count {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.light-mode .head-to-head {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.light-mode .h2h-label {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light-mode .challenge-prompt {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(124, 58, 237, 0.05));
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+.light-mode .challenge-prompt p {
+  color: rgba(0, 0, 0, 0.7);
 }
 
 .light-mode .word-input.invalid {

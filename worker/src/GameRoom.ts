@@ -83,7 +83,7 @@ export class GameRoom {
     // Get playerId from query string (sent by client) or generate one as fallback
     const url = new URL(request.url);
     const playerId = url.searchParams.get('playerId') || crypto.randomUUID();
-    const playerName = `Player ${this.players.size + 1}`;
+    const playerName = playerId;
 
     // Debug: log connection attempt
     console.log(`Connection attempt. Current players: ${this.players.size}, phase: ${this.gameState.phase}`);
