@@ -326,25 +326,28 @@
       function renderGamesChart(data) {
         const ctx = document.getElementById('games-chart').getContext('2d');
 
-        // Aggregate data by day
+        // Aggregate data by day, tracking multiplayer vs bot separately
         const dailyData = {};
         data.forEach(d => {
           const date = new Date(d.timestamp);
           const dayKey = date.toISOString().split('T')[0];
           if (!dailyData[dayKey]) {
-            dailyData[dayKey] = 0;
+            dailyData[dayKey] = { multiplayer: 0, bot: 0 };
           }
-          dailyData[dayKey] += d.games;
+          // Use new breakdown if available, otherwise treat as multiplayer (legacy data)
+          dailyData[dayKey].multiplayer += d.multiplayer ?? d.games;
+          dailyData[dayKey].bot += d.bot ?? 0;
         });
 
         // Sort days and create arrays
         const sortedDays = Object.keys(dailyData).sort();
-        const dailyGames = sortedDays.map(day => dailyData[day]);
+        const dailyMultiplayer = sortedDays.map(day => dailyData[day].multiplayer);
+        const dailyBot = sortedDays.map(day => dailyData[day].bot);
 
         // Calculate cumulative totals
         let cumulative = 0;
-        const cumulativeGames = dailyGames.map(games => {
-          cumulative += games;
+        const cumulativeGames = sortedDays.map(day => {
+          cumulative += dailyData[day].multiplayer + dailyData[day].bot;
           return cumulative;
         });
 
@@ -360,8 +363,9 @@
 
         if (gamesChart) {
           gamesChart.data.labels = labels;
-          gamesChart.data.datasets[0].data = dailyGames;
-          gamesChart.data.datasets[1].data = cumulativeGames;
+          gamesChart.data.datasets[0].data = dailyMultiplayer;
+          gamesChart.data.datasets[1].data = dailyBot;
+          gamesChart.data.datasets[2].data = cumulativeGames;
           gamesChart.update();
         } else {
           gamesChart = new Chart(ctx, {
@@ -370,12 +374,23 @@
               labels: labels,
               datasets: [
                 {
-                  label: 'Daily Games',
-                  data: dailyGames,
-                  backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                  label: 'Multiplayer',
+                  data: dailyMultiplayer,
+                  backgroundColor: 'rgba(16, 185, 129, 0.8)',
                   borderColor: '#10b981',
                   borderWidth: 1,
                   yAxisID: 'y',
+                  stack: 'games',
+                  order: 3
+                },
+                {
+                  label: 'Bot',
+                  data: dailyBot,
+                  backgroundColor: 'rgba(251, 146, 60, 0.8)',
+                  borderColor: '#f97316',
+                  borderWidth: 1,
+                  yAxisID: 'y',
+                  stack: 'games',
                   order: 2
                 },
                 {
@@ -402,6 +417,7 @@
               },
               scales: {
                 x: {
+                  stacked: true,
                   ticks: {
                     display: false
                   },
@@ -410,6 +426,7 @@
                 y: {
                   type: 'linear',
                   position: 'left',
+                  stacked: true,
                   beginAtZero: true,
                   title: {
                     display: true,
@@ -417,7 +434,7 @@
                     color: '#10b981'
                   },
                   ticks: {
-                    color: '#10b981',
+                    color: '#888',
                     stepSize: 1
                   },
                   grid: { color: '#333' }

@@ -437,7 +437,7 @@ function showBotResults(state: BotGameState) {
     resultTitle.textContent = "It's a Tie!";
   } else if (isWinner) {
     resultTitle.textContent = 'You Win!';
-    recordWin(state.hintsUsed, result.yourTime);
+    recordWin(state.hintsUsed, result.yourTime, false); // Bot game
   } else {
     resultTitle.textContent = 'Your opponent Wins!';
     recordLoss();
@@ -1242,7 +1242,7 @@ async function updatePlayerStats(): Promise<void> {
   displayStats(wins);
 }
 
-async function recordWin(hintsUsed: number = 0, timeMs: number = 0): Promise<void> {
+async function recordWin(hintsUsed: number = 0, timeMs: number = 0, isMultiplayer: boolean = true): Promise<void> {
   // Prevent duplicate win recording for the same game
   if (winRecordedForCurrentGame) {
     console.log('Win already recorded for this game, skipping');
@@ -1254,7 +1254,7 @@ async function recordWin(hintsUsed: number = 0, timeMs: number = 0): Promise<voi
     const response = await fetch(`${getApiUrl()}/api/player/${currentPlayerId}/record-win`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hintsUsed, timeMs }),
+      body: JSON.stringify({ hintsUsed, timeMs, isMultiplayer }),
     });
     if (response.ok) {
       const data = await response.json();

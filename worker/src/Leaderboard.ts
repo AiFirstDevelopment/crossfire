@@ -5,6 +5,7 @@ export interface Env {
 interface WinRecord {
   playerId: string;
   timestamp: number;
+  isMultiplayer?: boolean; // true for multiplayer, false for bot games (defaults to true for legacy records)
 }
 
 // Old format for migration
@@ -118,8 +119,8 @@ export class Leaderboard {
 
     // POST /record - Record a win for a player
     if (request.method === 'POST' && url.pathname === '/record') {
-      const body = await request.json() as { playerId: string };
-      const { playerId } = body;
+      const body = await request.json() as { playerId: string; isMultiplayer?: boolean };
+      const { playerId, isMultiplayer = true } = body;
 
       if (!playerId) {
         return new Response(JSON.stringify({ error: 'playerId required' }), {
@@ -133,7 +134,7 @@ export class Leaderboard {
 
       // Add new win record
       const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
-      wins.push({ playerId, timestamp: Date.now() });
+      wins.push({ playerId, timestamp: Date.now(), isMultiplayer });
       await this.state.storage.put('wins', wins);
 
       // Cleanup old wins periodically (every 100 wins)
@@ -196,20 +197,32 @@ export class Leaderboard {
       const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
       const cutoff = Date.now() - SEVEN_DAYS_MS;
 
-      // Group wins by hour
-      const hourlyGames = new Map<number, number>();
+      // Group wins by hour, tracking multiplayer vs bot separately
+      const hourlyGames = new Map<number, { multiplayer: number; bot: number }>();
       for (const win of wins) {
         if (win.timestamp >= cutoff) {
           // Round down to the nearest hour
           const hourTimestamp = Math.floor(win.timestamp / (60 * 60 * 1000)) * (60 * 60 * 1000);
-          hourlyGames.set(hourTimestamp, (hourlyGames.get(hourTimestamp) || 0) + 1);
+          const existing = hourlyGames.get(hourTimestamp) || { multiplayer: 0, bot: 0 };
+          // Legacy records without isMultiplayer field are treated as multiplayer
+          if (win.isMultiplayer !== false) {
+            existing.multiplayer++;
+          } else {
+            existing.bot++;
+          }
+          hourlyGames.set(hourTimestamp, existing);
         }
       }
 
       // Convert to sorted array
       const data = Array.from(hourlyGames.entries())
         .sort((a, b) => a[0] - b[0])
-        .map(([timestamp, count]) => ({ timestamp, games: count }));
+        .map(([timestamp, counts]) => ({
+          timestamp,
+          games: counts.multiplayer + counts.bot,
+          multiplayer: counts.multiplayer,
+          bot: counts.bot,
+        }));
 
       return new Response(JSON.stringify({ data }), {
         headers: { 'Content-Type': 'application/json' },

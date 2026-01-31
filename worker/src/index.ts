@@ -132,29 +132,32 @@ export default {
     if (recordWinMatch && request.method === 'POST') {
       const playerId = recordWinMatch[1].toLowerCase();
 
-      // Forward body with hintsUsed and timeMs
-      let body = '{}';
+      // Forward body with hintsUsed, timeMs, and isMultiplayer
+      let bodyData: { hintsUsed?: number; timeMs?: number; isMultiplayer?: boolean } = {};
       try {
-        body = await request.text();
+        const bodyText = await request.text();
+        if (bodyText) {
+          bodyData = JSON.parse(bodyText);
+        }
       } catch {
-        // No body
+        // No body or invalid JSON
       }
 
       const id = env.PLAYER_STATS.idFromName(playerId);
       const stats = env.PLAYER_STATS.get(id);
       const response = await stats.fetch(new Request('https://stats/record-win', {
         method: 'POST',
-        body,
+        body: JSON.stringify(bodyData),
         headers: { 'Content-Type': 'application/json' },
       }));
       const data = await response.json();
 
-      // Also update leaderboard
+      // Also update leaderboard with isMultiplayer flag
       const leaderboardId = env.LEADERBOARD.idFromName('global');
       const leaderboard = env.LEADERBOARD.get(leaderboardId);
       await leaderboard.fetch(new Request('https://leaderboard/record', {
         method: 'POST',
-        body: JSON.stringify({ playerId }),
+        body: JSON.stringify({ playerId, isMultiplayer: bodyData.isMultiplayer }),
         headers: { 'Content-Type': 'application/json' },
       }));
 
