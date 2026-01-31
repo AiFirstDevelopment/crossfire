@@ -379,11 +379,12 @@ function handleBotStateChange(state: BotGameState) {
           onCellChange: (row, col, letter) => botGame?.updateCell(row, col, letter),
           onHintRequest: (row, col) => botGame?.requestHint(row, col),
         });
+        // Start timer only once when entering solve phase
+        startTimer(state.solvingTimeoutMs, state.phaseStartedAt, timerSolve);
       } else if (crosswordUI) {
         crosswordUI.update(state.playerFilledCells, state.playerCellCorrectness);
       }
       updateBotProgress(state);
-      startTimer(state.solvingTimeoutMs, state.phaseStartedAt, timerSolve);
       break;
 
     case 'finished':
@@ -582,11 +583,12 @@ function handleStateChange(state: GameState) {
           onCellChange: (row, col, letter) => game.updateCell(row, col, letter),
           onHintRequest: (row, col) => game.requestHint('reveal-letter', { row, col }),
         });
+        // Start timer only once when entering solve phase
+        startTimer(state.solvingTimeoutMs, state.phaseStartedAt, timerSolve);
       } else if (crosswordUI) {
         crosswordUI.update(state.filledCells, state.cellCorrectness);
       }
       updateProgress(state);
-      startTimer(state.solvingTimeoutMs, state.phaseStartedAt, timerSolve);
       break;
 
     case 'finished':
@@ -1554,42 +1556,59 @@ function showStreakToast(streak: number) {
 // Sound effects
 let audioContext: AudioContext | null = null;
 
-function playSound(type: 'win' | 'lose' | 'correct' | 'achievement') {
+function getAudioContext(): AudioContext | null {
   try {
-    // Create or resume audio context
     if (!audioContext) {
       audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     }
-
-    // Resume if suspended (required by browser autoplay policy)
     if (audioContext.state === 'suspended') {
       audioContext.resume();
     }
-
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    // Different frequencies for different sounds
-    const frequencies: Record<string, number> = {
-      win: 523.25, // C5
-      lose: 261.63, // C4
-      correct: 659.25, // E5
-      achievement: 783.99, // G5
-    };
-
-    oscillator.frequency.value = frequencies[type] || 440;
-    oscillator.type = type === 'win' || type === 'achievement' ? 'sine' : 'triangle';
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.5);
+    return audioContext;
   } catch {
-    // Audio not supported, silently fail
+    return null;
+  }
+}
+
+function playNote(ctx: AudioContext, freq: number, startTime: number, duration: number, volume: number = 0.2) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = freq;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(volume, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+function playSound(type: 'win' | 'lose' | 'correct' | 'achievement') {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+
+  if (type === 'win') {
+    // Triumphant ascending arpeggio: C-E-G-C (major chord)
+    playNote(ctx, 523.25, now, 0.15, 0.25);        // C5
+    playNote(ctx, 659.25, now + 0.1, 0.15, 0.25);  // E5
+    playNote(ctx, 783.99, now + 0.2, 0.15, 0.25);  // G5
+    playNote(ctx, 1046.50, now + 0.3, 0.4, 0.3);   // C6 (hold longer)
+  } else if (type === 'lose') {
+    // Descending minor tone
+    playNote(ctx, 392.00, now, 0.2, 0.15);         // G4
+    playNote(ctx, 329.63, now + 0.15, 0.2, 0.15);  // E4
+    playNote(ctx, 261.63, now + 0.3, 0.4, 0.15);   // C4
+  } else if (type === 'achievement') {
+    // Sparkly achievement sound - quick ascending with harmony
+    playNote(ctx, 659.25, now, 0.12, 0.2);         // E5
+    playNote(ctx, 783.99, now + 0.08, 0.12, 0.2);  // G5
+    playNote(ctx, 987.77, now + 0.16, 0.12, 0.2);  // B5
+    playNote(ctx, 1318.51, now + 0.24, 0.3, 0.25); // E6
+  } else if (type === 'correct') {
+    // Quick positive blip
+    playNote(ctx, 880, now, 0.1, 0.15);            // A5
   }
 }
 
