@@ -241,6 +241,8 @@
       function renderStats(data) {
         const container = document.getElementById('stats-container');
         container.className = 'stats-grid';
+        const multiplayerGames = data.multiplayerGamesPlayed || 0;
+        const botGames = data.totalGamesPlayed - multiplayerGames;
         container.innerHTML = `
           <div class="stat-card">
             <div class="stat-value">${data.onlineCount}</div>
@@ -253,6 +255,14 @@
           <div class="stat-card" id="total-games-card">
             <div class="stat-value">${data.totalGamesPlayed.toLocaleString()}</div>
             <div class="stat-label">Total Games Played</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${multiplayerGames.toLocaleString()}</div>
+            <div class="stat-label">Multiplayer Games</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${botGames.toLocaleString()}</div>
+            <div class="stat-label">Bot Games</div>
           </div>
           <div class="stat-card">
             <div class="stat-value">${data.totalPlayers.toLocaleString()}</div>

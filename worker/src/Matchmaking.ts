@@ -21,6 +21,7 @@ export class Matchmaking {
   private playerCounter: number;
   private activeGames: number;
   private totalGamesPlayed: number;
+  private multiplayerGamesPlayed: number;
   private totalPlayers: number;
   private returningUsers: number;
   private sharedLinkClicks: number;
@@ -38,6 +39,7 @@ export class Matchmaking {
     this.playerCounter = 0;
     this.activeGames = 0;
     this.totalGamesPlayed = Matchmaking.INITIAL_GAMES_COUNT;
+    this.multiplayerGamesPlayed = 0;
     this.totalPlayers = Matchmaking.INITIAL_PLAYER_COUNT;
     this.returningUsers = 0;
     this.sharedLinkClicks = 0;
@@ -51,6 +53,10 @@ export class Matchmaking {
       const storedTotal = await this.state.storage.get<number>('totalGamesPlayed');
       if (storedTotal !== undefined) {
         this.totalGamesPlayed = storedTotal;
+      }
+      const storedMultiplayer = await this.state.storage.get<number>('multiplayerGamesPlayed');
+      if (storedMultiplayer !== undefined) {
+        this.multiplayerGamesPlayed = storedMultiplayer;
       }
       const storedPlayers = await this.state.storage.get<number>('totalPlayers');
       if (storedPlayers !== undefined) {
@@ -84,14 +90,16 @@ export class Matchmaking {
       });
     }
 
-    // Handle game-ended notification from GameRoom
+    // Handle game-ended notification from GameRoom (multiplayer games only)
     if (url.pathname === '/game-ended' && request.method === 'POST') {
       this.activeGames = Math.max(0, this.activeGames - 1);
       this.totalGamesPlayed++;
+      this.multiplayerGamesPlayed++;
       await this.state.storage.put('activeGames', this.activeGames);
       await this.state.storage.put('totalGamesPlayed', this.totalGamesPlayed);
+      await this.state.storage.put('multiplayerGamesPlayed', this.multiplayerGamesPlayed);
       this.broadcastStats();
-      return new Response(JSON.stringify({ activePlayers: this.getDisplayActivePlayers(), totalGamesPlayed: this.totalGamesPlayed }), {
+      return new Response(JSON.stringify({ activePlayers: this.getDisplayActivePlayers(), totalGamesPlayed: this.totalGamesPlayed, multiplayerGamesPlayed: this.multiplayerGamesPlayed }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -160,6 +168,7 @@ export class Matchmaking {
         onlineCount: this.connectedSockets.size,
         activePlayers: this.getDisplayActivePlayers(),
         totalGamesPlayed: this.totalGamesPlayed,
+        multiplayerGamesPlayed: this.multiplayerGamesPlayed,
         totalPlayers: this.totalPlayers,
         returningUsers: this.returningUsers,
         sharedLinkClicks: this.sharedLinkClicks,
@@ -186,6 +195,10 @@ export class Matchmaking {
     if (storedTotal !== undefined && storedTotal > this.totalGamesPlayed) {
       this.totalGamesPlayed = storedTotal;
     }
+    const storedMultiplayer = await this.state.storage.get<number>('multiplayerGamesPlayed');
+    if (storedMultiplayer !== undefined && storedMultiplayer > this.multiplayerGamesPlayed) {
+      this.multiplayerGamesPlayed = storedMultiplayer;
+    }
     const storedActive = await this.state.storage.get<number>('activeGames');
     if (storedActive !== undefined) {
       this.activeGames = storedActive;
@@ -200,6 +213,7 @@ export class Matchmaking {
       onlineCount: this.connectedSockets.size,
       activePlayers: this.getDisplayActivePlayers(),
       totalGamesPlayed: this.totalGamesPlayed,
+      multiplayerGamesPlayed: this.multiplayerGamesPlayed,
       totalPlayers: this.totalPlayers,
       returningUsers: this.returningUsers,
     });
@@ -322,6 +336,7 @@ export class Matchmaking {
       onlineCount: this.connectedSockets.size,
       activePlayers: this.getDisplayActivePlayers(),
       totalGamesPlayed: this.totalGamesPlayed,
+      multiplayerGamesPlayed: this.multiplayerGamesPlayed,
       totalPlayers: this.totalPlayers,
       returningUsers: this.returningUsers,
     });
