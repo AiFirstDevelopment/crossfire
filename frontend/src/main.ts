@@ -608,6 +608,37 @@ function handleStateChange(state: GameState) {
 function showScreen(name: keyof typeof screens) {
   Object.values(screens).forEach(s => s.classList.add('hidden'));
   screens[name].classList.remove('hidden');
+
+  // Load AdSense ad when showing results screen
+  if (name === 'results') {
+    loadResultsAd();
+  }
+}
+
+// Load AdSense ad on results screen
+function loadResultsAd() {
+  // Only load ad if user has consented to ads
+  const consent = localStorage.getItem('crossfire-cookie-consent');
+  if (consent !== 'all') return;
+
+  try {
+    const adContainer = document.getElementById('results-ad-container');
+    if (adContainer) {
+      // Clear previous ad and create fresh ins element
+      adContainer.innerHTML = `
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-9275404280127308"
+             data-ad-slot="6942531764"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      `;
+      // Push ad request
+      ((window as unknown as { adsbygoogle: unknown[] }).adsbygoogle = (window as unknown as { adsbygoogle: unknown[] }).adsbygoogle || []).push({});
+    }
+  } catch (e) {
+    console.log('AdSense not loaded');
+  }
 }
 
 function updateActivePlayers(serverCount: number) {

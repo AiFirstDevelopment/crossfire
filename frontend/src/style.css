@@ -1962,3 +1962,16 @@ body.light-mode .site-footer a {
     font-size: 0.8rem;
   }
 }
+
+/* Results Ad Container */
+.results-ad-container {
+  margin: 1.5rem 0;
+  min-height: 100px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.results-ad-container .adsbygoogle {
+  display: block;
+}
