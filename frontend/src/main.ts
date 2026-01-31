@@ -305,6 +305,8 @@ function init() {
   leaveWaitingBtn.addEventListener('click', () => {
     game.leaveRoom();
     clearRoomFromUrl();
+    roomIdInput.value = '';
+    joinRoomBtn.disabled = true;
     showScreen('menu');
     window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
