@@ -1,0 +1,10 @@
+# Crossfire robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://crossfire.game/sitemap.xml
+
+# Disallow private pages
+Disallow: /stats.html
+Disallow: /api/
