@@ -5,8 +5,8 @@
 - Tests must pass before proceeding with commit or deploy
 
 ## Deployment Rules
-- **Always deploy after making any changes** - both worker and frontend if applicable
-- **Only commit when explicitly asked** by the user
+- **never commit or deploy after making changes unless asked to by the user**
+- **Only commit or deploy when explicitly asked** by the user
 
 ## Commands
 - E2E Tests (local): `npm run test:e2e`
