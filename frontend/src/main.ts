@@ -334,7 +334,10 @@ function init() {
 
   declineRematchBtn.addEventListener('click', () => {
     game.leaveRoom();
+    clearRoomFromUrl();
+    roomIdInput.value = '';
     showScreen('menu');
+    window.scrollTo(0, 0);
     findMatchBtn.disabled = false;
     statusText.textContent = '';
   });
@@ -667,6 +670,7 @@ function handleStateChange(state: GameState) {
       if (state.opponentLeftAfterGame) {
         game.leaveRoom();
         clearRoomFromUrl();
+        roomIdInput.value = '';
         showScreen('menu');
         window.scrollTo(0, 0);
         findMatchBtn.disabled = false;
