@@ -277,6 +277,8 @@ export class GameClient {
           playerId: message.playerId,
           playerName: message.playerName,
           phase: 'waiting',
+          // Set opponent name if joining a room that already has a player
+          opponentName: message.opponent?.name ?? this.state.opponentName,
         });
         break;
 

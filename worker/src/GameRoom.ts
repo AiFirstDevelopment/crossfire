@@ -117,12 +117,16 @@ export class GameRoom {
     this.gameState.players[playerId] = { id: playerId, name: playerName };
     console.log(`Player joined: ${playerName} (${playerId}). Total players: ${this.players.size}`);
 
-    // Send welcome
+    // Get opponent info if there's already another player in the room
+    const existingPlayer = Array.from(this.players.values()).find(p => p.id !== playerId);
+
+    // Send welcome with opponent info if available
     this.sendTo(server, {
       type: 'welcome',
       playerId,
       playerName,
       playerCount: this.players.size,
+      opponent: existingPlayer ? { id: existingPlayer.id, name: existingPlayer.name } : undefined,
     });
 
     // Notify others
