@@ -326,21 +326,34 @@
       function renderGamesChart(data) {
         const ctx = document.getElementById('games-chart').getContext('2d');
 
-        // Aggregate data by day, tracking multiplayer vs bot separately
+        // Generate all 7 days including today
+        const today = new Date();
+        const allDays = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          allDays.push(d.toISOString().split('T')[0]);
+        }
+
+        // Initialize all days with zero counts
         const dailyData = {};
+        allDays.forEach(day => {
+          dailyData[day] = { multiplayer: 0, bot: 0 };
+        });
+
+        // Aggregate data by day, tracking multiplayer vs bot separately
         data.forEach(d => {
           const date = new Date(d.timestamp);
           const dayKey = date.toISOString().split('T')[0];
-          if (!dailyData[dayKey]) {
-            dailyData[dayKey] = { multiplayer: 0, bot: 0 };
+          if (dailyData[dayKey]) {
+            // Use new breakdown if available, otherwise treat as multiplayer (legacy data)
+            dailyData[dayKey].multiplayer += d.multiplayer ?? d.games;
+            dailyData[dayKey].bot += d.bot ?? 0;
           }
-          // Use new breakdown if available, otherwise treat as multiplayer (legacy data)
-          dailyData[dayKey].multiplayer += d.multiplayer ?? d.games;
-          dailyData[dayKey].bot += d.bot ?? 0;
         });
 
-        // Sort days and create arrays
-        const sortedDays = Object.keys(dailyData).sort();
+        // Use pre-sorted allDays array
+        const sortedDays = allDays;
         const dailyMultiplayer = sortedDays.map(day => dailyData[day].multiplayer);
         const dailyBot = sortedDays.map(day => dailyData[day].bot);
 
