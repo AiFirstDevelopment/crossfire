@@ -616,6 +616,7 @@ function handleStateChange(state: GameState) {
 
     case 'submitting':
       cancelMatchmakingBtn.classList.add('hidden');
+      rematchModal.classList.add('hidden'); // Hide modal when starting new game
       // Reset win tracking for new game
       winRecordedForCurrentGame = false;
       showScreen('submit');
