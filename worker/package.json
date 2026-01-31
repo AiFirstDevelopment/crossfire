@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "an-array-of-english-words": "^2.0.0",
-    "crossword-layout-generator": "^0.1.1"
+    "crossword-layout-generator": "^0.1.1",
+    "stemmer": "^2.0.1"
   }
 }
