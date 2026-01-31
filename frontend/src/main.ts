@@ -47,6 +47,7 @@ const crosswordContainer = document.getElementById('crossword-container')!;
 const resultTitle = document.getElementById('result-title')!;
 const resultDetails = document.getElementById('result-details')!;
 const leaveRoomBtn = document.getElementById('leave-room-btn') as HTMLButtonElement;
+const backToMenuBtn = document.getElementById('back-to-menu-btn') as HTMLButtonElement;
 const leaveWaitingBtn = document.getElementById('leave-waiting-btn') as HTMLButtonElement;
 const shareLinkInput = document.getElementById('share-link-input') as HTMLInputElement;
 const copyLinkBtn = document.getElementById('copy-link-btn') as HTMLButtonElement;
@@ -249,6 +250,25 @@ function init() {
     setTimeout(() => {
       findMatchBtn.click();
     }, 100);
+  });
+
+  backToMenuBtn.addEventListener('click', () => {
+    if (isBotMode && botGame) {
+      botGame.destroy();
+      botGame = null;
+      isBotMode = false;
+      botGameActive = false;
+      updateActivePlayers(game.getState().activePlayers);
+    } else {
+      game.leaveRoom();
+    }
+    lastSubmittedWords = [];
+    crosswordUI = null;
+    hideSolutionGrid();
+    showScreen('menu');
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+    // No auto-matchmaking - just return to menu
   });
 
   leaveWaitingBtn.addEventListener('click', () => {
@@ -1617,7 +1637,6 @@ function showResultsWithEngagement(isWinner: boolean, newStats: PlayerEngagement
   // Show confetti for wins
   if (isWinner) {
     showConfetti();
-    playSound('win');
   } else {
     playSound('lose');
   }
