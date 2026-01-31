@@ -726,17 +726,16 @@ function handleStateChange(state: GameState) {
       break;
 
     case 'finished':
-      // If opponent left after game, return to menu with message
-      if (state.opponentLeftAfterGame) {
-        game.leaveRoom();
-        clearRoomFromUrl();
-        roomIdInput.value = '';
-        showScreen('menu');
-        window.scrollTo(0, 0);
-        findMatchBtn.disabled = false;
-        showInfo('Opponent declined the rematch');
+      // Check if we're already on results screen (opponent left while viewing results)
+      const alreadyOnResults = !screens.results.classList.contains('hidden');
+
+      if (state.opponentLeftAfterGame && alreadyOnResults) {
+        // Just update the rematch UI and show notification - don't navigate away
+        updateRematchUI(state);
+        showInfo('Opponent has left the room');
         break;
       }
+
       showScreen('results');
       stopTimer();
       showResults(state);
@@ -1175,7 +1174,10 @@ function updateRematchUI(state: GameState) {
   // Show rematch section for multiplayer
   rematchSection.classList.remove('hidden');
 
-  if (state.opponentLeftAfterGame) {
+  // Check if opponent left (either after game or during game causing 'opponent-left' win reason)
+  const opponentLeft = state.opponentLeftAfterGame || state.result?.winReason === 'opponent-left';
+
+  if (opponentLeft) {
     // Opponent left/declined - hide rematch options and modal, show message
     rematchModal.classList.add('hidden');
     rematchBtn.classList.add('hidden');

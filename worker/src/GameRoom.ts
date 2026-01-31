@@ -89,6 +89,14 @@ export class GameRoom {
     // Debug: log connection attempt
     console.log(`Connection attempt. Current players: ${this.players.size}, phase: ${this.gameState.phase}`);
 
+    // Safety check: if no players are connected but room isn't in waiting state, reset it
+    // This can happen if the room wasn't properly cleaned up after all players left
+    if (this.players.size === 0 && this.gameState.phase !== 'waiting') {
+      console.log(`Resetting stale room (was in phase: ${this.gameState.phase})`);
+      this.gameState = this.createInitialGameState();
+      this.gameEndedNotified = false;
+    }
+
     // Check if room is full or game already started
     if (this.players.size >= 2) {
       console.log('Rejecting: room is full');
