@@ -568,6 +568,92 @@ input[type="text"]::placeholder {
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Rematch Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.modal-content h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4em;
+  color: #fff;
+}
+
+.modal-content p {
+  margin: 0 0 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1em;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.modal-actions .accept-btn,
+.modal-actions .decline-btn {
+  padding: 0.75em 1.75em;
+  font-size: 1em;
+}
+
+.light-mode .modal-content {
+  background: linear-gradient(135deg, #f8f8fc 0%, #eef0f8 100%);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-mode .modal-content h3 {
+  color: #1a1a2e;
+}
+
+.light-mode .modal-content p {
+  color: rgba(0, 0, 0, 0.7);
+}
+
 /* Waiting Screen */
 .spinner {
   width: 50px;

@@ -117,6 +117,11 @@ const rematchRequest = document.getElementById('rematch-request')!;
 const acceptRematchBtn = document.getElementById('accept-rematch-btn') as HTMLButtonElement;
 const declineRematchBtn = document.getElementById('decline-rematch-btn') as HTMLButtonElement;
 
+// Rematch modal elements
+const rematchModal = document.getElementById('rematch-modal')!;
+const modalAcceptBtn = document.getElementById('modal-accept-btn') as HTMLButtonElement;
+const modalDeclineBtn = document.getElementById('modal-decline-btn') as HTMLButtonElement;
+
 let currentPlayerId: string = '';
 
 
@@ -329,10 +334,29 @@ function init() {
   });
 
   acceptRematchBtn.addEventListener('click', () => {
+    rematchModal.classList.add('hidden');
     game.playAgain();
   });
 
   declineRematchBtn.addEventListener('click', () => {
+    rematchModal.classList.add('hidden');
+    game.leaveRoom();
+    clearRoomFromUrl();
+    roomIdInput.value = '';
+    showScreen('menu');
+    window.scrollTo(0, 0);
+    findMatchBtn.disabled = false;
+    statusText.textContent = '';
+  });
+
+  // Modal rematch button handlers
+  modalAcceptBtn.addEventListener('click', () => {
+    rematchModal.classList.add('hidden');
+    game.playAgain();
+  });
+
+  modalDeclineBtn.addEventListener('click', () => {
+    rematchModal.classList.add('hidden');
     game.leaveRoom();
     clearRoomFromUrl();
     roomIdInput.value = '';
@@ -1108,6 +1132,7 @@ function updateRematchUI(state: GameState) {
   // Only show rematch for multiplayer games (not bot games)
   if (isBotMode) {
     rematchSection.classList.add('hidden');
+    rematchModal.classList.add('hidden');
     return;
   }
 
@@ -1115,18 +1140,21 @@ function updateRematchUI(state: GameState) {
   rematchSection.classList.remove('hidden');
 
   if (state.opponentLeftAfterGame) {
-    // Opponent left/declined - hide rematch options, show message
+    // Opponent left/declined - hide rematch options and modal, show message
+    rematchModal.classList.add('hidden');
     rematchBtn.classList.add('hidden');
     rematchRequest.classList.add('hidden');
     rematchStatus.textContent = 'Opponent has left the room';
     rematchStatus.classList.remove('hidden');
   } else if (state.opponentWantsRematch) {
-    // Opponent wants rematch - show accept/decline
+    // Opponent wants rematch - show modal
+    rematchModal.classList.remove('hidden');
     rematchBtn.classList.add('hidden');
     rematchStatus.classList.add('hidden');
     rematchRequest.classList.remove('hidden');
   } else if (state.waitingForRematch) {
     // We're waiting for opponent
+    rematchModal.classList.add('hidden');
     rematchBtn.disabled = true;
     rematchBtn.textContent = 'Waiting...';
     rematchBtn.classList.remove('hidden');
@@ -1135,6 +1163,7 @@ function updateRematchUI(state: GameState) {
     rematchRequest.classList.add('hidden');
   } else {
     // Initial state - show rematch button
+    rematchModal.classList.add('hidden');
     rematchBtn.disabled = false;
     rematchBtn.textContent = 'Rematch';
     rematchBtn.classList.remove('hidden');
@@ -1144,6 +1173,7 @@ function updateRematchUI(state: GameState) {
 }
 
 function resetRematchUI() {
+  rematchModal.classList.add('hidden');
   rematchBtn.disabled = false;
   rematchBtn.textContent = 'Rematch';
   rematchBtn.classList.remove('hidden');
