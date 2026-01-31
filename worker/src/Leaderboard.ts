@@ -190,6 +190,32 @@ export class Leaderboard {
       });
     }
 
+    // GET /games-over-time - Get games grouped by hour for the past 7 days
+    if (request.method === 'GET' && url.pathname === '/games-over-time') {
+      await this.migrateIfNeeded();
+      const wins = await this.state.storage.get<WinRecord[]>('wins') || [];
+      const cutoff = Date.now() - SEVEN_DAYS_MS;
+
+      // Group wins by hour
+      const hourlyGames = new Map<number, number>();
+      for (const win of wins) {
+        if (win.timestamp >= cutoff) {
+          // Round down to the nearest hour
+          const hourTimestamp = Math.floor(win.timestamp / (60 * 60 * 1000)) * (60 * 60 * 1000);
+          hourlyGames.set(hourTimestamp, (hourlyGames.get(hourTimestamp) || 0) + 1);
+        }
+      }
+
+      // Convert to sorted array
+      const data = Array.from(hourlyGames.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([timestamp, count]) => ({ timestamp, games: count }));
+
+      return new Response(JSON.stringify({ data }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // GET /player-rank - Get a specific player's rank
     if (request.method === 'GET' && url.pathname === '/player-rank') {
       const playerId = url.searchParams.get('playerId');

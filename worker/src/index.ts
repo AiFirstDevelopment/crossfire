@@ -236,6 +236,17 @@ export default {
       return new Response(JSON.stringify(ACHIEVEMENTS), { headers: corsHeaders });
     }
 
+    // Games over time - GET /api/leaderboard/games-over-time
+    if (url.pathname === '/api/leaderboard/games-over-time' && request.method === 'GET') {
+      const leaderboardId = env.LEADERBOARD.idFromName('global');
+      const leaderboard = env.LEADERBOARD.get(leaderboardId);
+      const response = await leaderboard.fetch(
+        new Request('https://leaderboard/games-over-time', { method: 'GET' })
+      );
+      const data = await response.json();
+      return new Response(JSON.stringify(data), { headers: corsHeaders });
+    }
+
     // Default 404 response
     return new Response(
       JSON.stringify({ error: 'Not Found' }),
