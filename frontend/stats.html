@@ -316,43 +316,72 @@
       function renderGamesChart(data) {
         const ctx = document.getElementById('games-chart').getContext('2d');
 
-        // Format labels as readable dates
-        const labels = data.map(d => {
+        // Aggregate data by day
+        const dailyData = {};
+        data.forEach(d => {
           const date = new Date(d.timestamp);
+          const dayKey = date.toISOString().split('T')[0];
+          if (!dailyData[dayKey]) {
+            dailyData[dayKey] = 0;
+          }
+          dailyData[dayKey] += d.games;
+        });
+
+        // Sort days and create arrays
+        const sortedDays = Object.keys(dailyData).sort();
+        const dailyGames = sortedDays.map(day => dailyData[day]);
+
+        // Calculate cumulative totals
+        let cumulative = 0;
+        const cumulativeGames = dailyGames.map(games => {
+          cumulative += games;
+          return cumulative;
+        });
+
+        // Labels (hidden but needed for tooltips)
+        const labels = sortedDays.map(day => {
+          const date = new Date(day + 'T12:00:00');
           return date.toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
-            day: 'numeric',
-            hour: 'numeric'
+            day: 'numeric'
           });
-        });
-
-        // Make cumulative
-        let cumulative = 0;
-        const games = data.map(d => {
-          cumulative += d.games;
-          return cumulative;
         });
 
         if (gamesChart) {
           gamesChart.data.labels = labels;
-          gamesChart.data.datasets[0].data = games;
+          gamesChart.data.datasets[0].data = dailyGames;
+          gamesChart.data.datasets[1].data = cumulativeGames;
           gamesChart.update();
         } else {
           gamesChart = new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
               labels: labels,
-              datasets: [{
-                label: 'Total Games',
-                data: games,
-                borderColor: '#7c3aed',
-                backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 2,
-                pointHoverRadius: 5,
-              }]
+              datasets: [
+                {
+                  label: 'Daily Games',
+                  data: dailyGames,
+                  backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                  borderColor: '#10b981',
+                  borderWidth: 1,
+                  yAxisID: 'y',
+                  order: 2
+                },
+                {
+                  label: 'Cumulative Total',
+                  data: cumulativeGames,
+                  type: 'line',
+                  borderColor: '#7c3aed',
+                  backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                  fill: false,
+                  tension: 0.3,
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  yAxisID: 'y1',
+                  order: 1
+                }
+              ]
             },
             options: {
               responsive: true,
@@ -369,12 +398,36 @@
                   grid: { color: '#333' }
                 },
                 y: {
+                  type: 'linear',
+                  position: 'left',
                   beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Daily',
+                    color: '#10b981'
+                  },
                   ticks: {
-                    color: '#888',
+                    color: '#10b981',
                     stepSize: 1
                   },
                   grid: { color: '#333' }
+                },
+                y1: {
+                  type: 'linear',
+                  position: 'right',
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Cumulative',
+                    color: '#7c3aed'
+                  },
+                  ticks: {
+                    color: '#7c3aed',
+                    stepSize: 1
+                  },
+                  grid: {
+                    drawOnChartArea: false
+                  }
                 }
               }
             }
