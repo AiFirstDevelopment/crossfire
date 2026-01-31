@@ -141,7 +141,10 @@ export class CrosswordUI {
       const letter = text.slice(-1);
       cellEl.textContent = letter;
 
-      // Move cursor to end
+      // Always notify of cell change (even if empty, to handle deletion)
+      this.options.onCellChange(row, col, letter);
+
+      // Move cursor to end and advance to next cell only if there's a letter
       if (letter) {
         const range = document.createRange();
         range.selectNodeContents(cellEl);
@@ -150,7 +153,6 @@ export class CrosswordUI {
         sel?.removeAllRanges();
         sel?.addRange(range);
 
-        this.options.onCellChange(row, col, letter);
         this.moveToNextCell(row, col);
       }
     });
