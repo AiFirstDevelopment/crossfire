@@ -5775,7 +5775,7 @@ export const _categoryWords: Record<string, string[]> = {
     "vowel",
     "word",
   ],
-  connector: [
+  connectingWord: [
     "about",
     "although",
     "also",
