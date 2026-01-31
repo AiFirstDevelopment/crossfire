@@ -1082,6 +1082,13 @@ input[type="text"]::placeholder {
   text-align: left;
 }
 
+/* Info Toast (reuses error-toast element) */
+.error-toast.info-toast {
+  background: #7c3aed;
+  top: 2rem;
+  bottom: auto;
+}
+
 .error-message {
   margin-bottom: 0.75rem;
 }

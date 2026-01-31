@@ -667,14 +667,9 @@ function handleStateChange(state: GameState) {
       if (state.opponentLeftAfterGame) {
         game.leaveRoom();
         showScreen('menu');
+        window.scrollTo(0, 0);
         findMatchBtn.disabled = false;
-        statusText.textContent = 'Opponent declined the rematch';
-        // Clear message after a few seconds
-        setTimeout(() => {
-          if (statusText.textContent === 'Opponent declined the rematch') {
-            statusText.textContent = '';
-          }
-        }, 4000);
+        showInfo('Opponent declined the rematch');
         break;
       }
       showScreen('results');
@@ -775,7 +770,18 @@ function updateShareLink(roomId: string): void {
 function showError(message: string) {
   errorToast.textContent = message;
   errorToast.classList.remove('hidden');
+  errorToast.classList.remove('info-toast');
   setTimeout(() => errorToast.classList.add('hidden'), 5000);
+}
+
+function showInfo(message: string) {
+  errorToast.textContent = message;
+  errorToast.classList.add('info-toast');
+  errorToast.classList.remove('hidden');
+  setTimeout(() => {
+    errorToast.classList.add('hidden');
+    errorToast.classList.remove('info-toast');
+  }, 4000);
 }
 
 // Generate replacement suggestions for words that don't share letters (for multiplayer grid failures)
