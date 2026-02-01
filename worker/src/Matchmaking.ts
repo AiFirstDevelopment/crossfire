@@ -161,6 +161,17 @@ export class Matchmaking {
       });
     }
 
+    // Broadcast maintenance warning to all connected clients (called before deployments)
+    if (url.pathname === '/broadcast-maintenance' && request.method === 'POST') {
+      const body = await request.json() as { countdownSeconds?: number; version?: string };
+      const countdownSeconds = body.countdownSeconds || 180; // Default 3 minutes
+      const version = body.version || 'unknown';
+      this.broadcastMaintenance(countdownSeconds, version);
+      return new Response(JSON.stringify({ success: true, clientCount: this.connectedSockets.size, countdownSeconds, version }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Return current stats
     return new Response(
       JSON.stringify({
@@ -378,6 +389,22 @@ export class Matchmaking {
       }
     } catch (error) {
       console.error('Error broadcasting leaderboard:', error);
+    }
+  }
+
+  private broadcastMaintenance(countdownSeconds: number, version: string) {
+    const message = JSON.stringify({
+      type: 'maintenance-warning',
+      countdownSeconds,
+      version,
+      scheduledAt: Date.now() + countdownSeconds * 1000,
+    });
+    for (const ws of this.connectedSockets) {
+      try {
+        ws.send(message);
+      } catch (error) {
+        // Connection may be closed
+      }
     }
   }
 

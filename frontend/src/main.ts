@@ -101,6 +101,10 @@ const achievementTextEl = document.getElementById('achievement-text')!;
 const streakToast = document.getElementById('streak-toast')!;
 const streakTextEl = document.getElementById('streak-text')!;
 
+// Maintenance banner elements
+const maintenanceBanner = document.getElementById('maintenance-banner')!;
+const maintenanceTime = document.getElementById('maintenance-time')!;
+
 // Challenge a friend elements
 const friendBattlesCountEl = document.getElementById('friend-battles-count')!;
 const headToHeadEl = document.getElementById('head-to-head')!;
@@ -147,6 +151,9 @@ let botGameActive = false; // Track if bot game is active for game count
 let winRecordedForCurrentGame = false; // Prevent duplicate win recording
 let currentOpponentName: string | null = null; // Track current opponent for h2h
 
+// Maintenance state
+let maintenanceCheckStarted = false;
+
 // Handle submission timeout - auto-leave the game
 function handleSubmissionTimeout() {
   if (isBotMode && botGame) {
@@ -170,6 +177,52 @@ function handleLeaderboardUpdate(leaderboard: Array<{ rank: number; playerId: st
   displayLeaderboard(leaderboard, null, 0);
 }
 
+// Handle maintenance warning from WebSocket
+function handleMaintenanceWarning(_countdownSeconds: number, _version: string, scheduledAt: number) {
+  // Prevent duplicate handling
+  if (maintenanceCheckStarted) return;
+  maintenanceCheckStarted = true;
+
+  // Format the scheduled time in user's local timezone
+  const scheduledDate = new Date(scheduledAt);
+  const timeStr = scheduledDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  maintenanceTime.textContent = timeStr;
+
+  // Show the maintenance banner
+  maintenanceBanner.classList.remove('hidden');
+
+  // Start checking for new version immediately
+  startVersionCheck();
+}
+
+// Check for new version and reload when ready
+function startVersionCheck() {
+  const checkVersion = async () => {
+    try {
+      // Fetch the index.html to check for new version
+      const response = await fetch('/?v=' + Date.now(), { cache: 'no-store' });
+      const html = await response.text();
+
+      // Check if the version in the HTML has changed
+      const versionMatch = html.match(/title="Version: ([^"]+)"/);
+      const currentVersion = document.getElementById('logo')?.getAttribute('title')?.replace('Version: ', '');
+
+      if (versionMatch && versionMatch[1] !== currentVersion) {
+        // New version detected, reload
+        window.location.reload();
+        return;
+      }
+    } catch (e) {
+      console.log('Version check failed:', e);
+    }
+
+    // Keep checking every 5 seconds until new version is detected
+    setTimeout(checkVersion, 5000);
+  };
+
+  checkVersion();
+}
+
 function init() {
   game = new GameClient();
   game.setPlayerId(currentPlayerId);
@@ -178,6 +231,7 @@ function init() {
   game.onHintUsed(showHintUsed);
   game.onMatchmakingTimeout(startBotGame);
   game.onLeaderboardUpdate(handleLeaderboardUpdate);
+  game.onMaintenanceWarning(handleMaintenanceWarning);
 
   findMatchBtn.addEventListener('click', () => {
     findMatchBtn.disabled = true;
@@ -2119,3 +2173,19 @@ function disableNonEssentialTracking(): void {
 initCookieConsent();
 
 console.log('Crossfire initialized');
+
+// Dev helper: trigger maintenance banner from console
+// Usage: window.testMaintenance()
+(window as unknown as { testMaintenance: () => void }).testMaintenance = () => {
+  console.log('testMaintenance called');
+  console.log('maintenanceBanner element:', maintenanceBanner);
+  console.log('maintenanceCheckStarted:', maintenanceCheckStarted);
+
+  // Reset the flag so we can test multiple times
+  maintenanceCheckStarted = false;
+
+  const scheduledAt = Date.now() + 180000; // 3 minutes from now
+  handleMaintenanceWarning(180, 'test-version', scheduledAt);
+
+  console.log('Banner classes after:', maintenanceBanner.className);
+};

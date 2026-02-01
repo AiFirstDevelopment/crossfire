@@ -102,23 +102,37 @@ echo -e "${GREEN}Release notes:${NC}"
 echo "$COMMITS"
 echo ""
 
+# Broadcast maintenance warning to connected clients (3 min conservative estimate)
+# Frontend will show countdown, then poll for new version until deployment completes
+echo ""
+echo -e "${YELLOW}[5/7] Broadcasting maintenance warning...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
+MAINTENANCE_RESPONSE=$(curl -s -X POST \
+  "https://crossfire-worker.joelstevick.workers.dev/api/matchmaking/broadcast-maintenance" \
+  -H "Content-Type: application/json" \
+  -d "{\"countdownSeconds\": 180, \"version\": \"$NEW_VERSION\"}")
+echo "Response: $MAINTENANCE_RESPONSE"
+CLIENT_COUNT=$(echo "$MAINTENANCE_RESPONSE" | grep -o '"clientCount":[0-9]*' | cut -d':' -f2)
+echo -e "${GREEN}Notified ${CLIENT_COUNT:-0} connected clients (3 min countdown started)${NC}"
+echo -e "${YELLOW}Users will see countdown, then auto-reload when deployment completes${NC}"
+
 # Deploy worker
 echo ""
-echo -e "${YELLOW}[5/7] Deploying worker...${NC}"
+echo -e "${YELLOW}[6/7] Deploying worker...${NC}"
 echo -e "${YELLOW}────────────────────────────────${NC}"
 cd worker && npx wrangler deploy
 cd ..
 
 # Build and deploy frontend
 echo ""
-echo -e "${YELLOW}[6/7] Building and deploying frontend...${NC}"
+echo -e "${YELLOW}[7/7] Building and deploying frontend...${NC}"
 echo -e "${YELLOW}────────────────────────────────${NC}"
 cd frontend && npm run build && npx wrangler pages deploy dist --project-name=crossfire
 cd ..
 
-# Push the commit and tag
+# Push the commit and tag (happens in parallel with user reloads)
 echo ""
-echo -e "${YELLOW}[7/7] Pushing to remote...${NC}"
+echo -e "${YELLOW}Pushing to remote...${NC}"
 echo -e "${YELLOW}────────────────────────────────${NC}"
 git push origin main
 git push origin "$NEW_VERSION"

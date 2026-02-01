@@ -2379,6 +2379,98 @@ body.light-mode .site-footer a {
   }
 }
 
+/* ==================== Maintenance Banner ==================== */
+.maintenance-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(220, 38, 38, 0.95));
+  color: white;
+  padding: 0.75rem 1rem;
+  z-index: 10001;
+  box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.maintenance-banner.hidden {
+  display: none;
+}
+
+.maintenance-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.maintenance-icon {
+  font-size: 1.2em;
+  margin-right: 0.5rem;
+}
+
+.maintenance-text {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+#maintenance-countdown {
+  font-family: monospace;
+  font-size: 1.1em;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+}
+
+.maintenance-subtext {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* Pulse animation when countdown is low */
+.maintenance-banner.urgent {
+  animation: urgentPulse 1s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%, 100% { background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(220, 38, 38, 0.95)); }
+  50% { background: linear-gradient(135deg, rgba(220, 38, 38, 0.95), rgba(185, 28, 28, 0.95)); }
+}
+
+/* Light mode */
+body.light-mode .maintenance-banner {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 1), rgba(220, 38, 38, 1));
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .maintenance-banner {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .maintenance-text {
+    font-size: 0.9rem;
+  }
+
+  .maintenance-subtext {
+    font-size: 0.8rem;
+  }
+}
+
 /* Results Ad Container - hidden when no ad */
 .results-ad-container {
   margin: 1.5rem 0;

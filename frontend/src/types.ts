@@ -71,6 +71,7 @@ export type ServerMessage =
   | { type: 'game-over'; result: GameResult }
   | { type: 'opponent-wants-rematch' }
   | { type: 'rematch-starting' }
+  | { type: 'maintenance-warning'; countdownSeconds: number; version: string; scheduledAt: number }
   | { type: 'error'; code: string; message: string };
 
 // Client messages

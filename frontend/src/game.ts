@@ -28,6 +28,7 @@ type StateChangeHandler = (state: GameState) => void;
 type HintUsedHandler = (penaltyMs: number) => void;
 type MatchmakingTimeoutHandler = () => void;
 type LeaderboardUpdateHandler = (leaderboard: Array<{ rank: number; playerId: string; wins: number }>) => void;
+type MaintenanceWarningHandler = (countdownSeconds: number, version: string, scheduledAt: number) => void;
 
 export class GameClient {
   private ws: WebSocket | null = null;
@@ -37,6 +38,7 @@ export class GameClient {
   private hintHandler: HintUsedHandler | null = null;
   private matchmakingTimeoutHandler: MatchmakingTimeoutHandler | null = null;
   private leaderboardUpdateHandler: LeaderboardUpdateHandler | null = null;
+  private maintenanceWarningHandler: MaintenanceWarningHandler | null = null;
   private matchmakingTimer: number | null = null;
   private isProduction: boolean;
   private intentionalDisconnect: boolean = false;
@@ -72,6 +74,10 @@ export class GameClient {
         if (this.leaderboardUpdateHandler) {
           this.leaderboardUpdateHandler(message.leaderboard);
         }
+      } else if (message.type === 'maintenance-warning') {
+        if (this.maintenanceWarningHandler) {
+          this.maintenanceWarningHandler(message.countdownSeconds, message.version, message.scheduledAt);
+        }
       }
     };
 
@@ -95,6 +101,10 @@ export class GameClient {
 
   onLeaderboardUpdate(handler: LeaderboardUpdateHandler) {
     this.leaderboardUpdateHandler = handler;
+  }
+
+  onMaintenanceWarning(handler: MaintenanceWarningHandler) {
+    this.maintenanceWarningHandler = handler;
   }
 
   private clearMatchmakingTimer() {
