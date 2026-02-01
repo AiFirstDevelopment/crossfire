@@ -166,6 +166,7 @@ export class Matchmaking {
       JSON.stringify({
         queueSize: this.queue.size,
         onlineCount: this.connectedSockets.size,
+        activeGames: this.activeGames,
         activePlayers: this.getDisplayActivePlayers(),
         totalGamesPlayed: this.totalGamesPlayed,
         multiplayerGamesPlayed: this.multiplayerGamesPlayed,
