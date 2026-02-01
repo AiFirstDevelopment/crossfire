@@ -7,7 +7,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}=== Crossfire Release Script ===${NC}"
+echo ""
+echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}                    Crossfire Release Script                     ${NC}"
+echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+echo ""
 
 # Ensure we're on main branch
 CURRENT_BRANCH=$(git branch --show-current)
@@ -24,7 +28,9 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Pull latest changes
-echo -e "${YELLOW}Pulling latest changes...${NC}"
+echo ""
+echo -e "${YELLOW}[1/7] Pulling latest changes...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 git pull origin main
 
 # Get the latest tag and increment version
@@ -51,7 +57,9 @@ if [ -n "$1" ]; then
 fi
 
 # Run E2E tests
-echo -e "${YELLOW}Running E2E tests...${NC}"
+echo ""
+echo -e "${YELLOW}[2/7] Running E2E tests...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 npm run test:e2e
 if [ $? -ne 0 ]; then
   echo -e "${RED}E2E tests failed. Aborting release.${NC}"
@@ -60,7 +68,9 @@ fi
 echo -e "${GREEN}E2E tests passed!${NC}"
 
 # Update version in index.html
-echo -e "${YELLOW}Updating version in index.html...${NC}"
+echo ""
+echo -e "${YELLOW}[3/7] Updating version in index.html...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 sed -i '' "s/title=\"Version: [^\"]*\"/title=\"Version: $NEW_VERSION\"/" frontend/index.html
 
 # Commit the version change
@@ -70,7 +80,9 @@ git commit -m "Release $NEW_VERSION
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 # Generate release notes from commits since last tag
-echo -e "${YELLOW}Generating release notes...${NC}"
+echo ""
+echo -e "${YELLOW}[4/7] Generating release notes...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 if [ -z "$LATEST_TAG" ]; then
   # First release - get all commits
   COMMITS=$(git log --oneline --no-merges | head -20)
@@ -80,7 +92,7 @@ else
 fi
 
 # Create the tag with release notes
-echo -e "${YELLOW}Creating tag $NEW_VERSION...${NC}"
+echo -e "${YELLOW}Creating tag $NEW_VERSION${NC}"
 git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION - $(date +%Y-%m-%d)
 
 Changes:
@@ -91,21 +103,30 @@ echo "$COMMITS"
 echo ""
 
 # Deploy worker
-echo -e "${YELLOW}Deploying worker...${NC}"
+echo ""
+echo -e "${YELLOW}[5/7] Deploying worker...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 cd worker && npx wrangler deploy
 cd ..
 
 # Build and deploy frontend
-echo -e "${YELLOW}Building and deploying frontend...${NC}"
+echo ""
+echo -e "${YELLOW}[6/7] Building and deploying frontend...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 cd frontend && npm run build && npx wrangler pages deploy dist --project-name=crossfire
 cd ..
 
 # Push the commit and tag
-echo -e "${YELLOW}Pushing commit and tag to remote...${NC}"
+echo ""
+echo -e "${YELLOW}[7/7] Pushing to remote...${NC}"
+echo -e "${YELLOW}────────────────────────────────${NC}"
 git push origin main
 git push origin "$NEW_VERSION"
 
-echo -e "${GREEN}=== Release $NEW_VERSION complete! ===${NC}"
+echo ""
+echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}                Release $NEW_VERSION complete!                   ${NC}"
+echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "To rollback to a previous version:"
 echo "  npm run rollback <version>"
