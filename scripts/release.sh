@@ -56,11 +56,11 @@ if [ -n "$1" ]; then
   echo -e "${YELLOW}Using provided version: $NEW_VERSION${NC}"
 fi
 
-# Run E2E tests
+# Run E2E tests (use list reporter to avoid interactive HTML report)
 echo ""
 echo -e "${YELLOW}[2/7] Running E2E tests...${NC}"
 echo -e "${YELLOW}────────────────────────────────${NC}"
-npm run test:e2e
+npx playwright test --reporter=list
 if [ $? -ne 0 ]; then
   echo -e "${RED}E2E tests failed. Aborting release.${NC}"
   exit 1
