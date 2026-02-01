@@ -339,11 +339,21 @@ function init() {
 
   // Rematch button handlers
   rematchBtn.addEventListener('click', () => {
-    game.playAgain();
+    // Show waiting UI (same experience for bot and multiplayer)
     rematchBtn.disabled = true;
     rematchBtn.textContent = 'Waiting...';
     rematchStatus.textContent = 'Waiting for opponent to accept...';
     rematchStatus.classList.remove('hidden');
+
+    if (isBotMode) {
+      // Bot "thinks" for 5 seconds then auto-accepts
+      setTimeout(() => {
+        restartBotGame();
+      }, 5000);
+    } else {
+      // Multiplayer - request rematch from opponent
+      game.playAgain();
+    }
   });
 
   acceptRematchBtn.addEventListener('click', () => {
@@ -455,6 +465,20 @@ function startBotGame() {
   handleBotStateChange(botGame.getState());
 }
 
+// Restart a bot game (for rematch - bot auto-accepts)
+function restartBotGame() {
+  // Create new bot game
+  botGame = new BotGame(validWords, wordList);
+  botGame.onStateChange(handleBotStateChange);
+  botGame.onHintUsed(showHintUsed);
+
+  // Update status text
+  statusText.textContent = `Playing against ${botGame.getBotName()}`;
+
+  // Trigger initial state change to show the submit screen
+  handleBotStateChange(botGame.getState());
+}
+
 function handleBotStateChange(state: BotGameState) {
   switch (state.phase) {
     case 'submitting':
@@ -512,6 +536,8 @@ function handleBotStateChange(state: BotGameState) {
       stopTimer();
       showBotResults(state);
       crosswordUI = null;
+      // Show rematch UI for bot games (pass empty state, isBotMode handles the rest)
+      updateRematchUI({} as GameState);
       break;
   }
 }
@@ -547,10 +573,9 @@ function showBotResults(state: BotGameState) {
   const isWinner = result.winnerId === 'player';
   const isTie = result.winReason === 'tie';
 
-  // Hide h2h and rematch (only for multiplayer), show challenge prompt for bot games
+  // Hide h2h (only for multiplayer), rematch UI handled by updateRematchUI()
   headToHeadEl.classList.add('hidden');
-  rematchSection.classList.add('hidden');
-  challengePromptEl.classList.remove('hidden');
+  challengePromptEl.classList.add('hidden');
   currentOpponentName = null; // Reset for next game
 
   if (isTie) {
@@ -1166,15 +1191,20 @@ function hideSolutionGrid() {
 }
 
 function updateRematchUI(state: GameState) {
-  // Only show rematch for multiplayer games (not bot games)
+  // Show rematch section
+  rematchSection.classList.remove('hidden');
+
+  // For bot games, show "Rematch" button (same as multiplayer - bot auto-accepts after 5s)
   if (isBotMode) {
-    rematchSection.classList.add('hidden');
+    challengePromptEl.classList.add('hidden'); // Hide challenge prompt, show rematch instead
     rematchModal.classList.add('hidden');
+    rematchBtn.disabled = false;
+    rematchBtn.textContent = 'Rematch';
+    rematchBtn.classList.remove('hidden');
+    rematchStatus.classList.add('hidden');
+    rematchRequest.classList.add('hidden');
     return;
   }
-
-  // Show rematch section for multiplayer
-  rematchSection.classList.remove('hidden');
 
   // Check if opponent left (either after game or during game causing 'opponent-left' win reason)
   const opponentLeft = state.opponentLeftAfterGame || state.result?.winReason === 'opponent-left';
